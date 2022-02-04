@@ -9,22 +9,26 @@ module.exports = {
     test: {filename: 'package-test.js', library: {type: 'var', name:`${packageName}_test`}, import: './src/package-test.ts'},
     package: './src/package.ts'
   },
-  resolve: {
-    fallback: { "url": false },
-    extensions: ['.wasm', '.mjs', '.js', '.json', '.ts', '.tsx'],
+  devtool: 'inline-source-map',
+  devServer: {
+    contentBase: './dist'
   },
+  target: 'web',
   module: {
     rules: [
       { test: /\.tsx?$/, loader: 'ts-loader' },
       { test: /\.css$/, use: ['style-loader', 'css-loader'] },
       { test: /\.(jpe?g|gif|png|svg|sdf)$/, loader: "file-loader" }
-    ],
+    ]
   },
-  devtool: 'inline-source-map',
+  resolve: {
+    fallback: { "url": false },
+    extensions: ['.wasm', '.mjs', '.js', '.json', '.ts', '.tsx']
+  },
   externals: {
     'datagrok-api/dg': 'DG',
     'datagrok-api/grok': 'grok',
-    'datagrok-api/ui': 'ui'
+    'datagrok-api/ui': 'ui',
   },
   output: {
     filename: '[name].js',
