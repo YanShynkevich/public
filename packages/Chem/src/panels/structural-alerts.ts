@@ -39,25 +39,32 @@ export function runStructuralAlertsDetection(df: DG.DataFrame, ruleSetList: stri
   ruleSetCol: DG.Column<string>, ruleIdCol: DG.Column<string>, smartsMap: Map<string, RDMol>,
   rdkitModule: RDModule): DG.DataFrame {
   ruleSetList.forEach((ruleSetName) => df.columns.addNewBool(ruleSetName));
-  const skipRuleSetList: string[] = [];
   const originalDfLength = df.rowCount;
   const alertsDfLength = ruleSetCol.length;
 
-  for (let i = 0; i < originalDfLength; i++) {
-    const mol = rdkitModule.get_mol(col.get(i)!);
+  //@ts-ignore:
+  const lib: SubstructLibrary = new rdkitModule.SubstructLibrary();
+  const indexMap: Map<number, number> = new Map();
 
-    for (let j = 0; j < alertsDfLength; j++) {
-      const currentRuleSet = ruleSetCol.get(j)!;
-      if (!ruleSetList.includes(currentRuleSet) || skipRuleSetList.includes(currentRuleSet))
-        continue;
+  for (let i = 0; i < originalDfLength; i++)
+    indexMap.set(lib.add_mol(rdkitModule.get_mol(col.get(i)!)), i);
 
-      const matches = mol.get_substruct_match(smartsMap.get(ruleIdCol.get(j)!)!);
-      if (matches != '{}') {
-        skipRuleSetList.push(currentRuleSet);
-        df.set(currentRuleSet, i, true);
-      }
+  let matches: number[];
+  for (let i = 0; i < alertsDfLength; i++) {
+    const currentRuleSet = ruleSetCol.get(i)!;
+    if (!ruleSetList.includes(currentRuleSet))
+      continue;
+
+    try {
+      matches = JSON.parse(lib.get_matches(smartsMap.get(ruleIdCol.get(i)!)!));
+    } catch (e) {
+      console.warn(`StructuralAlertsError: ${e}`);
+      continue;
     }
-    skipRuleSetList.length = 0;
+
+    const currentRuleSetCol: DG.Column<boolean> = df.getCol(currentRuleSet);
+    for (const libIndex of matches)
+      currentRuleSetCol.set(indexMap.get(libIndex)!, true);
   }
 
   return df;
