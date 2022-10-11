@@ -10,7 +10,30 @@ class AnnaSequencePackageDetectors extends DG.Package {
     //input: column col
     //output: string semType
     detectNucleotides(col) {
-        if (col.type === "string" && col.categories.every(str => /^[\satgcATGC]+$/.test(str))) return 'dna_nucleotide';
-        return col.type;
+        if (col.type === DG.TYPE.STRING && col.categories.every(cat => /^[\satgcATGC]+$/.test(cat))) {
+            col.semType = 'dna_nucleotide';
+            return col.semType;
+        }
+        return null;
+        }
+
+    //tags: semTypeDetector
+    //input: column col
+    //output: string semType
+    isPotentialENAIdCol(col) {
+        if (col.type === DG.TYPE.STRING && col.categories.every(cat => /[A-Z]{2}[0-9]{6}/.test(cat))) { // add ^$ to regex if needed
+            col.semType = 'ENA';
+            return col.semType;
+        }
+        return null;
+    }
+
+    //input: string str
+    //output: bool result
+    isPotentialENAId(str) {
+        return /[A-Z]{2}[0-9]{6}/.test(str);
     }
 }
+
+
+

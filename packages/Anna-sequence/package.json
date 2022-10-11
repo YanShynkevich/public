@@ -4,10 +4,11 @@
 	"version": "0.0.1",
 	"description": "",
 	"dependencies": {
-		"datagrok-api": "latest",
+		"@datagrok-libraries/utils": "latest",
 		"cash-dom": "latest",
+		"datagrok-api": "latest",
 		"dayjs": "latest",
-		"@datagrok-libraries/utils": "latest"
+		"fusioncharts-smartlabel": "^2.1.2"
 	},
 	"devDependencies": {
 		"webpack": "latest",

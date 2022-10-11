@@ -1,4 +1,4 @@
---name: ordersByCountryA
+--name: ordersByCountry
 --connection: northwind
 --input: string country
 select customerid, sum(freight)

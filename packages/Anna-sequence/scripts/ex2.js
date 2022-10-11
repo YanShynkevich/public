@@ -4,4 +4,4 @@
 //input: string subsequence
 //output: int count
 
-let count = sequence.match(new RegExp(subsequence, 'g')).length;
+let count = (sequence.match(new RegExp(subsequence, 'g')) || []).length;

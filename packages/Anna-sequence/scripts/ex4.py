@@ -2,13 +2,14 @@
 #language: python
 #tags: demo, viewers
 #input: dataframe t
+#input: column xColumnName
 #output: graphics
 
 from collections import Counter
 import matplotlib.pyplot as plt
 import re
 
-seq = t['Sequence']
+seq = t[xColumnName]
 a = []
 
 for s in seq:
