@@ -1770,32 +1770,42 @@ export class Stats {
     return api.grok_Stats_Get_Q3(this.dart);
   }
 
-  /** @returns {number} - first quantile */
+  /** @returns {number} - first percentile */
   get perc01(): number {
     return api.grok_Stats_Get_PERC01(this.dart);
   }
 
-  /** @returns {number} - fifth quantile */
+  /** @returns {number} - fifth percentile */
   get perc05(): number {
     return api.grok_Stats_Get_PERC05(this.dart);
   }
 
-  /** @returns {number} - tenth quantile */
+  /** @returns {number} - tenth percentile */
   get perc10(): number {
     return api.grok_Stats_Get_PERC10(this.dart);
   }
+  
+   /** @returns {number} - twety fifth percentile */
+  get perc25(): number {
+    return api.grok_Stats_Get_PERC25(this.dart);
+  }
+  
+  /** @returns {number} - seventy fifth percentile */
+  get perc75(): number {
+    return api.grok_Stats_Get_PERC75(this.dart);
+  }
 
-  /** @returns {number} - ninetieth quantile */
+  /** @returns {number} - ninetieth percentile */
   get perc90(): number {
     return api.grok_Stats_Get_PERC90(this.dart);
   }
 
-  /** @returns {number} - ninety fifth quantile */
+  /** @returns {number} - ninety fifth percentile */
   get perc95(): number {
     return api.grok_Stats_Get_PERC95(this.dart);
   }
 
-  /** @returns {number} - ninety ninth quantile */
+  /** @returns {number} - ninety ninth percentile */
   get perc99(): number {
     return api.grok_Stats_Get_PERC99(this.dart);
   }
