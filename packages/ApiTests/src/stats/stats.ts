@@ -57,6 +57,14 @@ category('Stats', () => {
   test('perc10', async () => {
     expect(stats_n.perc10, 12);
   });
+  
+  test('perc25', async () => {
+    expect(stats_n.perc25, 15);
+  });
+  
+  test('perc75', async () => {
+    expect(stats_n.perc25, 98);
+  });
 
   test('perc90', async () => {
     expect(stats_n.perc90, 16);
