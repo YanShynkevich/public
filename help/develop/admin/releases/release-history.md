@@ -1,6 +1,20 @@
 <!-- TITLE: Release History -->
 <!-- SUBTITLE: -->
 
+# 2022-10-13 Dev build 1.7.2
+
+## Latest Docker Images
+
+* Datagrok: 
+  *  `docker pull datagrok/datagrok:1.7.2`
+* [Docker-Compose](https://datagrok.ai/help/develop/admin/docker-compose)
+
+## Addressed Issues
+
+* dgrok-release 1.7.1:fix   PackNaming+gconnect 1.05 
+* change grok konnect version 
+
+
 # 2022-10-06 Dev build 1.6.12
 
 ## Latest Docker Images
