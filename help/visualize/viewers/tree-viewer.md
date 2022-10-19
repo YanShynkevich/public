@@ -27,7 +27,7 @@ To learn more about viewers' properties, see
 | Node: shift+click   | Add node to selection  |
 
 For the complete list of actions, see
-[**Common actions**](../viewers.md#common-actions)
+[Common actions](../viewers.md#common-actions)
 
 ![TreeViewer](tree-viewer.gif)
 
