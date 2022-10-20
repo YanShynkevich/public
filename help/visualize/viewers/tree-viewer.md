@@ -1,22 +1,31 @@
 # Tree viewer
 
-Tree viewer visualizes hierarchical data. Initially, the chart builds a tree
-structure for a given dataset with up to three levels. To form a hierarchy, the
-viewer selects columns with the least number of categories. Each category
-corresponds to a node.
+The tree viewer visualizes the hierarchical structure of a dataset's categorical data. Each node within the same hierarchy level corresponds to a category within one column. It also shows the number of rows containing this category. The branches between nodes of different levels form a tree network providing hierarchical data insights.
 
-To apply tree viewer for a given dataset, on the menu ribbon, click **Add
-viewer** icon and select **Tree viewer** in the opend window.
+Initially, the chart builds a tree structure with up to three levels selecting columns with the least number of categories. You can change the order of columns, add new levels to the initial hierarchy or remove the existing ones using [settings](tree-viewer.md#settings) available from the UI.
 
-## Properties
+To apply a tree viewer to a given dataset, on the menu ribbon, click **Add viewer** icon and select **Tree viewer** in the opened window.
 
-To change the order of columns, add new levels to the initial hierarchy or
+>Note: viewer for sequences
+
+## Interaction
+
+## Layouts
+
+## Filtering
+
+## Docking
+
+## Settings
+
+The tree viewer settings are available from the To change the order of columns, add new levels to the initial hierarchy or
 remove the existing ones, edit the viewer's **Hierarchy** property. Also, in the
 viewer properties, you can adjust marker settings, change a tree layout, or
 toggle certain behaviors, such as animation, expanding or collapsing nodes, etc.
 
-To learn more about viewers' properties, see
-[Properties](../viewers.md#properties).
+To learn more about all viewers' properties, see [Properties](../viewers.md#properties).
+
+> Developers: To learn more about tree diagram properties, see [Tree Diagram](https://echarts.apache.org/en/option.html#series-tree) library documentation.
 
 ## Actions
 
@@ -29,7 +38,7 @@ To learn more about viewers' properties, see
 For the complete list of actions, see
 [Common actions](../viewers.md#common-actions)
 
-![TreeViewer](tree-viewer.gif)
+GIF
 
 See also:
 
