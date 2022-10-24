@@ -2,7 +2,7 @@
 
 A tree viewer visualizes the hierarchical structure of a dataset's categorical data. Nodes on the first level depict the categories of a corresponding column and show the number of rows with these categories. Each node can branch, forming the next level corresponding to another categorical column. A branch between nodes appears if the categories of parent and child nodes are on the same row. The child node shows the list of all its parents and the number of rows containing all corresponding categories.
 
-The platform automatically detects the categorical columns with the least number of categories and builds a tree viewer. By default, the tree viewer has three levels: the root node on level 0 to the leaf nodes on level 2. You can adjust the number of initially expanded levels and change the tree viewer's hierarchy by setting the **Initial Tree Depth** and **Hierarchy** properties.
+The platform automatically detects the categorical columns with the least number of categories and builds a tree viewer. By default, the tree viewer has three levels: the root node on level 0 to the leaf nodes on level 2. You can adjust the number of initially expanded levels and change the tree viewer's hierarchy by editing the **Initial Tree Depth** and **Hierarchy** properties.
 
 > Note: Empty cells, if they are, form a separate category with no name.
 <!--Note: BiostructureViewer, PhyloTreeViewer for phylogenetic trees visualization-->
