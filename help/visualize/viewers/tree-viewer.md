@@ -1,25 +1,22 @@
+
 # Tree viewer
 
-A tree viewer visualizes the hierarchical structure of a dataset's categorical data. Nodes on the first level depict the categories of a corresponding column and show the number of rows with these categories. Each node can branch, forming the next level corresponding to another categorical column. A branch between nodes appears if the categories of parent and child nodes are on the same row. The child node shows the list of all its parents and the number of rows containing all corresponding categories.
-
-The platform automatically detects the categorical columns with the least number of categories and builds a tree viewer. By default, the tree viewer has three levels: the root node on level 0 to the leaf nodes on level 2. You can adjust the number of initially expanded levels and change the tree viewer's hierarchy by editing the **Initial Tree Depth** and **Hierarchy** properties.
+A tree viewer visualizes the hierarchical structure of categorical data, where levels correspond to the columns and nodes group rows with the same categories. Thus nodes of the first level use data from the entire dataset. And nodes of subsequent levels receive data from their parent nodes.
 
 > Note: Empty cells, if they are, form a separate category with no name.
 <!--Note: BiostructureViewer, PhyloTreeViewer for phylogenetic trees visualization-->
 
-To add a tree viewer,  on the menu ribbon, click the **Add viewer** icon and select **Tree viewer** in the opened window. To see the properties, right-click the viewer and select **Properties…**. This action updates the **Context Pane** with available properties in **Data** and **Misc** info panels.
-
-GIF (changing the properties)
-
-Additionally, you can use size coding to highlight nodes with large values of the selected aggregation function applied to the specified column (see the **Size Aggr Type** and **Size** properties). Similarly, you can color-code the nodes using  **Color Aggr Type** and **Color** properties.
+The platform automatically detects categorical columns with the least number of categories to build a tree chart. By default, it has three levels. You can adjust the number of initially expanded levels and change the tree chart's hierarchy by editing the **Initial Tree Depth** and **Hierarchy** properties. Additionally, you can use size coding to highlight nodes with larger values of the selected aggregation function applied to the specified column (see the **Size Aggr Type** and **Size** properties). Similarly, you can color-code the nodes using  **Color Aggr Type** and **Color** properties.
 
 For the complete list of tree viewer properties, see [Properties](tree-viewer.md#properties)
 
->Developers: To learn more about tree diagram properties, see [ECharts](https://echarts.apache.org/en/option.html#series-tree) library documentation.
+>Developers: To learn more about tree chart properties, see [ECharts](https://echarts.apache.org/en/option.html#series-tree) library documentation.
 
-GIF
+To add a tree viewer, on the menu ribbon, click the **Add viewer** icon and select **Tree viewer** in the opened window. To see the properties, right-click the viewer and select **Properties…**. This action updates the **Context Pane** with available properties in **Data** and **Misc** info panels.
 
-You can work with a tree viewer like other Datagrok viewers. It interacts with the grid, filter, and other viewers in the usual manner when all objects share the same filtered state. For more information on manipulation across all viewers, see [Selection](../viewers.md#selection). You can change the viewer's docking layout (see [Docking](../viewers.md#docking)), customize it, and embed it into an external site as an iframe (see [Embedding](../viewers.md#Embedding)) just like other Datagrok viewers. Once you configure the relative position of the viewer and its properties, you can save these settings in view **Layout** to apply them later to a different dataset. To learn more about view layout, see [Layouts](../viewers.md#layouts).
+GIF (changing the properties)
+
+Like other Datagrok viewers, a tree viewer is highly interactive, sharing the same filtered state with other objects on the view. For more information on manipulation across all viewers, see [Selection](../viewers.md#selection). As well, you can change the viewer's docking layout (see [Docking](../viewers.md#docking)), customize it, and embed it into an external site as an iframe (see [Embedding](../viewers.md#embedding)). Once you configure the relative position of the viewer and its properties, you can save these settings in view **Layout** to apply them later to a different dataset. To learn more about view layout, see [Layouts](../viewers.md#layouts).
 
 >Note: Since a tree viewer shows aggregated values, not single ones, it highlights the node as selected if you select all of its elements in another object.
 
