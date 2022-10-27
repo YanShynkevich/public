@@ -5,7 +5,7 @@ The tree viewer shows the hierarchical structure of your data. It groups dataset
 
 >Note: The tree viewer composition is similar to multiple grouping in a SQL query, with the difference that here each group is a node.
 
-Use the tree viewer to visualize and explore any series array with the categorical data. 
+Use the tree viewer to visualize and explore any series array with the categorical data.
 
 Common uses:
 
@@ -16,9 +16,9 @@ Common uses:
 
 ## Create a tree viewer
 
-On the menu ribbon, click the **Add viewer** icon. A dialog opens.
-In the dialog, select **Tree viewer**.
-Click OK.
+1. On the menu ribbon, click the **Add viewer** icon. A dialog opens.
+2. In the dialog, select **Tree viewer**.
+3. Click OK.
 
 GIF – add a tree viewer
 
@@ -103,7 +103,7 @@ GIF – size and color coding, changing symbol
 
 For the _orthogonal_ layout, you can set the shape of the tree branches. Its default value is _curve_. And you can change it to _polyline_. To do that, on the **Misc** info panel, locate the **Edge Shape** property and select the value from the dropdown list.
 
-< brief GIF – switching the shape>
+brief GIF – switching the shape
 
 ## Tree viewer interaction
 
