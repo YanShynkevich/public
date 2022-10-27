@@ -122,9 +122,9 @@ GIF (showing the interaction between tree viewer, scatterplot, filter, and grid)
 
 You can manipulate the tree viewer just like a regular Datagrok viewer:
 
-* customize it
-* change the [viewer's docking layout](../viewers.md#docking), and
-* [embed](../viewers.md#embedding) it into an external site as an iframe
+* Customize it
+* Change the [viewer's docking layout](../viewers.md#docking), and
+* [Embed](../viewers.md#embedding) it into an external site as an iframe
 
 >Note: To see the complete list of common actions, see [Common actions](../viewers.md#common-actions).
 
