@@ -50,7 +50,7 @@ After setting the hierarchy, the viewer automatically expands levels according t
 
 You can also expand and collapse the whole tree hierarchy. To do so, switch the **Expand and Collapse** property:
 
-* To expands the entire tree hierarchy, unselect it.
+* To expand the entire tree hierarchy, unselect it.
 * To collapse the tree to the initial tree depth, select it.
 
 You can expand and collapse individual nodes by clicking them. The viewer displays a collapsed node with a filled circle and an expanded node with an empty one. The leaf nodes are always empty circles.
