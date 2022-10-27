@@ -86,7 +86,7 @@ To add size coding for the tree nodes, do the following:
 
 1. On the **Data** info panel, locate **Size** and click the **Down Arrow** control next to it. A dialog opens.
 1. Select a column for the aggregation.
-Below, find the **Size Aggr Type** property.
+1. Below, find the **Size Aggr Type** property.
 1. Select an aggregation function from the dropdown list.
 
 Similarly, you can set the color coding for nodes using **Color Aggr Type** and **Color** properties.
