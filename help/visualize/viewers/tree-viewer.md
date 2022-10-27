@@ -5,9 +5,12 @@ The tree viewer shows the hierarchical structure of your data. It groups dataset
 
 >Note: The tree viewer composition is similar to multiple grouping in a SQL query, with the difference that here each group is a node.
 
-Use the tree viewer to visualize and explore any series array with the categorical data. Common uses:
-An organizational chart
-Headcount by location
+Use the tree viewer to visualize and explore any series array with the categorical data. 
+
+Common uses:
+
+* An organizational chart
+* Headcount by location
 
 ![Tree viewer composition](../viewers/treeViewer.png)
 
