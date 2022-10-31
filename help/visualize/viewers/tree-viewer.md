@@ -28,9 +28,8 @@ For example, you can:
 * **Expand and collapse** the whole tree hierarchy by switching **Expand and Collapse**.
 * **Change the number of levels** the viewer automatically collapses to by setting the **Initial Tree Depth** value.
 * **Customize the tree viewer** by setting the tree **Layout** as either `orthogonal` or `radial`. And for `orthogonal` layout, you can also:
-    * Define the tree **direction** using the **Orient** setting.
-    * Change the **shape of the branches** in the **Edge Shape** setting.
-
+  * Define the tree **direction** using the **Orient** setting.
+  * Change the **shape of the branches** in the **Edge Shape** setting.
 
 GIF
 
