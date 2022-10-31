@@ -1,11 +1,13 @@
 # Tree viewer
 
-The tree viewer shows the hierarchical structure of your data. It groups dataset rows into nodes based on their values in one or several columns. Use the tree viewer to explore datasets with categorical data.
+The tree viewer shows the hierarchical structure of categorical data. It groups dataset rows into nodes by categories in columns. In this case, each column forms a new hierarchy level.
 
 Common uses:
 
 * An organizational chart
 * Sales by location
+
+![Tree viewer](tree-viewer.png)
 
 ## Create a tree viewer
 
@@ -14,28 +16,23 @@ Common uses:
 
 When you add the viewer, Datagrok automatically detects two categorical columns with the least number of categories. They form the initial hierarchy of the tree chart.  
 
-## Manage a tree viewer
+## Manage the viewer settings
 
-You can set the tree hierarchy and customize the viewer. To do that, click the **gear** icon on top of the viewer. The **Data** and **Misc** info panels appear on the **Context Pane**. Manage the tree viewer using properties from these panels.
+You can set the tree hierarchy and customize the viewer. To do that, click the **gear** icon on top of the viewer and use the **Data** and **Misc** info panels on the **Context Pane** to manage the tree viewer settings.
 
-### Set the tree hierarchy
+For example, you can:
 
-* _Change the tree chart's hierarchy_ by adding/deleting new levels and changing their order. These actions are available from the **Hierarchy** property.
-* _Size-code_ the nodes. Apply an aggregation function to the node data, making the node size dependent on this value. To do so, define a column for aggregation in **Size** and select an aggregation function in **Size Aggr Type**.
-* Similarly, set the _color coding_ for nodes using **Color Aggr Type** and **Color** properties.
+* **Set the tree hierarchy**. Add and delete new levels or change their order using the **Hierarchy** setting.
+* **Size-code the nodes**. Define a column for aggregation in **Size** and select an aggregation function in **Size Aggr Type**.
+* **Color-code the nodes** using **Color Aggr Type** and **Color** settings.
+* **Expand and collapse** the whole tree hierarchy by switching **Expand and Collapse**.
+* **Change the number of levels** the viewer automatically collapses to by setting the **Initial Tree Depth** value.
+* **Customize the tree viewer** by setting the tree **Layout** as either `orthogonal` or `radial`. And for `orthogonal` layout, you can also:
+    * Define the tree **direction** using the **Orient** setting.
+    * Change the **shape of the branches** in the **Edge Shape** setting.
 
-### Expand and collapse the tree
 
-* Expand and collapse the whole tree hierarchy by switching **Expand and Collapse**.
-* The viewer automatically collapses the tree according to the **Initial Tree Depth** value. By default, it’s `2` and you can change it.
-
-> Note: Expand and collapse individual nodes by clicking them.
-
-### Customize the tree viewer
-
-* Set the tree **Layout** as either `orthogonal` or `radial`. By default, it’s  `orthogonal`. And for this layout, you can also:
-  * Define the tree direction by setting the **Orient** property.
-  * Set the shape of the branches in the **Edge Shape** property.
+GIF
 
 ## Viewer controls
 
@@ -44,8 +41,6 @@ You can set the tree hierarchy and customize the viewer. To do that, click the *
 | Expand/collapse branch        |Node: click   |
 | Add node to selection           | Node: shift+click|
 | Toggle node selection           |  Node: ctrl+click |
-
-GIF
 
 ## See also
 
