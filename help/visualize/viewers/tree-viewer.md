@@ -7,7 +7,7 @@ Common uses:
 * An organizational chart
 * Sales by location
 
-![Tree viewer](treeviewer.png)
+![Tree viewer](tree-viewer.png)
 
 ## Create a tree viewer
 
