@@ -55,7 +55,8 @@ You can use an invitation link in the following cases:
 1. To generate a password, click the button next to the **Password** field. A _password_ appears.
 1. Copy the _password_.
 1. Generate an invitation link by the following structure:
-`https://public.datagrok.ai/?groupPassword=``<_password_>`
+
+   `https://public.datagrok.ai/?groupPassword=``<_password_>`
 
 ![Providing membership by link](group-membership.gif)
 
