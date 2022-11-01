@@ -36,6 +36,29 @@ To request a membership, right-click on a group and choose "Request membership".
 to [group admin](group.md#group-admin). Once it is approved or declined, a notification will appear in the
 [notification panel](user.md#profile). [Audit record](audit.md) is created for both request and a resolution.
 
+## Providing membership by link
+
+Datagrok supports providing membership by link. That means any person outside the Datagrok instance can get membership in a particular group by an invitation link. The number of users that can join the group this way is not limited.
+
+You can use an invitation link in the following cases:
+
+* To invite a user whose email you don’t know
+* To add a lot of new users in a short time
+* To reveal users coming after a marketing event
+
+### Create an invitation link
+
+ >Prerequisites: You should have the privileges of the group administrator.
+
+1. Go to **Manage** > **Groups**.
+1. Right-click the group and select **Edit…**. A dialog opens.
+1. To generate a password, click the button next to the **Password** field. A _password_ appears.
+1. Copy the _password_.
+1. Generate an invitation link by the following structure:
+`https://public.datagrok.ai/?groupPassword=``<_password_>`
+
+![Providing membership by link](group-membership.gif)
+
 ## Groups as roles
 
 Authorization system is based on user groups. There are one group called "All users", that contains all users by default
