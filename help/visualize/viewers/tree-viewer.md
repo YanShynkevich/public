@@ -31,7 +31,7 @@ For example, you can:
   * Define the tree **direction** using the **Orient** setting.
   * Change the **shape of the branches** in the **Edge Shape** setting.
 
-GIF
+![Tree viewer](tree-viewer.gif "Tree viewer")
 
 ## Viewer controls
 
