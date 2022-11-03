@@ -15,7 +15,7 @@ location.
 ## Create a tree viewer
 
 1. On the menu ribbon, click the **Add viewer** icon. A dialog opens.
-1. In the dialog, select **Tree viewer** and click OK.
+1. In the dialog, select **Tree viewer**.
 
 When you add a tree viewer, Datagrok chooses two categorical columns with the
 least number of categories. They form the initial hierarchy of the tree chart.
