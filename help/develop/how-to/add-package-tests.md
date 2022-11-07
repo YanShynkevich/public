@@ -69,11 +69,11 @@ which has `Jest` properly configured and all tests written properly.
 ## Skipping tests
 
 If a test fails for some reason, you can skip it using the skipReason parameter
-(please specify a reason for skipping the test, for example,
+(specify a reason for skipping the test, for example,
 the associated Jira issue key or GitHub issue number):
 
 ```js
-test('Success', async () => {
+test('Skipped', async () => {
   expect(1, 1);
 }, {skipReason: 'GROK-99999'});
 ```
