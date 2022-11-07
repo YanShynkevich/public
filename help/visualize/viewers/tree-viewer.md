@@ -10,7 +10,7 @@ location.
 
 ![Tree viewer](tree-viewer.png)
 
->Note: To use tree viewer, install the package [Charts](https://github.com/datagrok-ai/public/tree/master/packages/Charts).
+>Note: To use a tree viewer, install the package [Charts](https://github.com/datagrok-ai/public/tree/master/packages/Charts).
 
 ## Create a tree viewer
 
@@ -45,7 +45,7 @@ For example, you can:
 
 ## Interaction with other viewers
 
-A tree viewer responds to data filters but has limited interaction in rows selection since it shows aggregated values.
+A tree viewer responds to data filters but has limited interaction in rows selection. It displays the node as selected only if you select all elements of the node.
 
 ![Tree viewer](tree-viewer.gif "Tree viewer")
 
