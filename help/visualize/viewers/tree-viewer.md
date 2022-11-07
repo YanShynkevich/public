@@ -10,7 +10,7 @@ location.
 
 ![Tree viewer](tree-viewer.png)
 
->Note: To use tree viewer, install the package [Charts](https://github.com/datagrok-ai/public/tree/master/packages/Charts)
+>Note: To use tree viewer, install the package [Charts](https://github.com/datagrok-ai/public/tree/master/packages/Charts).
 
 ## Create a tree viewer
 
@@ -18,7 +18,7 @@ location.
 1. In the dialog, select **Tree viewer**.
 
 When you add a tree viewer, Datagrok chooses two categorical columns with the
-least number of categories. They form the initial hierarchy of the tree chart.
+least number of categories. They form the initial hierarchy of the tree viewer.
 
 ## Configuring a tree viewer
 
