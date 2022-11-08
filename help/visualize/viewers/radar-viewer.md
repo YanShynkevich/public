@@ -7,7 +7,7 @@ Radar viewer (a spider chart) compares multivariate data across several quantita
 
 On radar viewer, you can compare the numerical values of different columns within a row and rows’ values within a dataset. Radar viewer is commonly used in the comparison, decision-making, and analysis, for example, in [elemental analysis in cheminformatics](https://github.com/datagrok-ai/public/tree/master/packages/Chem#elemental-analysis).
 
-![Radar viewer](radar.png)
+![Radar viewer](radar-viewer.png)
 
 You can use a radar viewer as a standalone chart or as an [inline viewer in summary column](grid.md#row-summary-columns) of the grid.
 
