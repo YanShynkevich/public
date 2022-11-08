@@ -3,7 +3,7 @@
 
 # Radar viewer
 
-Radar viewer (a spider chart) compares multivariate data across several quantitative dimensions. It plots numerical values of the table columns on axes that radiate out of a point: the higher value is, the further it is from the center. The values from the same table row are connected across axes with line segments.
+Radar viewer (a spider chart) compares multivariate data across several dimensions. It plots numerical values of the table columns on axes that radiate out of a center: the higher value is, the further it is from the center. The values from the same table row are connected across axes with lines.
 
 On radar viewer, you can compare the numerical values of different columns within a row and rows’ values within a dataset. Radar viewer is commonly used in the comparison, decision-making, and analysis, for example, in [elemental analysis in cheminformatics](https://github.com/datagrok-ai/public/tree/master/packages/Chem#elemental-analysis).
 
@@ -22,7 +22,7 @@ You can use a radar viewer as a standalone chart or as an [inline viewer in summ
   1. Right-click a grid. The context menu appears.
   1. Select **Add** > **Summary columns** > **Radar**.
 
-When you add a standalone radar viewer, Datagrok chooses all numerical columns from the table (their number is limited to 20). For each column, it forms an axis and calculates the min and max percentiles (5th and 95th). As row values, percentiles are also connected across axes forming two color-filled areas.
+Initially, a radar viewer picks up the first 20 numerical columns in the corresponding table. For each column, it forms an axis and calculates the min and max percentiles (5th and 95th). As row values, percentiles are also connected across axes forming two color-filled areas.
 
 ## Configuring a radar viewer
 
