@@ -39,9 +39,12 @@ For example, you can:
 
 A radar viewer responds to the current row selection and doesn’t respond to data filters.
 
-GIF
+![Radar viewer](radar-viewer.gif)
 
 ## See also
 
 * [Viewers](../viewers.md)
-* PC plot
+* [PC plot](pc-plot.md)
+* [Bar chart](bar-chart.md)
+* Pie bar chart
+* Sparkline
