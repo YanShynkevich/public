@@ -23,7 +23,7 @@ least number of categories. They form the initial hierarchy of the tree viewer.
 ## Configuring a tree viewer
 
 You can set the tree hierarchy and customize a tree viewer. To do that, click
-the **gear** icon on top of the viewer and use the **Data** and **Misc** info
+the **Gear** icon on top of the viewer and use the **Data** and **Misc** info
 panels on the **Context Pane** to manage the tree viewer’s settings.
 
 For example, you can:
@@ -45,7 +45,9 @@ For example, you can:
 
 ## Interaction with other viewers
 
-A tree viewer responds to data filters but has limited interaction in rows selection. It displays the node as selected only if you select all elements of the node.
+A tree viewer responds to data filters but has limited interaction in rows
+selection. For the node to be selected, you need to select all rows comprising
+the node.
 
 ![Tree viewer](tree-viewer.gif "Tree viewer")
 
