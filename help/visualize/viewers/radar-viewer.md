@@ -9,7 +9,7 @@ On radar viewer, you can compare the numerical values of different columns withi
 
 ![Radar viewer](radar-viewer.png)
 
-You can use a radar viewer as a standalone chart or as an [inline viewer in summary column](grid.md#row-summary-columns) of the grid.
+You can use a radar viewer as a standalone chart or as an [inline viewer in summary column](grid.md#row-summary-columns) of [grid](grid.md).
 
 >Note: To use a radar viewer, install the package [Charts](https://github.com/datagrok-ai/public/tree/master/packages/Charts).
 
@@ -19,14 +19,14 @@ You can use a radar viewer as a standalone chart or as an [inline viewer in summ
   1. On the menu ribbon, click the **Add viewer** icon. A dialog opens.
   1. In the dialog, select **Radar viewer**.
 * As an inline viewer:
-  1. Right-click a grid. The context menu appears.
+  1. Right-click a grid viewer. The context menu appears.
   1. Select **Add** > **Summary columns** > **Radar**.
 
 Initially, a radar viewer picks up the first 20 numerical columns in the corresponding table. For each column, it forms an axis and calculates the min and max percentiles (5th and 95th). As row values, percentiles are also connected across axes forming two color-filled areas.
 
 ## Configuring a radar viewer
 
-To configure a radar viewer, click the **gear** icon on top of the viewer and use the **Misc** and **Color** info panels on the **Context Pane**.
+To configure a radar viewer, click the **Gear** icon on top of the viewer and use the **Misc** and **Color** info panels on the **Context Pane**.
 
 For example, you can:
 
