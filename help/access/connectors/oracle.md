@@ -5,6 +5,17 @@
 
 Provides access to [Oracle Database](https://www.oracle.com/database/) database using SQL queries via the JDBC driver.
 
+## Connection parameters
+
+```json
+{
+    "server": "",
+    "port": "",
+    "db": "",
+    "connString": ""
+}
+```
+
 See also:
 
 * [Data connection](../data-connection.md)
