@@ -64,3 +64,4 @@ A map viewer responds to data filters and rows selection.
 ## See also
 
 * [Viewers](../viewers.md)
+* [Globe](globe.md)
