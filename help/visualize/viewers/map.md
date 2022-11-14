@@ -3,14 +3,16 @@
 
 # Map viewer
 
-Map viewer shows geographic data on a map. It recognizes geographic data from your dataset or opens files in the geographic data display formats. You can overlay data from multiple files using map layers.
+Map viewer shows geographic data on a map. It recognizes geographic data from
+a table or opens files in the geographic data display formats. You can
+overlay data from multiple files using map layers.
 
 ## Add a map viewer
 
 1. Go to **Tables** and expand the **Viewers** panel.
 1. Locate the **Map Viewer** icon and click it.
 
-When you add a map viewer to a dataset, it recognizes columns with geographic
+When you add a map viewer, it recognizes columns with geographic
 semantic types and converts rows to the points on a map. All data relevant to a
 data point is shown in a tooltip.
 
@@ -33,7 +35,7 @@ selected data points separately. When added, a heatmap is also displayed as a
 separate layer. To add new data as a layer, drag and drop the corresponding file
 into a map viewer.
 
-To work with layers, right-click the viewer and select **Extended UI**. A
+To work with layers, right-click a map viewer and select **Extended UI**. A
 toolbar and a layers management panel appear. Use them to delete layers, toggle
 their visibility, and more.
 
