@@ -42,7 +42,7 @@ export async function startApp(context: any) {
       view.dataFrame = t;
       let order = ['smiles', 'CS-id', 'id', 'similarity', 'iupac_name', 'molformula', 'mw',
         'molweight', 'cas', 'hac', 'logp', 'rotb', 'hba', 'hbd',
-        'ring_count', 'fsp3', 'tpsa', 'mfcd', 'price_category', 'vendor_id', 'link'
+        'ring_count', 'fsp3', 'tpsa', 'mfcd', 'price_category', 'vendor_id', 'link',
       ];
       if (t.rowCount > 0) {
         const names = t.columns.names();
@@ -91,7 +91,7 @@ export function chemspaceSamplesPanel(smiles: any): DG.Widget {
   return new DG.Widget(panels);
 }
 
-//description: Creates search panel
+//Creates search panel
 function createSearchPanel(panelName: string, smiles: any): HTMLElement {
   const searchModeToCommand: Record<string, any> = {'Similar': 'smarts/bb/sim', 'Substructure': 'smarts/bb/sub'};
 
@@ -121,8 +121,8 @@ function createSearchPanel(panelName: string, smiles: any): HTMLElement {
       }
 
       for (let n = 0; n < Math.min((t as DG.DataFrame).rowCount, 20); n++) {
-        let smiles = tbl.get('smiles', n);
-        let mol = grok.chem.svgMol(smiles, 150, 75);
+        const smiles = tbl.get('smiles', n);
+        const mol = grok.chem.svgMol(smiles, 150, 75);
         ui.tooltip.bind(mol, () => getTooltip(n));
         mol.addEventListener('click', function() {
           window.open(tbl.get('link', n), '_blank');
@@ -189,23 +189,23 @@ export function chemspacePricesPanel(id: string): DG.Widget {
   return new DG.Widget(panel);
 }
 
-//description: Converts prices JSON items into DataFrame
+//Converts prices JSON items into DataFrame
 function pricesDataToTable(items: any): DG.DataFrame {
   const table = DG.DataFrame.fromJson(JSON.stringify(items));
   table.columns.remove('vendor_code');
   const packsArrays = new Map();
   for (let n = 0; n < items.length; n++) {
-    let packs = items[n]['prices'];
+    const packs = items[n]['prices'];
     for (let m = 0; m < packs.length; m++) {
-      let pack = packs[m];
-      let name = `${pack['pack_g']} g`;
+      const pack = packs[m];
+      const name = `${pack['pack_g']} g`;
       if (!packsArrays.has(name))
         packsArrays.set(name, new Array(items.length));
       packsArrays.get(name)[n] = pack['price_usd'];
     }
   }
-  for (let name of Array.from(packsArrays.keys()).sort()) {
-    let column = DG.Column.fromList(DG.TYPE.FLOAT, name, packsArrays.get(name));
+  for (const name of Array.from(packsArrays.keys()).sort()) {
+    const column = DG.Column.fromList(DG.TYPE.FLOAT, name, packsArrays.get(name));
     column.semType = 'Money';
     column.setTag('format', 'money($)');
     table.columns.add(column);
@@ -213,7 +213,7 @@ function pricesDataToTable(items: any): DG.DataFrame {
   return table;
 }
 
-//description: Gets access token
+//Gets access token
 async function getApiToken(): Promise<string|null> {
   if (_token === null) {
     const t = await grok.data.query('Chemspace:AuthToken', null, true, 100);
@@ -222,14 +222,14 @@ async function getApiToken(): Promise<string|null> {
   return _token;
 }
 
-//description: Perform query with multipart form data
+//Perform query with multipart form data
 function queryMultipart(path: string, smiles: any, params: any, token: string|null) {
   // TODO: Deprecate after WebQuery 'multipart/form-data' support
   return new Promise(function(resolve, reject) {
     const xhr = new XMLHttpRequest();
     const formData = new FormData();
     formData.append('SMILES', smiles);
-    const queryParams = params !== null ? `?${Object.keys(params).map((key) => key + '=' + params[key]).join('&')}` : '';
+    const queryParams = params !== null ? `?${Object.keys(params).map((key) => key + '=' + params[key]).join('&')}` :'';
     xhr.open('POST', `${_host}/v2/${path}${queryParams}`);
     xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     xhr.setRequestHeader('Accept', 'application/json; version=2.6');

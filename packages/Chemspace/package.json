@@ -1,6 +1,6 @@
 {
 	"name": "@datagrok/chemspace",
-	"version": "0.3.2",
+	"version": "0.3.4",
 	"author": {
     "name": "Maksym Shvyrlo",
     "email": "mshvyrlo@datagrok.ai"
@@ -11,10 +11,10 @@
 	"friendlyName": "Chemspace store",
 	"category": "Cheminformatics",
 	"dependencies": {
-		"datagrok-api": "latest",
+		"datagrok-api": "1.8.3",
 		"cash-dom": "latest",
 		"dayjs": "latest",
-		"@datagrok-libraries/utils": "latest"
+    "@datagrok-libraries/utils": "^1.11.1"
 	},
 	"devDependencies": {
 		"webpack": "latest",
