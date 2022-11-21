@@ -3,34 +3,39 @@
 
 # Word cloud
 
-A word cloud is a graphical representation of word frequency. Any other aggregation function can be used as well for
-representing size or color of the particular word. On the example of the demographics dataset, to visualize races by
-indicating size as number of subjects, and color as average age, use the following settings (open up properties by
-pressing F4 or by clicking on the gear icon in the top right corner):
+Word cloud (a tag cloud) shows word frequency. The most frequently used words appear larger than the others, providing a quick summary and visualization of word data. Use it to see the most popular concepts, highlight important textual data points, compare data, etc.
 
-Properties:
+![Word Cloud](word-cloud.png "Word Cloud")
 
-|           |         |
-|-----------|---------|
-| Word      | RACE    |
-| Size      |         |
-| Size Aggr | #values |
-| Color     | AGE     |
-| Color     | avg     |
+## Add a word cloud
 
-General:
+1. Go to **Tables** and expand the **Viewers** panel.
+1. Locate the **Word Cloud** icon and click it.
 
-|             |              |
-|-------------|--------------|
-| Right click | Context menu |
+When you add the viewer, it builds a word cloud based on the first column of the string type.
 
-![Word Cloud](../../uploads/viewers/word-cloud.png "Word Cloud")
+## Configuring a word cloud
 
-## Videos
+To configure a word cloud, click the **Gear** icon on top of the viewer and use the info panels on the Context Pane. For example, you can:
 
-[![Word Cloud](../../uploads/youtube/visualizations2.png "Open on Youtube")](https://www.youtube.com/watch?v=7MBXWzdC0-I&t=1972s)
+* Set the data for displaying a word cloud. Choose the corresponding column from the dropdown list in **Word**.
+* Size-code and color-code words. Define a column for aggregation in **Size** and **Color** and select an aggregation function in **Size Column Aggr Type** and  **Color Column Aggr Type**.
+* Set min and max font sizes using **Min Size** and **Max size**.
+* Limit the number of words to appear in a cloud using **Max Words**.
+* Set the background color for the viewer using **Back Color**.
 
-See also:
+## Interaction with other viewers
+
+A word cloud viewer doesn’t respond to the row selection and data filtering; however, it filters a grid and other viewers.
+
+## Viewer controls
+
+|Action              |        Control                |
+|------------------------|----------------------|
+| See the number of rows / highlight the corresponding rows in other viewers | Hover over the word |
+| Add a word to selection                |Click the word                  |
+
+## See also
 
 * [Viewers](../viewers.md)
 * [Table View](../../datagrok/table-view.md)
