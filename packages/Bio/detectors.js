@@ -404,6 +404,19 @@ class BioPackageDetectors extends DG.Package {
     }.bind(this);
   }
 
+  // -- Newick --
+
+  detectNewick(col) {
+
+    return 'Newick'; // DG.SEMTYPE.NEWICK
+  }
+
+  isNewick(str){
+
+  }
+
+  // -- Routines --
+
   sample(src, n) {
     if (src.length < n) {
       throw new Error('Sample source is less than n requested.');

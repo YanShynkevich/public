@@ -23,6 +23,7 @@
       "error",
       120
     ],
+    "no-unused-vars": "warn",
     "require-jsdoc": "off",
     "spaced-comment": "off",
     "linebreak-style": "off",

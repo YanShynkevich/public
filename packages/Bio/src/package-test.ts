@@ -3,8 +3,8 @@ import * as DG from 'datagrok-api/dg';
 import {runTests, TestContext, tests} from '@datagrok-libraries/utils/src/test';
 
 import './tests/Palettes-test';
-import './tests/detectors-tests';
-import './tests/detectors-benchmark-tests';
+import './tests/detectors-macromolecule-tests';
+import './tests/detectors-macromolecule-benchmark-tests';
 import './tests/msa-tests';
 import './tests/sequence-space-test';
 import './tests/activity-cliffs-tests';

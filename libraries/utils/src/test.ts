@@ -61,7 +61,9 @@ export class Test {
   }
 }
 
-export async function testEvent<T>(event: Observable<T>, handler: (args: T) => void, trigger: () => void, ms: number = 0): Promise<string> {
+export async function testEvent<T>(
+  event: Observable<T>, handler: (args: T) => void, trigger: () => void, ms: number = 0
+): Promise<string> {
   let sub: Subscription;
   return new Promise((resolve, reject) => {
     sub = event.subscribe((args) => {
@@ -160,8 +162,10 @@ export function after(after: () => Promise<void>): void {
 
 
 export async function runTests(options?: { category?: string, test?: string, testContext?: TestContext }) {
-  const results: { category?: string, name?: string, success: boolean,
-                   result: string, ms: number, skipped: boolean }[] = [];
+  const results: {
+    category?: string, name?: string, success: boolean,
+    result: string, ms: number, skipped: boolean
+  }[] = [];
   const packageName = grok.functions.getCurrentCall()?.func?.package;
   console.log(`Running tests`);
   options ??= {};
@@ -286,4 +290,45 @@ export function isDialogPresent(dialogTitle: string): boolean {
       return true;
   }
   return false;
+}
+
+export type DfReaderFunc = () => Promise<DG.DataFrame>;
+
+export async function readAndDetect(dfReader: DfReaderFunc, colName: string, detectFunc: DG.Func): Promise<DG.Column> {
+  const df: DG.DataFrame = await dfReader();
+  const col: DG.Column = df.getCol(colName);
+
+  const detectCall: DG.FuncCall = detectFunc.prepare({col: col});
+  detectCall.callSync();
+  const semType = detectCall.getOutputParamValue();
+  if (semType)
+    col.semType = semType;
+
+  return col;
+}
+
+/** Returns ET [ms] of test() */
+export async function benchmark<TData, TRes>(
+  maxET: number, prepare: () => TData, test: (data: TData) => Promise<TRes>, check: (res: TRes) => void
+): Promise<number> {
+  const data: TData = prepare();
+
+  const t1: number = Date.now();
+  // console.profile();
+  const res: TRes = await test(data);
+  //console.profileEnd();
+  const t2: number = Date.now();
+
+  check(res);
+
+  const resET: number = t2 - t1;
+  if (resET > maxET) {
+    const errMsg = `ET ${resET} ms is more than max allowed ${maxET} ms.`;
+    console.error(errMsg);
+    throw new Error(errMsg);
+  } else {
+    console.log(`ET ${resET} ms is OK.`);
+  }
+
+  return resET;
 }

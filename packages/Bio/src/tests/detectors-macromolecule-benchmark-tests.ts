@@ -3,64 +3,61 @@ import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
 import * as bio from '@datagrok-libraries/bio';
 
-import {after, before, category, test, expect, expectObject} from '@datagrok-libraries/utils/src/test';
+import {after, before, category, test, expect, expectObject, benchmark} from '@datagrok-libraries/utils/src/test';
 import {UnitsHandler} from '@datagrok-libraries/bio';
-import {Column} from 'datagrok-api/dg';
+import {detectMacromoleculeGetFunc} from './detectors-macromolecule-tests';
 
-category('detectorsBenchmark', () => {
+const DETECT_MAX_ET = 10;
 
+category('detectMacromoleculeBenchmark', () => {
   let detectFunc: DG.Func;
 
   before(async () => {
-    const funcList: DG.Func[] = DG.Func.find({package: 'Bio', name: 'detectMacromolecule'});
-    detectFunc = funcList[0];
-
-    // warm up the detector function
-    const col: DG.Column = DG.Column.fromStrings('seq', ['ACGT', 'ACGT', 'ACGT']);
-    await detectFunc.prepare({col: col}).call();
+    detectFunc = await detectMacromoleculeGetFunc();
   });
 
   // -- fasta --
 
   test('fastaDnaShorts50Few50', async () => {
-      const et: number = await detectMacromoleculeBenchmark(10, bio.NOTATION.FASTA, bio.ALPHABET.DNA, 50, 50);
-    },
-    {skipReason: '#1192'});
+    const et: number = await detectMacromoleculeBenchmark(DETECT_MAX_ET,
+      bio.NOTATION.FASTA, bio.ALPHABET.DNA, 50, 50);
+  }, {skipReason: '#1192'});
 
   test('fastaDnaShorts50Many1E6', async () => {
-      const et: number = await detectMacromoleculeBenchmark(10, bio.NOTATION.FASTA, bio.ALPHABET.DNA, 50, 1E6);
-    },
-    {skipReason: '#1192'});
+    const et: number = await detectMacromoleculeBenchmark(DETECT_MAX_ET,
+      bio.NOTATION.FASTA, bio.ALPHABET.DNA, 50, 1E6);
+  }, {skipReason: '#1192'});
 
   test('fastaDnaLong1e6Few50', async () => {
-      const et: number = await detectMacromoleculeBenchmark(10, bio.NOTATION.FASTA, bio.ALPHABET.DNA, 1E6, 50);
-    },
-    {skipReason: '#1192'});
+    const et: number = await detectMacromoleculeBenchmark(DETECT_MAX_ET,
+      bio.NOTATION.FASTA, bio.ALPHABET.DNA, 1E6, 50);
+  }, {skipReason: '#1192'});
 
   // -- separator --
 
   test('separatorDnaShorts50Few50', async () => {
-    const et: number = await detectMacromoleculeBenchmark(10, bio.NOTATION.SEPARATOR, bio.ALPHABET.DNA, 50, 50, '/');
+    const et: number = await detectMacromoleculeBenchmark(DETECT_MAX_ET,
+      bio.NOTATION.SEPARATOR, bio.ALPHABET.DNA, 50, 50, '/');
   });
 
   test('separatorDnaShorts50Many1E6', async () => {
-      const et: number = await detectMacromoleculeBenchmark(10, bio.NOTATION.SEPARATOR, bio.ALPHABET.DNA, 50, 1E6, '/');
-    },
-    { /* skipReason: 'slow transmit large dataset to detector' */});
+    const et: number = await detectMacromoleculeBenchmark(DETECT_MAX_ET,
+      bio.NOTATION.SEPARATOR, bio.ALPHABET.DNA, 50, 1E6, '/');
+  }, { /* skipReason: 'slow transmit large dataset to detector' */});
 
   test('separatorDnaLong1e6Few50', async () => {
-      const et: number = await detectMacromoleculeBenchmark(10, bio.NOTATION.SEPARATOR, bio.ALPHABET.DNA, 1E6, 50, '/');
-    },
-    {skipReason: '#1192'});
+    const et: number = await detectMacromoleculeBenchmark(DETECT_MAX_ET,
+      bio.NOTATION.SEPARATOR, bio.ALPHABET.DNA, 1E6, 50, '/');
+  }, {skipReason: '#1192'});
 
   async function detectMacromoleculeBenchmark(
     maxET: number, notation: bio.NOTATION, alphabet: bio.ALPHABET, length: number, count: number, separator?: string
   ): Promise<number> {
-    return await benchmark<DG.FuncCall, DG.Column>(10,
+    return await benchmark<DG.FuncCall, DG.Column>(DETECT_MAX_ET,
       (): DG.FuncCall => {
         const col: DG.Column = generate(notation, [...bio.getAlphabet(alphabet)], length, count, separator);
-        const funcCall: DG.FuncCall = detectFunc.prepare({col: col});
-        return funcCall;
+        const detectFuncCall: DG.FuncCall = detectFunc.prepare({col: col});
+        return detectFuncCall;
       },
       async (funcCall: DG.FuncCall): Promise<DG.Column> => {
         return testDetector(funcCall);
@@ -75,7 +72,9 @@ category('detectorsBenchmark', () => {
       });
   }
 
-  function generate(notation: bio.NOTATION, alphabet: string[], length: number, count: number, separator?: string): DG.Column {
+  function generate(
+    notation: bio.NOTATION, alphabet: string[], length: number, count: number, separator?: string
+  ): DG.Column {
     let seqMerger: (seqMList: string[], separator?: string) => string;
 
     switch (notation) {
@@ -100,16 +99,15 @@ category('detectorsBenchmark', () => {
 
     const buildSeq = (alphabet: string[], length: number): string => {
       const seqMList = new Array<string>(length);
-      for (let j = 0; j < length; j++) {
+      for (let j = 0; j < length; j++)
         seqMList[j] = alphabet[Math.floor(Math.random() * alphabet.length)];
-      }
+
       return seqMerger(seqMList, separator);
     };
 
     const seqList: string[] = Array(count);
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count; i++)
       seqList[i] = buildSeq(alphabet, length);
-    }
 
     return DG.Column.fromStrings('seq', seqList);
   }
@@ -133,33 +131,5 @@ category('detectorsBenchmark', () => {
     expect(uh.alphabet, tgt.alphabet);
     expect(uh.separator, tgt.separator);
   }
-
 });
-
-
-/** Returns ET [ms] of test() */
-async function benchmark<TData, TRes>(
-  maxET: number, prepare: () => TData, test: (data: TData) => Promise<TRes>, check: (res: TRes) => void
-): Promise<number> {
-  const data: TData = prepare();
-
-  const t1: number = Date.now();
-  // console.profile();
-  const res: TRes = await test(data);
-  //console.profileEnd();
-  const t2: number = Date.now();
-
-  check(res);
-
-  const resET: number = t2 - t1;
-  if (resET > maxET) {
-    const errMsg = `ET ${resET} ms is more than max allowed ${maxET} ms.`;
-    console.error(errMsg);
-    throw new Error(errMsg);
-  } else {
-    console.log(`ET ${resET} ms is OK.`);
-  }
-
-  return resET;
-}
 

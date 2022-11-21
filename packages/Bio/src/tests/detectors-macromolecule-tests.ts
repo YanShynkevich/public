@@ -3,7 +3,7 @@ import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
 import * as bio from '@datagrok-libraries/bio';
 
-import {after, before, category, test, expect, expectObject} from '@datagrok-libraries/utils/src/test';
+import {after, before, category, test, expect, expectObject, DfReaderFunc} from '@datagrok-libraries/utils/src/test';
 
 import {importFasta} from '../package';
 
@@ -18,9 +18,19 @@ for (let i = 0; i < df.columns.length; i++) {
 }
  */
 
-type DfReaderFunc = () => Promise<DG.DataFrame>;
+/** Get warmed up detector function */
+export async function detectMacromoleculeGetFunc(): Promise<DG.Func> {
+  const funcList: DG.Func[] = DG.Func.find({package: 'Bio', name: 'detectMacromolecule'});
+  const resFunc: DG.Func = funcList[0];
 
-category('detectors', () => {
+  // warm up the detector function
+  const col: DG.Column = DG.Column.fromStrings('seq', ['ACGT', 'ACGT', 'ACGT']);
+  await resFunc.prepare({col: col}).call();
+
+  return resFunc;
+}
+
+category('detectMacromolecule', () => {
   const csvDf1: string = `col1
 1
 2
@@ -204,6 +214,11 @@ MWRSWY-CKHP
     };
   };
 
+  let detectFunc: DG.Func;
+
+  before(async () => {
+    detectFunc = await detectMacromoleculeGetFunc();
+  });
 
   test('NegativeEmpty', async () => { await _testNeg(readCsv('csvDfEmpty', csvDfEmpty), 'col1'); });
   test('Negative1', async () => { await _testNeg(readCsv('csvDf1', csvDf1), 'col1'); });
@@ -212,28 +227,34 @@ MWRSWY-CKHP
   test('NegativeSmiles', async () => { await _testNeg(readCsv('csvDfSmiles', csvDfSmiles), 'col1'); });
 
   test('Dna1', async () => {
-    await _testPos(readCsv('csvDfDna1', csvDfDna1), 'seq', bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ, bio.ALPHABET.DNA, 4, false);
+    await _testPos(readCsv('csvDfDna1', csvDfDna1), 'seq',
+      bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ, bio.ALPHABET.DNA, 4, false);
   });
   test('Rna1', async () => {
-    await _testPos(readCsv('csvDfRna1', csvDfRna1), 'seq', bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ, bio.ALPHABET.RNA, 4, false);
+    await _testPos(readCsv('csvDfRna1', csvDfRna1), 'seq',
+      bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ, bio.ALPHABET.RNA, 4, false);
   });
   test('AA1', async () => {
-    await _testPos(readCsv('csvDfPt1', csvDfPt1), 'seq', bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ, bio.ALPHABET.PT, 20, false);
+    await _testPos(readCsv('csvDfPt1', csvDfPt1), 'seq',
+      bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ, bio.ALPHABET.PT, 20, false);
   });
   test('MsaDna1', async () => {
-    await _testPos(readCsv('csvDfMsaDna1', csvDfMsaDna1), 'seq', bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ_MSA, bio.ALPHABET.DNA, 4, false);
+    await _testPos(readCsv('csvDfMsaDna1', csvDfMsaDna1), 'seq',
+      bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ_MSA, bio.ALPHABET.DNA, 4, false);
   });
 
   test('MsaAA1', async () => {
-    await _testPos(readCsv('csvDfMsaPt1', csvDfMsaPt1), 'seq', bio.NOTATION.FASTA,
-      bio.ALIGNMENT.SEQ_MSA, bio.ALPHABET.PT, 20, false);
+    await _testPos(readCsv('csvDfMsaPt1', csvDfMsaPt1), 'seq',
+      bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ_MSA, bio.ALPHABET.PT, 20, false);
   });
 
   test('SepDna', async () => {
-    await _testPos(readCsv('csvDfSepDna', csvDfSepDna), 'seq', bio.NOTATION.SEPARATOR, bio.ALIGNMENT.SEQ, bio.ALPHABET.DNA, 4, false, '*');
+    await _testPos(readCsv('csvDfSepDna', csvDfSepDna), 'seq',
+      bio.NOTATION.SEPARATOR, bio.ALIGNMENT.SEQ, bio.ALPHABET.DNA, 4, false, '*');
   });
   test('SepRna', async () => {
-    await _testPos(readCsv('csvDfSepRna', csvDfSepRna), 'seq', bio.NOTATION.SEPARATOR, bio.ALIGNMENT.SEQ, bio.ALPHABET.RNA, 4, false, '*');
+    await _testPos(readCsv('csvDfSepRna', csvDfSepRna), 'seq',
+      bio.NOTATION.SEPARATOR, bio.ALIGNMENT.SEQ, bio.ALPHABET.RNA, 4, false, '*');
   });
   test('SepPt', async () => {
     await _testPos(readCsv('csvDfSepPt', csvDfSepPt), 'seq',
@@ -254,7 +275,8 @@ MWRSWY-CKHP
   });
 
   test('SamplesFastaCsvPt', async () => {
-    await _testPos(readSamples(Samples.fastaCsv), 'sequence', bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ, bio.ALPHABET.PT, 20, false);
+    await _testPos(readSamples(Samples.fastaCsv), 'sequence',
+      bio.NOTATION.FASTA, bio.ALIGNMENT.SEQ, bio.ALPHABET.PT, 20, false);
   });
   test('SamplesFastaCsvNegativeEntry', async () => {
     await _testNeg(readSamples(Samples.fastaCsv), 'Entry');
@@ -396,7 +418,7 @@ MWRSWY-CKHP
 
 export async function _testNeg(readDf: DfReaderFunc, colName: string) {
   const df: DG.DataFrame = await readDf();
-  const col: DG.Column = df.col(colName)!;
+  const col: DG.Column = df.getCol(colName);
   const semType: string = await grok.functions
     .call('Bio:detectMacromolecule', {col: col}) as unknown as string;
   if (semType)
