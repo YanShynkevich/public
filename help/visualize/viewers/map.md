@@ -16,10 +16,10 @@ When you add a map viewer, it recognizes columns with geographic semantic types 
 
  To configure a map, click the **Gear** icon on top of the viewer and use the info panels on the **Context Pane**. For example, you can:
 
-* Toggle the tooltip visibility via **Show Tooltip**.
-* Color-code and size-code data points on a map by choosing corresponding columns from the dropdown lists under the **Color** and **Size** settings.
-* Set the min and max values for displaying markers when size coding data points. To do that, use the **Marker Min Size** and **Marker Max Size** settings.
-* Add a heatmap layer using one of these methods:
+* **Toggle the tooltip visibility** via **Show Tooltip**.
+* **Color-code and size-code data points** on a map by choosing corresponding columns from the dropdown lists under the **Color** and **Size** settings.
+* **Set the min and max values for displaying markers** when size coding data points. To do that, use the **Marker Min Size** and **Marker Max Size** settings.
+* **Add a heatmap layer** using one of these methods:
   * On the **Context Pane**, set the **Render type** setting to `heatmap`.
   * Switch to the **Extended UI** mode by right-clicking the map viewer and selecting **Extended UI** from the context menu. A toolbar with menu options appears on the top of the viewer.  On the toolbar, click the **Build heatmap for data** icon.
 
