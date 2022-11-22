@@ -42,6 +42,7 @@ import { getSimilaritiesMarix } from './utils/similarity-utils';
 import { molToMolblock } from './utils/convert-notation-utils'
 import { similarityMetric } from '@datagrok-libraries/utils/src/similarity-metrics';
 import { _importSmi } from './file-importers/smi-importer';
+import {SemanticValue} from "datagrok-api/dg";
 
 const drawMoleculeToCanvas = chemCommonRdKit.drawMoleculeToCanvas;
 
@@ -76,7 +77,45 @@ export async function initChem(): Promise<void> {
 }
 
 //tags: autostart
-export async function initChemAutostart(): Promise<void> { }
+//export async function initChemAutostart(): Promise<void> { }
+export async function initChemAutostart(): Promise<void> {
+
+  grok.events.onContextMenu.subscribe((args : any) => {
+    const grid = args.args.context;
+    if (!(grid instanceof DG.Grid))
+      return;
+
+    const e = args.causedBy;
+    const cell : DG.GridCell | null = grid.hitTest(e.offsetX, e.offsetY);
+    if (cell === undefined || cell === null || cell.cellType === null) //bug in DG , top left cell
+      return;
+
+    const molCol = cell.tableColumn;
+    if (molCol == null || cell.tableColumn?.semType !== 'Molecule' || cell.tableRow === null || cell.tableRow.idx === null)
+      return;
+
+    const tableRowIdx = cell.tableRow.idx;
+    let menu : DG.Menu = args.args.menu;
+    //menu = menu.find("Current Value");
+
+    menu.item('Sort by Similarity',  async () => {
+      const grid = args.args.context;
+      if (!(grid instanceof DG.Grid))
+        return;
+
+      const dframe = grid.dataFrame;
+      const smiles = molCol.get(tableRowIdx);
+      const fingerprints : DG.DataFrame = await callChemSimilaritySearch(dframe, molCol, smiles, 'Tanimoto', 1000000, 0.0, Fingerprint.Morgan);
+      const idxCol = fingerprints.columns.byName('indexes');
+      grid.sort([], []);
+      grid.setRowOrder(idxCol.toList());
+      grid.props.pinnedRows = [tableRowIdx];
+      grid.scrollToPixels(0,0); //to address thte bug in the core
+    });
+  });
+}
+
+
 
 //name: SubstructureFilter
 //description: RDKit-based substructure filter
@@ -442,7 +481,7 @@ export function elementalAnalysis(table: DG.DataFrame, molCol: DG.Column, radarV
     const packageExists = checkPackage('Charts', 'radarViewerDemo');
     if (packageExists) {
       let radarViewer = DG.Viewer.fromType('RadarViewer', table, {
-        valuesColumnNames: columnNames,  
+        valuesColumnNames: columnNames,
       });
       view.addViewer(radarViewer);
     } else {
@@ -681,11 +720,13 @@ export async function oclCellRenderer(): Promise<OCLCellRenderer> {
 //name: Use as filter
 //description: Adds this structure as a substructure filter
 //meta.action: Use as filter
-//input: string mol { semType: Molecule }
-export function useAsSubstructureFilter(mol: string): void {
+//input: semantic_value value
+export function useAsSubstructureFilter(value: SemanticValue): void {
   const tv = grok.shell.tv;
   if (tv == null)
     throw 'Requires an open table view.';
+
+  const mol = value.value;
 
   const molCol = tv.dataFrame.columns.bySemType(DG.SEMTYPE.MOLECULE);
   if (molCol == null)
