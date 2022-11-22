@@ -3,53 +3,46 @@
 
 # Map viewer
 
- Map viewer shows geographic data on a map. It recognizes geographic data from a table or opens files in geographic formats, like  KML, KMZ, and geoJSON. You can overlay data from multiple files using map layers.
+Map viewer shows arbitrary geospatial data on a map. Use it to display your custom data or open files in geographic formats, like  KML, KMZ, or GeoJSON, on a map. You can create multiple layers by uploading data from different files.
 
 ## Add a map viewer
 
 1. Go to **Tables** and expand the **Viewers** panel.
 1. Locate the **Map Viewer** icon and click it.
 
- When you add a map viewer, it recognizes columns with geographic semantic types and converts rows to points on a map. A tooltip displays all relevant information when you hover over a data point.
- >Developers: You can [set the data shown in a tooltip](../../develop/how-to/column-tooltip.md).
+When you add a map viewer, it recognizes columns with geographic semantic types and converts rows to points on a map.
 
 ## Configuring a map viewer
 
  To configure a map, click the **Gear** icon on top of the viewer and use the info panels on the **Context Pane**. For example, you can:
 
 * Toggle the tooltip visibility via **Show Tooltip**.
-* Color-code and size-code data points on a map by choosing corresponding columns from the dropdown lists in **Color** and **Size**.
-* Set the min and max values for displaying markers when size coding data points. To do that, use **Marker Min Size** and **Marker Max Size**.
-* Color-code data using heatmap as a layer:
-  * From the **Context Pane**: set **Render type** to `heat map`.
-  * From the extended UI mode:
-    1. Right-click a map viewer and select **Extended UI**.
-    1. On the top toolbar, click the **Build heatmap for data** icon.
+* Color-code and size-code data points on a map by choosing corresponding columns from the dropdown lists under the **Color** and **Size** settings.
+* Set the min and max values for displaying markers when size coding data points. To do that, use the **Marker Min Size** and **Marker Max Size** settings.
+* Add a heatmap layer using one of these methods:
+  * On the **Context Pane**, set the **Render type** setting to `heatmap`.
+  * Switch to the **Extended UI** mode by right-clicking the map viewer and selecting **Extended UI** from the context menu. A toolbar with menu options appears on the top of the viewer.  On the toolbar, click the **Build heatmap for data** icon.
 
 GIF
 
 ## Working with layers
 
-A map viewer separates different types of objects into layers. For example, you can manipulate the data points and heatmap separately.
+A map viewer separates different types of geospatial data into layers. For example, you can manipulate the data points and heatmap separately.
 
 To work with layers, right-click a map viewer and select **Extended UI**. A toolbar and a layers management panel appear. Use them to delete layers, toggle their visibility, and more. For example, you can:
 
-* **Customize a map viewer.** To add a layer with the geographic information you need, upload the corresponding file:
-   1. On the toolbar, click the **Upload geo File** icon. A dialog opens.
-   1. In the dialog, locate the file and double-click it.
-  > Note: To upload a file from your local host, drag and drop it into a map viewer.
-  >
-  > Tip:  If an additional layer shows areas on a map, you can select data points within the chosen area:
-  >
-  > 1. Select the area on the additional layer.
-  > 1. On the top toolbar, click the **Select markers by area** icon.
-
- <!--Share a project
-Save to layout-->
+* **Add arbitrary geographical data as a layer.** A map viewer renders geometries in data, such as points, lines, or polygons, as markers, polylines, and areas. To add a layer, upload the corresponding file:
+  1. On the toolbar, click the **Upload geo File** icon. A dialog opens.
+  1. In the dialog, locate the file and double-click it.
+  >Note: To upload a file from your local host, drag and drop it into a map viewer.
+* **Select data points within the area**, if a layer shows areas on a map:
+  1. Select the area on the layer.
+  1. On the top toolbar, click the **Select markers by area** icon.
 
 * **Export data to a new table:**
-  * To export layer content, on the layers management panel, click the **Export layer data to table** icon.
-  * To export selected data, on the top toolbar, click the **Export selected markers to new table** icon.
+
+  * **To export layer content**, on the layers management panel, click the **Export layer data to table** icon.
+  * **To export selected data**, on the top toolbar, click the **Export selected markers to new table** icon.
 
 GIF
 
