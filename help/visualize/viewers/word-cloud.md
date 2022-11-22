@@ -3,7 +3,7 @@
 
 # Word cloud
 
-Word clouds (a tag cloud) shows weight or importance of individual words from a table column. The importance of each word is shown with font size and color. Use it to see the most popular concepts, highlight important textual data points, compare data, etc.
+Word cloud (a tag cloud) shows frequency of individual words from a table column with font size and color. Use it to see the most popular concepts, highlight important textual data points, compare data, etc.
 
 ![Word Cloud](word-cloud.png "Word Cloud")
 
