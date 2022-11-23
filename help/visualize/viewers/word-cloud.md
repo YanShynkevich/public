@@ -3,7 +3,7 @@
 
 # Word cloud
 
-Word cloud (a tag cloud) shows frequency of individual words from a table column with font size and color. Use it to see the most popular concepts, highlight important textual data points, compare data, etc.
+Word cloud (a tag cloud) shows the frequency of individual words using font size and color. Use it to see the most popular concepts, highlight important textual data points, compare data, etc.
 
 ![Word Cloud](word-cloud.png "Word Cloud")
 
