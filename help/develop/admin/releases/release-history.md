@@ -1,6 +1,20 @@
 <!-- TITLE: Release History -->
 <!-- SUBTITLE: -->
 
+# 2022-11-24 Dev build 1.9.1
+
+## Latest Docker Images
+
+* Datagrok: 
+  *  `docker pull datagrok/datagrok:1.9.1`
+* [Docker-Compose](https://datagrok.ai/help/develop/admin/docker-compose)
+
+## Addressed Issues
+
+* #709 filter panel rollback 
+* (Bug) JS: check permissions method always returns true 
+
+
 # 2022-11-22 Dev build 1.9.0
 
 ## Latest Docker Images
