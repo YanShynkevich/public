@@ -8,11 +8,11 @@ branches are rectangles, then tiled with smaller rectangles representing
 sub-branches. A leaf nodes' rectangles have areas proportional to a specified
 dimension of the data.
 
-Treemap displays all data simultaneously and makes it easy to spot
-irregularities or patterns in data. For example, a treemap is commonly used to
-display the average annual sales by product categories.
+Treemap displays all data simultaneously and shows a part-to-whole relationship
+among many categories. Use a treemap to spot irregularities or patterns, for
+example, in sales data.
 
-PNG
+![Treemap ](../viewers/treemap.png "Treemap")
 
 ## Add a treemap
 
@@ -30,15 +30,16 @@ example, you can:
 
 * **Set tree hierarchy**. Add and delete new levels or change their order using
   one of the following methods:
-  * Check or uncheck columns in table from the **Split by** setting
-  * On the top of the viewer, on the **Column Selection Panel**consequently
-    select columns from the dropdown lists.
-* **Filter the rows for treemap display** using the **Row source** dropdown
+  * Select the desired columns using the checkboxes provided under the **Split
+    by** setting.
+  * On the top of the viewer, on the **Column Selection Panel**, select the
+    desired columns from the dropdown lists.
+* **Select the rows for the treemap display** using the **Row source** dropdown
   list.
-* **Size-code nodes**. Define a column for aggregation in **Size** and select an
-  aggregation function in **Size Aggr Type**.
-* **Color-code nodes**. Define a column for aggregation in **Color** and select
-  an aggregation function in **Color Aggr Type**.
+* **Size-code nodes**. Select a column for aggregation and an aggregation
+  function using the **Size**  and **Size Aggr Type** settings.
+* **Color-code nodes**. Select a column for aggregation and an aggregation
+  function using the **Color** and **Color Aggr Type** settings.
 * **Toggle visibility of Column Selection Panel** via the **Show Column
   Selection Panel** checkbox.
 
