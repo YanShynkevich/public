@@ -47,7 +47,7 @@ example, you can:
 
 A treemap viewer responds to the rows selection and data filtering.
 
-GIF
+![Treemap](treemap.gif)
 
 ## Viewer controls
 
