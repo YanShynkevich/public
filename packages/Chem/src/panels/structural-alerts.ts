@@ -3,68 +3,91 @@ import * as ui from 'datagrok-api/ui';
 import * as grok from 'datagrok-api/grok';
 import * as DG from 'datagrok-api/dg';
 import {getRdKitModule, getRdKitWebRoot} from '../utils/chem-common-rdkit';
-import {RDModule, RDMol} from '@datagrok-libraries/chem-meta/src/rdkit-api';
+import {RDModule, RDMol, SubstructLibrary} from '@datagrok-libraries/chem-meta/src/rdkit-api';
 
-export async function checkForStructuralAlerts(col: DG.Column<string>): Promise<void> {
-  const df = col.dataFrame;
-  const alertsDf = await grok.data.loadTable(getRdKitWebRoot() + 'files/alert-collection.csv');
-  const ruleSetCol = alertsDf.getCol('rule_set_name');
-  const smartsCol = alertsDf.getCol('smarts');
-  const ruleIdCol = alertsDf.getCol('rule_id');
-  const alertsDfLength = alertsDf.rowCount;
-  const rdkitModule = getRdKitModule();
+let rdkitModule: RDModule | null = null;
+let alertsDf: DG.DataFrame | null = null;
+let alertsMolList: RDMol[] | null = null;
 
+export async function checkForStructuralAlerts(molCol: DG.Column<string>): Promise<void> {
+  rdkitModule ??= getRdKitModule();
+  alertsDf ??= await grok.data.loadTable(getRdKitWebRoot() + 'files/alert-collection.csv');
+
+  const ruleSetNameCol = alertsDf.getCol('rule_set_name');
+  const ruleSetNameColCategories = ruleSetNameCol.categories;
   const dialog = ui.dialog('Structural Alerts');
-  for (const ruleSet of ruleSetCol.categories)
+  for (const ruleSet of ruleSetNameColCategories)
     dialog.add(ui.boolInput(ruleSet, true));
-
+  
   dialog.onOK(() => {
     const progress = DG.TaskBarProgressIndicator.create('Checking for structural alerts...');
-    const ruleSetList = dialog.inputs.filter((input) => input.value).map((input) => input.caption);
-    if (ruleSetList.length == 0)
+    const ruleSetIndexList = dialog.inputs
+      .filter((input) => input.value)
+      .map((input) => ruleSetNameColCategories!.indexOf(input.caption));
+    if (ruleSetIndexList.length == 0)
       return;
-    runStructuralAlertsDetection(df, ruleSetList, col, ruleSetCol, ruleIdCol, smartsMap, rdkitModule);
+    runStructuralAlertsDetection(ruleSetIndexList, molCol, ruleSetNameCol, rdkitModule!, alertsMolList!);
     progress.close();
   });
 
-  dialog.show();
-
   // Caching the molecules
-  const smartsMap = new Map<string, RDMol>();
-  for (let i = 0; i < alertsDfLength; i++)
-    smartsMap.set(ruleIdCol.get(i), rdkitModule.get_qmol(smartsCol.get(i)));
+  if (alertsMolList == null) {
+    const smartsCol = alertsDf.getCol('smarts');
+    const smartsColData = smartsCol.getRawData();
+    const smartsColCategories = smartsCol.categories;
+    const alertsDfLen = alertsDf.rowCount;
+    alertsMolList = new Array(alertsDfLen);
+
+    for (let i = 0; i < alertsDfLen; i++)
+      alertsMolList[i] = rdkitModule.get_qmol(smartsColCategories[smartsColData[i]]);
+  }
+
+  dialog.show();
 }
 
-export function runStructuralAlertsDetection(df: DG.DataFrame, ruleSetList: string[], col: DG.Column<string>,
-  ruleSetCol: DG.Column<string>, ruleIdCol: DG.Column<string>, smartsMap: Map<string, RDMol>,
-  rdkitModule: RDModule): DG.DataFrame {
-  ruleSetList.forEach((ruleSetName) => df.columns.addNewBool(ruleSetName));
-  const originalDfLength = df.rowCount;
-  const alertsDfLength = ruleSetCol.length;
+export function runStructuralAlertsDetection(ruleSetIdxList: number[], molCol: DG.Column<string>,
+  ruleSetNameCol: DG.Column<string>, rdkitModule: RDModule, alertsMolList: RDMol[]): DG.DataFrame {
+  const colInfoList: (Int32Array | Float32Array | Float64Array | Uint32Array)[] = new Array(Math.max(...ruleSetIdxList));
+  const ruleSetNameColCategories = ruleSetNameCol.categories;
+  const df = molCol.dataFrame;
+  const dfCols = df.columns;
+  for (const ruleSetIdx of ruleSetIdxList) {
+    const ruleSetName = ruleSetNameColCategories![ruleSetIdx];
+    colInfoList[ruleSetIdx] = (df.col(ruleSetName) ?? dfCols.addNewBool(ruleSetName)).getRawData();
+  }
 
-  //@ts-ignore:
-  const lib: SubstructLibrary = new rdkitModule.SubstructLibrary();
+  const originalDfLength = df.rowCount;
+  const ruleSetNameColData = ruleSetNameCol.getRawData();
+  const molColData = molCol.getRawData();
+  const molColCategories = molCol.categories;
+  const nullMolIdx = molColCategories.indexOf('');
+
+  //@ts-ignore: wrong interface
+  const lib: SubstructLibrary = new rdkitModule!.SubstructLibrary();
   const indexMap: Map<number, number> = new Map();
 
-  for (let i = 0; i < originalDfLength; i++)
-    indexMap.set(lib.add_mol(rdkitModule.get_mol(col.get(i)!)), i);
+  for (let i = 0; i < originalDfLength; i++) {
+    const currentMolIdx = molColData[i];
+    if (currentMolIdx != nullMolIdx)
+      indexMap.set(lib.add_mol(rdkitModule!.get_mol(molColCategories[currentMolIdx])), i);
+  }
 
   let matches: number[];
-  for (let i = 0; i < alertsDfLength; i++) {
-    const currentRuleSet = ruleSetCol.get(i)!;
-    if (!ruleSetList.includes(currentRuleSet))
+  for (let i = 0; i < alertsMolList.length!; i++) {
+    const currentRuleSetNameCategoryIdx = ruleSetNameColData[i];
+    if (!ruleSetIdxList.includes(currentRuleSetNameCategoryIdx))
       continue;
 
     try {
-      matches = JSON.parse(lib.get_matches(smartsMap.get(ruleIdCol.get(i)!)!));
+      matches = JSON.parse(lib.get_matches(alertsMolList![i]));
     } catch (e) {
       console.warn(`StructuralAlertsError: ${e}`);
       continue;
     }
 
-    const currentRuleSetCol: DG.Column<boolean> = df.getCol(currentRuleSet);
+    const currentRuleSetColData = colInfoList[currentRuleSetNameCategoryIdx];
     for (const libIndex of matches)
-      currentRuleSetCol.set(indexMap.get(libIndex)!, true);
+      currentRuleSetColData[indexMap.get(libIndex)!] = 1;
   }
 
   return df;

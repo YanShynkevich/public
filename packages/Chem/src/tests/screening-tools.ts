@@ -17,21 +17,23 @@ category('screening tools benchmarks', () => {
 
   test('structural alerts', async () => {
     const alertsDf = DG.DataFrame.fromCsv(await _package.files.readAsText('alert-collection.csv'));
-    const ruleSetCol = alertsDf.getCol('rule_set_name');
+    const alertsDfLen = alertsDf.rowCount;
+    const ruleSetNameCol = alertsDf.getCol('rule_set_name');
     const smartsCol = alertsDf.getCol('smarts');
-    const ruleIdCol = alertsDf.getCol('rule_id');
+    const smartsColData = smartsCol.getRawData();
+    const smartsColCategories = smartsCol.categories;
     const rdkitModule = chemCommonRdKit.getRdKitModule();
 
-    const smartsMap = new Map<string, RDMol>();
-    for (let i = 0; i < alertsDf.rowCount; i++)
-      smartsMap.set(ruleIdCol.get(i), rdkitModule.get_qmol(smartsCol.get(i)));
+    const alertsMolList: RDMol[] = new Array(alertsDfLen);
+    for (let i = 0; i < alertsDfLen; i++)
+      alertsMolList[i] = rdkitModule.get_qmol(smartsColCategories[smartsColData[i]]);
 
-    const sarSmall = DG.DataFrame.fromCsv(await _package.files.readAsText('tests/smi10K.csv'));
-    const smilesCol = sarSmall.getCol('smiles');
-    const ruleSetList = ['BMS', 'Dundee', 'Glaxo', 'Inpharmatica', 'LINT', 'MLSMR', 'PAINS', 'SureChEMBL'];
+    const sarSmall = DG.DataFrame.fromCsv(await _package.files.readAsText('smiles.csv'));
+    const smilesCol = sarSmall.getCol('canonical_smiles');
+    const ruleSetList = ruleSetNameCol.categories.map((_, i) => i);
 
     DG.time('Structural Alerts', () => {
-      runStructuralAlertsDetection(sarSmall, ruleSetList, smilesCol, ruleSetCol, ruleIdCol, smartsMap, rdkitModule);
+      runStructuralAlertsDetection(ruleSetList, smilesCol, ruleSetNameCol, rdkitModule, alertsMolList);
     });
   }, {skipReason: '#1193'});
 
