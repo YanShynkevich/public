@@ -31,6 +31,8 @@ To configure a word cloud, click the **Gear** icon on top of the viewer and use 
 
 A word cloud viewer doesn’t respond to the row selection and data filtering. You can use it to filter other viewers.
 
+![Word Cloud](word-cloud.gif)
+
 ## See also
 
 * [Viewers](../viewers.md)
