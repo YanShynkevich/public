@@ -160,7 +160,6 @@ export class Dendrogram extends DG.JsViewer {
     this.step = this.float(PROPS.step, 28,
       {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 64, step: 0.1});
 
-
     // -- Data --, not userEditable option is not displayed in Property panel, but can be set through setOptions()
     this.newick = this.string(PROPS.newick, newickDefault,
       {category: PROPS_CATS.DATA/*, userEditable: false*/});
