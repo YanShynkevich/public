@@ -45,6 +45,9 @@ export abstract class TreeRendererBase<TNode extends NodeType> {
     this._treeRoot = treeRoot;
 
     this._onAfterRender = new rxjs.Subject<TreeRendererEventArgsType<TNode>>();
+
+    // initial render
+    window.setTimeout(this.render.bind(this), 0 /* next event cycle */);
   }
 
   // -- View --
