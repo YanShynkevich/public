@@ -60,7 +60,7 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
       // ctx.stroke();
 
       renderNode(ctx, this.treeRoot as MarkupNodeType,
-        firstRowIndex, lastRowIndex, this.leftPadding, lengthRatio, stepRatio,
+        firstRowIndex - 0.5, lastRowIndex + 0.5, this.leftPadding, lengthRatio, stepRatio,
         this.treeRoot.subtreeLength!, 0);
     } finally {
       ctx.restore();
@@ -74,6 +74,10 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
     // TODO: adapt tree: bio.NodeType to MarkupNodeType
     markupNode(tree);
     const totalLength: number = (tree as MarkupNodeType).subtreeLength!;
+
+    if (Number.isNaN(totalLength))
+      throw new Error('Can not calculate totalLength for the tree.');
+
     return new LeafRangeGridTreeRenderer(tree as MarkupNodeType, totalLength, treeDiv, grid);
   }
 }

@@ -16,7 +16,8 @@ import {LeafRangeGridTreeRenderer} from './tree-renderers/grid-tree-renderer';
 
 
 export function injectTreeForGridUI2(
-  grid: DG.Grid, newickRoot: bio.NodeType, dataDf: DG.DataFrame, clusterDf: DG.DataFrame, leafColName: string, neighborWidth: number = 100,
+  grid: DG.Grid, newickRoot: bio.NodeType, dataDf: DG.DataFrame,
+  clusterDf: DG.DataFrame, leafColName: string | null, neighborWidth: number = 100,
   cut?: { min: number, max: number, clusterColName: string }
 ): GridNeighbor {
   const th: bio.ITreeHelper = new TreeHelper();
@@ -53,14 +54,7 @@ export function injectTreeForGridUI2(
     console.debug('PhyloTreeViewer: injectTreeForGridUI2() grid.dataFrame.onFilterChanged()');
 
     // to prevent nested fire event in event handler
-    window.setTimeout(() => {
-      const [viewedRoot] = th.setGridOrder(newickRoot, grid, leafColName);
-      markupNode(viewedRoot);
-      const source = viewedRoot ? {type: 'biojs', data: viewedRoot} :
-        {type: 'biojs', data: {name: 'NONE', branch_length: 1, children: []}};
-
-      treeRenderer.treeRoot = viewedRoot as MarkupNodeType;
-    }, 0 /* next event cycle */);
+    window.setTimeout(() => { alignGridWithTree(); }, 0);
   });
 
   let cutSlider: DG.InputBase<number | null> | null = null;
@@ -99,6 +93,18 @@ export function injectTreeForGridUI2(
       treeRenderer.treeRoot = newickRootCutted as MarkupNodeType;
     });
   }
+
+  function alignGridWithTree() {
+    const [viewedRoot] = th.setGridOrder(newickRoot, grid, leafColName);
+    markupNode(viewedRoot);
+    const source = viewedRoot ? {type: 'biojs', data: viewedRoot} :
+      {type: 'biojs', data: {name: 'NONE', branch_length: 1, children: []}};
+
+    treeRenderer.treeRoot = viewedRoot as MarkupNodeType;
+  }
+
+  // initial alignment tree with grid
+  alignGridWithTree();
 
   return treeN;
 }

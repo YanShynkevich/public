@@ -75,8 +75,9 @@ export class Dendrogram extends DG.JsViewer {
     this.step = this.float('step', 28,
       {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 64, step: 0.1});
 
-    // data
-    this.newick = this.string('newick', ';', {category: PROPS_CATS.DATA});
+    // data, not userEditable option is not displayed in Property panel, but can be set through setOptions()
+    this.newick = this.string('newick', ';',
+      {category: PROPS_CATS.DATA, userEditable: false});
   }
 
   private _nwkDf: DG.DataFrame;
@@ -119,7 +120,21 @@ export class Dendrogram extends DG.JsViewer {
 
   override onTableAttached() {
     super.onTableAttached();
-    this.nwkDf = this.dataFrame;
+    console.debug('PhyloTreeViewer: PhylocanvasGlViewer.onTableAttached() ' +
+      `this.dataFrame = ${!this.dataFrame ? 'null' : 'value'} )`);
+
+    if (this.viewed) {
+      this.destroyView();
+      this.viewed = false;
+    }
+
+    // TODO: Logic to get newick
+    this.newick = this.dataFrame.getTag(TREE_TAGS.NEWICK) ?? '';
+
+    if (!this.viewed) {
+      this.buildView();
+      this.viewed = true;
+    }
   }
 
   override detach() {
@@ -164,7 +179,7 @@ export class Dendrogram extends DG.JsViewer {
 
   // -- View --
 
-  private viewSubs: Unsubscribable[];
+  private viewSubs: Unsubscribable[] = [];
 
   private treeDiv?: HTMLDivElement;
   private renderer?: TreeRendererBase<MarkupNodeType>;
@@ -175,6 +190,7 @@ export class Dendrogram extends DG.JsViewer {
     delete this.renderer;
     delete this.treeDiv;
     for (const sub of this.viewSubs) sub.unsubscribe();
+    this.viewSubs = [];
   }
 
   private buildView(): void {
@@ -187,6 +203,7 @@ export class Dendrogram extends DG.JsViewer {
         backgroundColor: '#A0A0FF',
       }
     });
+    this.treeDiv.style.setProperty('overflow', 'hidden', 'important');
     this.root.appendChild(this.treeDiv);
 
     const treeRoot: MarkupNodeType = bio.Newick.parse_newick(this.newick);

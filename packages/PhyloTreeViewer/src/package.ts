@@ -21,8 +21,7 @@ import {TreeCutAsTreeApp} from './apps/tree-cut-as-tree-app';
 import {TreeForGridFilterApp} from './apps/tree-for-grid-filter-app';
 import {Dendrogram, MyViewer} from './viewers/dendrogram';
 import {DendrogramApp} from './apps/dendrogram-app';
-import { findNewick } from './scripts-api';
-
+import {hierarchicalClusteringUI} from './utils/hierarchical-clustering';
 
 export const _package = new DG.Package();
 
@@ -309,15 +308,17 @@ export function myViewer(): DG.JsViewer {
   return new MyViewer();
 }
 
-//name: newickRepresentation
-//input: dataframe data
-//input: column col
-//output: string newick
-export async function newickRepresentation(data: DG.DataFrame) {
-  const columns = Array.from(data.columns.numerical);
-  for (let i = 0; i < columns.length; ++i) 
-      if (columns[i].type === DG.TYPE.DATE_TIME) 
-        columns.splice(i, 1);
-  return await findNewick(DG.DataFrame.fromColumns(columns));
-}
+// -- Top menu --
 
+//top-menu: ML | Hierarchical Clustering ...
+//name: hierarchicalClustering
+//description: Calculates hierarchical clustering on features and injects tree to grid
+//input: dataframe table
+//input: column_list features {type: numerical}
+//input: string distance = 'euclidean' {choices: ['euclidean', 'manhattan']}
+//input: string linkage = 'ward' {choices: ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward']}
+export async function hierarchicalClustering(
+  table: DG.DataFrame, features: DG.ColumnList, distance: string, linkage: string
+): Promise<void> {
+  await hierarchicalClusteringUI(table, features, distance, linkage);
+}

@@ -75,7 +75,7 @@ export function renderNode<TNode extends MarkupNodeType>(
       const maxX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * r;
 
       // plot leaf grid
-      const posY = (node.index - firstRowIndex + 0.5) * stepRatio;
+      const posY = (node.index - firstRowIndex) * stepRatio;
       ctx.beginPath();
       ctx.strokeStyle = '#C0C0C0';
       ctx.lineWidth = 1;
@@ -111,8 +111,8 @@ export function renderNode<TNode extends MarkupNodeType>(
       const joinMinIndex = node.children[0].index;
       const joinMaxIndex = node.children[node.children.length - 1].index;
       const posX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * r;
-      const minY = Math.max((joinMinIndex - firstRowIndex + 0.5) * stepRatio, 0);
-      const maxY = Math.min((joinMaxIndex - firstRowIndex + 0.5) * stepRatio, ctx.canvas.height);
+      const minY = Math.max((joinMinIndex - firstRowIndex) * stepRatio, 0);
+      const maxY = Math.min((joinMaxIndex - firstRowIndex) * stepRatio, ctx.canvas.height);
       //
       ctx.beginPath();
       ctx.strokeStyle = 'black';
@@ -123,7 +123,7 @@ export function renderNode<TNode extends MarkupNodeType>(
 
       const minX = currentLength * lengthRatio + leftPadding * r;
       const maxX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * r;
-      const posY = (node.index - firstRowIndex + 0.5) * stepRatio;
+      const posY = (node.index - firstRowIndex) * stepRatio;
 
       ctx.beginPath();
       ctx.strokeStyle = 'black';

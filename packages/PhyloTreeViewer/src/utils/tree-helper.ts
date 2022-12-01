@@ -130,7 +130,7 @@ export class TreeHelper implements ITreeHelper {
 
   /** Sets grid's row order and returns tree (root node) of nodes presented in data */
   setGridOrder(
-    tree: NodeType, grid: DG.Grid, leafColName: string,
+    tree: NodeType, grid: DG.Grid, leafColName: string | null,
     removeMissingDataRows: boolean = false
   ): [NodeType, string[]] {
     console.debug('PhyloTreeViewer.setGridOrder() start');
@@ -150,7 +150,9 @@ export class TreeHelper implements ITreeHelper {
       treeLeafDict[treeLeaf.name] = treeLeaf;
     }
 
-    const dataNodeCol: DG.Column = dataDf.getCol(leafColName);
+    const dataNodeCol: DG.Column = leafColName ? dataDf.getCol(leafColName) :
+      DG.Column.fromList(DG.COLUMN_TYPE.INT, '<index>', wu.count(0).take(dataDf.rowCount).toArray());
+
     if (removeMissingDataRows) {
       for (let dataRowI = dataNodeCol.length - 1; dataRowI >= 0; dataRowI--) {
         const dataNodeName: string = dataNodeCol.get(dataRowI);
@@ -224,15 +226,18 @@ export class TreeHelper implements ITreeHelper {
   }
 
   markClusters(
-    tree: NodeCuttedType, dataDf: DG.DataFrame, leafColName: string, clusterColName: string, na?: any
+    tree: NodeCuttedType, dataDf: DG.DataFrame, leafColName: string | null, clusterColName: string, na?: any
   ): void {
     const na_value = na ?? null;
     const clusterCol: DG.Column = dataDf.getCol(clusterColName);
     clusterCol.init((rowI) => { return na_value; });
 
+    const dataNodeCol: DG.Column = leafColName ? dataDf.getCol(leafColName) :
+      DG.Column.fromList(DG.COLUMN_TYPE.INT, '<index>', wu.count(0).take(dataDf.rowCount).toArray());
+
     const dataNodeDict: DataNodeDict = {};
     for (let dataRowI: number = 0; dataRowI < dataDf.rowCount; dataRowI++) {
-      const dataNodeName = dataDf.get(leafColName, dataRowI);
+      const dataNodeName = dataNodeCol.get(dataRowI);
       dataNodeDict[dataNodeName] = dataRowI;
     }
 
@@ -249,7 +254,7 @@ export class TreeHelper implements ITreeHelper {
   }
 
   buildClusters(
-    tree: NodeCuttedType, clusterDf: DG.DataFrame, clusterColName: string, leafColName: string
+    tree: NodeCuttedType, clusterDf: DG.DataFrame, clusterColName: string, leafColName: string | null
   ) {
     for (let clusterRowI = clusterDf.rowCount - 1; clusterRowI >= 0; clusterRowI--) {
       clusterDf.rows.removeAt(clusterRowI);

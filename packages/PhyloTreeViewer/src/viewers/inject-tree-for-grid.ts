@@ -17,7 +17,8 @@ import {TreeRendererBase, TreeRendererEventArgsType} from './tree-renderers/tree
 
 
 export function injectTreeForGridUI(
-  grid: DG.Grid, newickRoot: bio.NodeType, dataDf: DG.DataFrame, clusterDf: DG.DataFrame, leafColName: string, neighborWidth: number = 100,
+  grid: DG.Grid, newickRoot: bio.NodeType, dataDf: DG.DataFrame,
+  clusterDf: DG.DataFrame, leafColName: string | null, neighborWidth: number = 100,
   cut?: { min: number, max: number, clusterColName: string }
 ): GridNeighbor {
   const th: bio.ITreeHelper = new TreeHelper();
