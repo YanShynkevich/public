@@ -3,7 +3,7 @@ import * as grok from 'datagrok-api/grok';
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
 
-import {ITreeHelper, NodeType, PhylocanvasGlServiceBase} from '@datagrok-libraries/bio';
+import {PhylocanvasGlServiceBase, ITreeHelper, NodeType} from '@datagrok-libraries/bio';
 import {newickToDf} from './utils';
 import {PhyloTreeViewer} from './tree-viewer';
 import {PhylocanvasGlViewer} from './viewers/phylocanvas-gl-viewer';
