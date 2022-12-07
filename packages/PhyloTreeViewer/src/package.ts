@@ -2,16 +2,14 @@
 import * as grok from 'datagrok-api/grok';
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
-import * as bio from '@datagrok-libraries/bio';
 
+import {PhylocanvasGlServiceBase, ITreeHelper, NodeType} from '@datagrok-libraries/bio';
 import {newickToDf} from './utils';
 import {PhyloTreeViewer} from './tree-viewer';
 import {PhylocanvasGlViewer} from './viewers/phylocanvas-gl-viewer';
 import {PhylocanvasGlViewerApp} from './apps/phylocanvas-gl-viewer-app';
-import {GridWithTreeViewer} from './viewers/grid-with-tree-viewer';
 import {TreeToGridApp} from './apps/tree-to-grid-app';
 import {injectTreeToGridUI} from './viewers/inject-tree-to-grid';
-import {NewickHelper} from './utils/newick-helper';
 import {TreeInGridCellApp} from './apps/tree-in-grid-cell-app';
 import {PhylocanvasGlService} from './utils/phylocanvas-gl-service';
 import {TreeHelper} from './utils/tree-helper';
@@ -32,17 +30,6 @@ export const _package = new DG.Package();
 //output: dataframe df
 export function _newickToDf(newick: string, name: string): DG.DataFrame {
   return newickToDf(newick, name);
-}
-
-let _newickHelper: NewickHelper | null = null;
-
-//name: getNewickHelper
-//description: Get object of interface bio.NewickHelper
-//output: object result
-export function getNewickHelper() {
-  if (!_newickHelper)
-    _newickHelper = new NewickHelper();
-  return _newickHelper;
 }
 
 
@@ -256,11 +243,11 @@ export async function injectTreeToGrid(grid: DG.Grid, newickText: string, leafCo
 }
 
 type PtvWindowType = Window & { $phylocanvasGlService?: PhylocanvasGlService };
-declare var window: PtvWindowType;
+declare const window: PtvWindowType;
 
 //name: getPhylocanvasGlService
 //output: object result
-export function getPhylocanvasGlService(): bio.PhylocanvasGlServiceBase {
+export function getPhylocanvasGlService(): PhylocanvasGlServiceBase {
   if (!(window.$phylocanvasGlService)) {
     const svc: PhylocanvasGlService = new PhylocanvasGlService();
     window.$phylocanvasGlService = svc;
@@ -271,7 +258,7 @@ export function getPhylocanvasGlService(): bio.PhylocanvasGlServiceBase {
 
 //name: getTreeHelper
 //output: object result
-export function getTreeHelper(): bio.ITreeHelper {
+export function getTreeHelper(): ITreeHelper {
   return new TreeHelper();
 }
 
@@ -283,7 +270,7 @@ export function generateTreeDialog() {
   return ui.dialog('Generate tree')
     .add(ui.divV([sizeInput, filenameInput]))
     .onOK(async () => {
-      const treeRoot: bio.NodeType = generateTree(sizeInput.value!);
+      const treeRoot: NodeType = generateTree(sizeInput.value!);
       const th = new TreeHelper();
       const treeNwk = th.toNewick(treeRoot);
 
