@@ -3,13 +3,14 @@ import * as ui from 'datagrok-api/ui';
 
 import {NodeType} from '@datagrok-libraries/bio';
 import {GridTreeRendererBase} from '../grid-tree-renderer';
-import {markupNode, MarkupNodeType, renderNode} from './markup';
+import {ITreeStyler, markupNode, MarkupNodeType, renderNode} from './markup';
+import {Observable, Subject} from 'rxjs';
 
 /** Draws only nodes/leaves visible in leaf range */
 export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeType> {
 
-  constructor(tree: MarkupNodeType, totalLength: number, treeDiv: HTMLElement, grid: DG.Grid) {
-    super(tree, totalLength, treeDiv, grid);
+  constructor(tree: MarkupNodeType, totalLength: number, treeDiv: HTMLElement, grid: DG.Grid, styler: ITreeStyler) {
+    super(tree, totalLength, treeDiv, grid, styler);
 
     this.view.style.setProperty('overflow-y', 'hidden', 'important');
 
@@ -60,7 +61,8 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
       // ctx.stroke();
 
       renderNode(ctx, this.treeRoot as MarkupNodeType,
-        firstRowIndex - 0.5, lastRowIndex + 0.5, this.leftPadding, lengthRatio, stepRatio,
+        firstRowIndex - 0.5, lastRowIndex + 0.5, this.leftPadding,
+        lengthRatio, stepRatio, this.styler,
         this.treeRoot.subtreeLength!, 0);
     } finally {
       ctx.restore();
@@ -78,6 +80,15 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
     if (Number.isNaN(totalLength))
       throw new Error('Can not calculate totalLength for the tree.');
 
-    return new LeafRangeGridTreeRenderer(tree as MarkupNodeType, totalLength, treeDiv, grid);
+    const styler = new class implements ITreeStyler {
+      lineWidth: number = 1;
+      nodeSize: number = 3;
+      showGrid: boolean = true;
+      strokeColor: string = '#000000';
+      fillColor: string = '#000000';
+      onStylingChanged: Observable<void> = new Subject<void>();
+    }();
+
+    return new LeafRangeGridTreeRenderer(tree as MarkupNodeType, totalLength, treeDiv, grid, styler);
   }
 }

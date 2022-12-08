@@ -1,4 +1,5 @@
 import {isLeaf, NodeType} from '@datagrok-libraries/bio';
+import * as rxjs from 'rxjs';
 
 /** Markup node for node and its subtree place on axis of leaves. */
 export type MarkupNodeType = NodeType & {
@@ -49,6 +50,20 @@ export function markupNode(
   console.debug('PhyloTreeViewer: LeafRangeTreeRenderer.markupNode() ' + `ET: ${((t2 - t1) / 1000).toString()} s`);
 }
 
+export interface ITreeStyler {
+  get lineWidth(): number;
+
+  get nodeSize(): number;
+
+  get showGrid(): boolean;
+
+  get strokeColor(): string;
+
+  get fillColor(): string;
+
+  get onStylingChanged(): rxjs.Observable<void>;
+}
+
 /**
  * @param ctx
  * @param node
@@ -64,7 +79,7 @@ export function markupNode(
 export function renderNode<TNode extends MarkupNodeType>(
   ctx: CanvasRenderingContext2D, node: TNode,
   firstRowIndex: number, lastRowIndex: number,
-  leftPadding: number, lengthRatio: number, stepRatio: number,
+  leftPadding: number, lengthRatio: number, stepRatio: number, styler: ITreeStyler,
   totalLength: number, currentLength: number = 0
 ) {
   const r: number = window.devicePixelRatio;
@@ -74,19 +89,23 @@ export function renderNode<TNode extends MarkupNodeType>(
       const minX = currentLength * lengthRatio + leftPadding * r;
       const maxX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * r;
 
-      // plot leaf grid
       const posY = (node.index - firstRowIndex) * stepRatio;
-      ctx.beginPath();
-      ctx.strokeStyle = '#C0C0C0';
-      ctx.lineWidth = 1;
-      ctx.moveTo(maxX, posY);
-      ctx.lineTo(ctx.canvas.width, posY);
-      ctx.stroke();
+      if (styler.showGrid) {
+        // plot leaf grid
+        ctx.beginPath();
+        ctx.strokeStyle = '#C0C0C0';
+        ctx.lineWidth = 1;
+        ctx.lineCap = 'round';
+        ctx.moveTo(maxX, posY);
+        ctx.lineTo(ctx.canvas.width, posY);
+        ctx.stroke();
+      }
 
       // plot branch
       ctx.beginPath();
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = styler.strokeColor;
+      ctx.lineWidth = styler.lineWidth;
+      ctx.lineCap = 'round';
       ctx.moveTo(minX, posY);
       ctx.lineTo(maxX, posY);
       ctx.stroke();
@@ -94,8 +113,9 @@ export function renderNode<TNode extends MarkupNodeType>(
 
       // plot leaf (marker?)
       ctx.beginPath();
-      ctx.fillStyle = 'black';
-      ctx.ellipse(maxX, posY, 1.5, 1.5, 0, 0, 2 * Math.PI);
+      ctx.fillStyle = styler.fillColor;
+      ctx.ellipse(maxX, posY, styler.nodeSize / 2, styler.nodeSize / 2,
+        0, 0, 2 * Math.PI);
       ctx.fill();
     }
   } else {
@@ -103,7 +123,7 @@ export function renderNode<TNode extends MarkupNodeType>(
       for (const childNode of node.children) {
         renderNode(ctx, childNode,
           firstRowIndex, lastRowIndex,
-          leftPadding, lengthRatio, stepRatio,
+          leftPadding, lengthRatio, stepRatio, styler,
           totalLength, currentLength + node.branch_length!);
       }
 
@@ -114,9 +134,11 @@ export function renderNode<TNode extends MarkupNodeType>(
       const minY = Math.max((joinMinIndex - firstRowIndex) * stepRatio, 0);
       const maxY = Math.min((joinMaxIndex - firstRowIndex) * stepRatio, ctx.canvas.height);
       //
+
       ctx.beginPath();
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = styler.strokeColor;
+      ctx.lineWidth = styler.lineWidth;
+      ctx.lineCap = 'round';
       ctx.moveTo(posX, minY);
       ctx.lineTo(posX, maxY);
       ctx.stroke();
@@ -126,8 +148,9 @@ export function renderNode<TNode extends MarkupNodeType>(
       const posY = (node.index - firstRowIndex) * stepRatio;
 
       ctx.beginPath();
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = styler.strokeColor;
+      ctx.lineWidth = styler.lineWidth;
+      ctx.lineCap = 'round';
       ctx.moveTo(minX, posY);
       ctx.lineTo(maxX, posY);
       ctx.stroke();

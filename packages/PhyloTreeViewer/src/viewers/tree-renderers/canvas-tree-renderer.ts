@@ -4,18 +4,23 @@ import * as ui from 'datagrok-api/ui';
 import * as rxjs from 'rxjs';
 import {NodeType} from '@datagrok-libraries/bio';
 import {TreeRendererBase} from './tree-renderer-base';
-import {MarkupNodeType, renderNode} from './markup';
+import {ITreeStyler, MarkupNodeType, renderNode} from './markup';
 
-interface ITreePlacer {
+export interface ITreePlacer {
 
   // Position of leaves' axis in canvas window
   /** -0.5 means half of row for first leaf*/
-  top: number;
-  bottom: number;
+  get top(): number;
 
-  height: number;
+  get bottom(): number;
 
-  padding: { left: number, right: number; };
+  get height(): number;
+
+  get padding(): { left: number, right: number; };
+
+  get onPlacingChanged(): rxjs.Observable<void>;
+
+  update(params: { top?: number, bottom?: number }): void;
 }
 
 export class CanvasTreeRenderer<TNode extends MarkupNodeType> extends TreeRendererBase<TNode> {
@@ -26,32 +31,26 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType> extends TreeRender
 
   protected readonly placer: ITreePlacer;
 
-  constructor(treeRoot: TNode, totalLength: number, view: HTMLElement) {
+  protected readonly styler: ITreeStyler;
+
+  constructor(treeRoot: TNode, totalLength: number, view: HTMLElement, placer: ITreePlacer, styler: ITreeStyler) {
     super(treeRoot, totalLength, view);
 
     this._canvas = ui.canvas();
     this.view.appendChild(this.canvas);
 
-    this.placer = new class implements ITreePlacer {
-      private _top: number;
-      get top(): number { return this._top; }
+    this.placer = placer;
+    this.placer.onPlacingChanged.subscribe(this.placerOnChanged.bind(this));
 
-      private _bottom: number;
-      get bottom() { return this._bottom;}
-
-      get height() { return this._bottom - this._top; }
-
-      get padding() { return {left: 8, right: 8,};}
-
-      constructor(top: number, bottom: number) {
-        this._top = top;
-        this._bottom = bottom;
-      }
-    }(this.treeRoot.minIndex - 0.5, this.treeRoot.maxIndex + 0.5);
+    this.styler = styler;
+    this.styler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this));
 
     let k = 11;
 
     rxjs.fromEvent<WheelEvent>(this.canvas, 'wheel').subscribe(this.canvasOnWheel.bind(this));
+    rxjs.fromEvent<MouseEvent>(this.canvas, 'mousedown').subscribe(this.canvasOnMouseDown.bind(this));
+    rxjs.fromEvent<MouseEvent>(this.canvas, 'mouseup').subscribe(this.canvasOnMouseUp.bind(this));
+    rxjs.fromEvent<MouseEvent>(this.canvas, 'mousemove').subscribe(this.canvasOnMouseMove.bind(this));
 
     // this.view onSizeChanged event handled with ancestor TreeRenderBase calls this.render()
   }
@@ -88,6 +87,7 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType> extends TreeRender
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+      // large red diagonal cross
       // ctx.beginPath();
       // ctx.strokeStyle = '#800000';
       // ctx.moveTo(0, 0);
@@ -98,7 +98,7 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType> extends TreeRender
 
       renderNode(ctx, this.treeRoot,
         this.placer.top, this.placer.bottom,
-        this.placer.padding.left, lengthRatio, stepRatio,
+        this.placer.padding.left, lengthRatio, stepRatio, this.styler,
         this.treeRoot.subtreeLength!, 0);
     } finally {
       ctx.restore();
@@ -108,10 +108,66 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType> extends TreeRender
 
   // -- Handle events --
 
+  private placerOnChanged() {
+    this.render();
+  }
+
+  private stylerOnChanged() {
+    this.render();
+  }
+
   private canvasOnWheel(e: WheelEvent): void {
-    const mousePosY: number = this.placer.top + e.clientY * this.placer.height / this.canvas.height;
+    const mouseY: number = e.offsetY;
+    console.debug('PhyloTreeViewer: CanvasTreeRenderer.canvasOnWheel() ' +
+      `canvas.clientHeight = ${this.canvas.clientHeight}, mouseY = ${mouseY}`);
+    e.preventDefault();
 
+    const mousePosY: number = this.placer.top + mouseY * this.placer.height / this.canvas.clientHeight;
 
-    e.stopPropagation();
+    // @ts-ignore
+    const delta: number = e.wheelDelta / -168;
+    const newTop = mousePosY - (mousePosY - this.placer.top) * (1 + 0.2 * delta);
+    const newBottom = mousePosY + (this.placer.bottom - mousePosY) * (1 + 0.2 * delta);
+
+    this.placer.update({top: newTop, bottom: newBottom});
+
+    // e.stopPropagation();
+  }
+
+  private mouseDragging: { mousePosY: number, top: number, bottom: number } | null;
+
+  private canvasOnMouseDown(e: MouseEvent) {
+    const mousePosY: number = this.placer.top + e.y * this.placer.height / this.canvas.clientHeight;
+
+    this.mouseDragging = {mousePosY: mousePosY, top: this.placer.top, bottom: this.placer.bottom};
+  }
+
+  private canvasOnMouseUp(e: MouseEvent) {
+    this.mouseDragging = null;
+  }
+
+  private canvasOnMouseMove(e: MouseEvent) {
+    const mouseY = e.offsetY;
+    const mousePosY: number = this.placer.top + mouseY * this.placer.height / this.canvas.clientHeight;
+    console.debug('PhyloTreeViewer: CanvasTreeRenderer.canvasOnMouseMove() ' +
+      `mousePosY = ${mousePosY}, mouseY = ${mouseY}.`);
+
+    const md = this.mouseDragging;
+    if (md) {
+      const mousePosY: number = md.top + e.y * this.placer.height / this.canvas.clientHeight;
+      const deltaPosY = md.mousePosY - mousePosY;
+
+      // const minY = this.treeRoot.minIndex - 0.5;
+      // const maxY = this.treeRoot.maxIndex + 0.5;
+      //
+      // const deltaLimY = Math.min(...[deltaY, md.top + deltaY - minY, md.bottom + deltaY - maxY]);
+
+      this.placer.update({
+        top: md.top + deltaPosY,
+        bottom: md.bottom + deltaPosY
+      });
+    } else {
+      // ui.tooltip.show('Hallo', e.x, e.y);
+    }
   }
 }

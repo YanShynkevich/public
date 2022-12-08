@@ -7,21 +7,22 @@ import wu from 'wu';
 
 import * as rxjs from 'rxjs';
 import {JsViewer} from 'datagrok-api/dg';
-import {Unsubscribable} from 'rxjs';
+import {Subject, Unsubscribable} from 'rxjs';
 import {TREE_TAGS} from '../consts';
-import {markupNode, MarkupNodeType} from './tree-renderers/markup';
+import {ITreeStyler, markupNode, MarkupNodeType} from './tree-renderers/markup';
 import {LeafRangeGridTreeRenderer} from './tree-renderers/grid-tree-renderer';
-import {CanvasTreeRenderer} from './tree-renderers/canvas-tree-renderer';
+import {CanvasTreeRenderer, ITreePlacer} from './tree-renderers/canvas-tree-renderer';
 import {TreeRendererBase} from './tree-renderers/tree-renderer-base';
+import {line} from 'd3';
 
-enum PROPS_CATS {
+export enum PROPS_CATS {
   APPEARANCE = 'Appearance',
   BEHAVIOR = 'Behavior',
   LAYOUT = 'Layout',
   DATA = 'Data',
 }
 
-enum Props {
+export enum PROPS {
   lineWidth = 'lineWidth',
   nodeSize = 'nodeSize',
   strokeColor = 'strokeColor',
@@ -38,38 +39,146 @@ enum Props {
   newick = 'newick',
 }
 
+class DendrogramTreePlacer implements ITreePlacer {
+  private _top: number;
+  get top(): number { return this._top; }
+
+  private _bottom: number;
+  get bottom() { return this._bottom;}
+
+  get height() { return this._bottom - this._top; }
+
+  get padding() { return {left: 8, right: 8,};}
+
+  private readonly _onChanged: rxjs.Subject<void>;
+
+  get onPlacingChanged(): rxjs.Observable<void> { return this._onChanged; }
+
+  constructor(top: number, bottom: number) {
+    this._top = top;
+    this._bottom = bottom;
+
+    this._onChanged = new Subject<void>();
+  }
+
+  update(params: { top?: number; bottom?: number }): void {
+    let changed: boolean = false;
+
+    if (params.top && params.top != this.top) {
+      this._top = params.top;
+      changed = true;
+    }
+
+    if (params.bottom && params.bottom != this.bottom) {
+      this._bottom = params.bottom;
+      changed = true;
+    }
+
+    if (changed)
+      this._onChanged.next();
+  }
+}
+
+class DendrogramTreeStyler implements ITreeStyler {
+
+  private _lineWidth: number;
+  get lineWidth(): number { return this._lineWidth; }
+
+  set lineWidth(value: number) {
+    this._lineWidth = value;
+    this._onStylingChanged.next();
+  }
+
+  private _nodeSize: number;
+  get nodeSize(): number { return this._nodeSize; }
+
+  set nodeSize(value: number) {
+    this._nodeSize = value;
+    this._onStylingChanged.next();
+  }
+
+  private _showGrid: boolean;
+  get showGrid(): boolean { return this._showGrid; }
+
+  set showGrid(value: boolean) {
+    this._showGrid = value;
+    this._onStylingChanged.next();
+  }
+
+  private _strokeColor: string;
+  get strokeColor(): string { return this._strokeColor; }
+
+  set strokeColor(value: string) {
+    this._strokeColor = value;
+    this._onStylingChanged.next();
+  }
+
+  private _fillColor: string;
+  get fillColor(): string { return this._fillColor; }
+
+  set fillColor(value: string) {
+    this._fillColor = value;
+    this._onStylingChanged.next();
+  }
+
+  private _onStylingChanged = new Subject<void>();
+
+  get onStylingChanged(): rxjs.Observable<void> { return this._onStylingChanged; }
+
+  constructor(lineWidth: number, nodeSize: number, showGrid: boolean, strokeColor: string, fillColor: string) {
+    this._lineWidth = lineWidth;
+    this._nodeSize = nodeSize;
+    this._showGrid = showGrid;
+    this._strokeColor = strokeColor;
+    this._fillColor = fillColor;
+  }
+}
+
+
 export class Dendrogram extends DG.JsViewer {
   private viewed: boolean = false;
 
-  [Props.lineWidth]: number;
-  [Props.nodeSize]: number;
-  [Props.strokeColor]: number;
-  [Props.fillColor]: number;
-  [Props.font]: string;
+  [PROPS.lineWidth]: number;
 
-  [Props.showGrid]: boolean;
-  [Props.showLabels]: boolean;
+  [PROPS.nodeSize]: number;
 
-  [Props.firstLeaf]: number;
-  [Props.step]: number;
-  [Props.stepZoom]: number;
+  [PROPS.showGrid]: boolean;
+
+  [PROPS.strokeColor]: number;
+
+  [PROPS.fillColor]: number;
+
+  [PROPS.font]: string;
+
+  [PROPS.showLabels]: boolean;
+
+  [PROPS.firstLeaf]: number;
+  [PROPS.step]: number;
+  [PROPS.stepZoom]: number;
+
+  styler: DendrogramTreeStyler;
 
   constructor() {
     super();
 
-    this.lineWidth = this.float(Props.lineWidth, 1, {category: PROPS_CATS.APPEARANCE,});
-    this.nodeSize = this.float(Props.nodeSize, 14,
-      {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 1, max: 32,});
-    this.strokeColor = this.int(Props.strokeColor, 0x222222, {category: PROPS_CATS.APPEARANCE});
-    this.fillColor = this.int(Props.fillColor, 0x333333, {category: PROPS_CATS.APPEARANCE,});
+    // ITreeStyler
 
-    this.showGrid = this.bool(Props.showGrid, false, {category: PROPS_CATS.APPEARANCE,});
+    this.lineWidth = this.float(PROPS.lineWidth, 1,
+      {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 16, step: 0.1});
+    this.nodeSize = this.float(PROPS.nodeSize, 3,
+      {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 16, step: 0.1});
 
-    this.showLabels = this.bool(Props.showLabels, false, {category: PROPS_CATS.APPEARANCE});
+    this.showGrid = this.bool(PROPS.showGrid, false, {category: PROPS_CATS.APPEARANCE,});
 
-    this.font = this.string(Props.font, 'monospace 10pt', {category: PROPS_CATS.APPEARANCE});
+    this.strokeColor = this.int(PROPS.strokeColor, 0x222222, {category: PROPS_CATS.APPEARANCE});
+    this.fillColor = this.int(PROPS.fillColor, 0x333333, {category: PROPS_CATS.APPEARANCE,});
 
-    this.stepZoom = this.float(Props.stepZoom, 0,
+
+    this.showLabels = this.bool(PROPS.showLabels, false, {category: PROPS_CATS.APPEARANCE});
+
+    this.font = this.string(PROPS.font, 'monospace 10pt', {category: PROPS_CATS.APPEARANCE});
+
+    this.stepZoom = this.float(PROPS.stepZoom, 0,
       {category: PROPS_CATS.BEHAVIOR, editor: 'slider', min: -4, max: 4, step: 0.1});
 
     this.step = this.float('step', 28,
@@ -78,6 +187,11 @@ export class Dendrogram extends DG.JsViewer {
     // data, not userEditable option is not displayed in Property panel, but can be set through setOptions()
     this.newick = this.string('newick', ';',
       {category: PROPS_CATS.DATA, userEditable: false});
+
+    this.styler = new DendrogramTreeStyler(
+      this.lineWidth, this.nodeSize, this.showGrid,
+      `#${(this.strokeColor & 0xFFFFFF).toString(16).padStart(6, '0')}`,
+      `#${(this.fillColor & 0xFFFFFF).toString(16).padStart(6, '0')}`);
   }
 
   private _nwkDf: DG.DataFrame;
@@ -167,12 +281,27 @@ export class Dendrogram extends DG.JsViewer {
       }
       break;
 
-    case Props.lineWidth:
-    case Props.nodeSize:
-    case Props.strokeColor:
-    case Props.fillColor:
-    case Props.font:
-      this.render();
+    case PROPS.lineWidth:
+      this.styler.lineWidth = this.lineWidth;
+      break;
+
+    case PROPS.nodeSize:
+      this.styler.nodeSize = this.nodeSize;
+      break;
+
+    case PROPS.showGrid:
+      this.styler.showGrid = this.showGrid;
+      break;
+
+    case PROPS.strokeColor:
+      this.styler.strokeColor = `#${(this.strokeColor & 0xFFFFFF).toString(16).padStart(6, '0')}`;
+      break;
+
+    case PROPS.fillColor:
+      this.styler.fillColor = `#${(this.fillColor & 0xFFFFFF).toString(16).padStart(6, '0')}`;
+      break;
+
+    case PROPS.font:
       break;
     }
   }
@@ -209,18 +338,11 @@ export class Dendrogram extends DG.JsViewer {
     const treeRoot: MarkupNodeType = bio.Newick.parse_newick(this.newick);
     markupNode(treeRoot);
     const totalLength: number = treeRoot.subtreeLength!;
-    this.renderer = new CanvasTreeRenderer(treeRoot, totalLength, this.treeDiv);
+    const placer = new DendrogramTreePlacer(treeRoot.minIndex - 0.5, treeRoot.maxIndex + 0.5);
+    this.renderer = new CanvasTreeRenderer(treeRoot, totalLength, this.treeDiv, placer, this.styler);
 
     this.viewSubs.push(
       ui.onSizeChanged(this.root).subscribe(this.rootOnSizeChanged.bind(this)));
-  }
-
-  // -- render --
-
-  private render(): void {
-    if (!this.renderer) return;
-
-    this.renderer.render();
   }
 
   // -- Handle controls events --
