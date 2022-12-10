@@ -34,7 +34,6 @@ export interface ITreeHelper {
   markClusters(tree: NodeCuttedType,
     dataDf: DG.DataFrame, leafColName: string | null, clusterColName: string, na?: any): void;
 
-
   /**
    * @param {string|null} leafColName Column name for leaf name in newick, null - use row index
    */
