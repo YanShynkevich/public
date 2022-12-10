@@ -4,7 +4,7 @@ import * as ui from 'datagrok-api/ui';
 import * as rxjs from 'rxjs';
 import {NodeType} from '@datagrok-libraries/bio';
 import {TreeRendererBase} from './tree-renderer-base';
-import {HoverType, ITreePlacer, ITreeStyler, MarkupNodeType, renderNode} from './markup';
+import {ITreePlacer, ITreeStyler, MarkupNodeType, renderNode} from './markup';
 import {RectangleTreeHoverType, RectangleTreePlacer} from './rectangle-tree-placer';
 import {Dendrogram} from '../dendrogram';
 import {selection} from 'd3';

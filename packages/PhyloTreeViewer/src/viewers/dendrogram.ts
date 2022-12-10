@@ -6,13 +6,16 @@ import wu from 'wu';
 
 import * as rxjs from 'rxjs';
 import {Subject, Unsubscribable} from 'rxjs';
+import {JsViewer} from 'datagrok-api/dg';
 import {TREE_TAGS} from '../consts';
 import {ITreeStyler, markupNode, MarkupNodeType} from './tree-renderers/markup';
+import {LeafRangeGridTreeRenderer} from './tree-renderers/grid-tree-renderer';
 import {CanvasTreeRenderer} from './tree-renderers/canvas-tree-renderer';
 import {TreeRendererBase} from './tree-renderers/tree-renderer-base';
 import {ITreeHelper, Newick, NodeType} from '@datagrok-libraries/bio';
 import {RectangleTreeHoverType, RectangleTreePlacer} from './tree-renderers/rectangle-tree-placer';
 import {TreeHelper} from '../utils/tree-helper';
+import {line} from 'd3';
 
 export enum PROPS_CATS {
   APPEARANCE = 'Appearance',
@@ -146,7 +149,6 @@ export class Dendrogram extends DG.JsViewer {
 
     this.strokeColor = this.int(PROPS.strokeColor, 0x222222, {category: PROPS_CATS.APPEARANCE});
     this.fillColor = this.int(PROPS.fillColor, 0x333333, {category: PROPS_CATS.APPEARANCE,});
-
 
     this.showLabels = this.bool(PROPS.showLabels, false, {category: PROPS_CATS.APPEARANCE});
 
@@ -397,6 +399,13 @@ export class Dendrogram extends DG.JsViewer {
         });
       }
     }
+  }
+
+  private dataFrameOnSelectionChanged(value: any) {
+    if (!this.renderer) return;
+
+    // if (this.nodeNameColumn)
+    // this.dataFrame.selection
   }
 
   private stylerOnStylingChanged() {

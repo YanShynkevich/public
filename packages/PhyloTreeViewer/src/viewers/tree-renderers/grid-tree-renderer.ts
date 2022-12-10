@@ -5,8 +5,6 @@ import {NodeType} from '@datagrok-libraries/bio';
 import {GridTreeRendererBase} from '../grid-tree-renderer';
 import {ITreeStyler, markupNode, MarkupNodeType, renderNode} from './markup';
 import {Observable, Subject} from 'rxjs';
-import {Dendrogram} from '../dendrogram';
-import {RectangleTreeHoverType} from './rectangle-tree-placer';
 
 /** Draws only nodes/leaves visible in leaf range */
 export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeType> {

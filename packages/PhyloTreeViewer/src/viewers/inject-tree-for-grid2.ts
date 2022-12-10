@@ -13,7 +13,6 @@ import {
 import {NodeCuttedType} from '@datagrok-libraries/bio';
 import {markupNode, MarkupNodeType} from './tree-renderers/markup';
 import {LeafRangeGridTreeRenderer} from './tree-renderers/grid-tree-renderer';
-import {PROPS as D_PROPS, PROPS_CATS as D_PROPS_CATS} from './dendrogram';
 
 
 export function injectTreeForGridUI2(

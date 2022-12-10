@@ -57,6 +57,7 @@ export function markupNode(
 
 export type HoverType<TNode> = { node: TNode };
 
+
 export interface ITreePlacer<TNode, THover extends HoverType<TNode>> {
 
   // Position of leaves' axis in canvas window
