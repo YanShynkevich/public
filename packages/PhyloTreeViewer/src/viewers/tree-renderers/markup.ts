@@ -1,5 +1,10 @@
-import {isLeaf, NodeType} from '@datagrok-libraries/bio';
+import * as ui from 'datagrok-api/ui';
+import * as grok from 'datagrok-api/grok';
+import * as DG from 'datagrok-api/dg';
+
 import * as rxjs from 'rxjs';
+
+import {isLeaf, NodeType} from '@datagrok-libraries/bio';
 
 /** Markup node for node and its subtree place on axis of leaves. */
 export type MarkupNodeType = NodeType & {
@@ -48,6 +53,34 @@ export function markupNode(
   markupNodeInt(node as MarkupNodeType, currentLeafIndex);
   const t2: number = Date.now();
   console.debug('PhyloTreeViewer: LeafRangeTreeRenderer.markupNode() ' + `ET: ${((t2 - t1) / 1000).toString()} s`);
+}
+
+export type HoverType<TNode> = { node: TNode };
+
+export interface ITreePlacer<TNode, THover extends HoverType<TNode>> {
+
+  // Position of leaves' axis in canvas window
+  /** -0.5 means half of row for first leaf*/
+  get top(): number;
+
+  get bottom(): number;
+
+  get height(): number;
+
+  get totalLength(): number;
+
+  get padding(): { left: number, right: number; };
+
+  get onPlacingChanged(): rxjs.Observable<void>;
+
+  update(params: { top?: number, bottom?: number, totalLength?: number }): void;
+
+  /**
+   * @param node
+   * @param point
+   * @param nodeSize Units of leaves axis scale
+   */
+  getNode(node: TNode, point: DG.Point, nodeSize: number): THover | null;
 }
 
 export interface ITreeStyler {

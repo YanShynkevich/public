@@ -23,8 +23,8 @@ export function injectTreeForGridUI(
 ): GridNeighbor {
   const th: bio.ITreeHelper = new TreeHelper();
 
-  const treeN = attachDivToGrid(grid, neighborWidth);
-  const treeRoot = treeN.root!;
+  const treeN: GridNeighbor = attachDivToGrid(grid, neighborWidth);
+  const treeRoot: HTMLElement = treeN.root!;
 
   // const treeDiv = ui.div();
   // treeRoot.appendChild(treeDiv);
@@ -32,14 +32,15 @@ export function injectTreeForGridUI(
   // treeRoot.style.setProperty('overflow-y', 'hidden', 'important');
 
   const treeRenderer: GridTreeRendererBase<MarkupNodeType> =
-    LeafRangeGridTreeRenderer.create(newickRoot, treeRoot, grid);
+    LeafRangeGridTreeRenderer.create(newickRoot, grid);
+  treeRenderer.attach(treeRoot);
   treeRenderer.onAfterRender.subscribe(
     ({target, context, lengthRatio}) => {
       if (cutSlider) {
         const tgt = target as GridTreeRendererBase<MarkupNodeType>;
 
         cutSlider.root.style.left = `${0}px`;
-        cutSlider.root.style.width = `${tgt.view.clientWidth}px`;
+        cutSlider.root.style.width = `${tgt.view!.clientWidth}px`;
         cutSlider.root.style.height = `${tgt.grid.colHeaderHeight}px`;
 
         const posX = cutSlider.value! * lengthRatio + tgt.leftPadding * window.devicePixelRatio;

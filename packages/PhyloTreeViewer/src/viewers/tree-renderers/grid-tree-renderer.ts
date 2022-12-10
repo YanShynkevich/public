@@ -5,20 +5,24 @@ import {NodeType} from '@datagrok-libraries/bio';
 import {GridTreeRendererBase} from '../grid-tree-renderer';
 import {ITreeStyler, markupNode, MarkupNodeType, renderNode} from './markup';
 import {Observable, Subject} from 'rxjs';
+import {Dendrogram} from '../dendrogram';
+import {RectangleTreeHoverType} from './rectangle-tree-placer';
 
 /** Draws only nodes/leaves visible in leaf range */
 export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeType> {
 
-  constructor(tree: MarkupNodeType, totalLength: number, treeDiv: HTMLElement, grid: DG.Grid, styler: ITreeStyler) {
-    super(tree, totalLength, treeDiv, grid, styler);
-
-    this.view.style.setProperty('overflow-y', 'hidden', 'important');
-
-    this.canvas.style.position = 'absolute';
-    this.view.appendChild(this.canvas);
+  constructor(
+    tree: MarkupNodeType, totalLength: number, grid: DG.Grid,
+    styler: ITreeStyler, highlightStyler: ITreeStyler, selectionStyler: ITreeStyler
+  ) {
+    super(tree, totalLength, grid, styler, highlightStyler, selectionStyler);
   }
 
   public render(): void {
+    if (!this.view || !this.canvas) return;
+
+    const dpr = window.devicePixelRatio;
+
     const firstRowIndex: number = Math.floor(this._grid.vertScroll.min);
     const rowsGridHeight: number = this._grid.root.clientHeight - this._grid.colHeaderHeight;
     const lastRowIndex: number = firstRowIndex + Math.ceil(rowsGridHeight / this._grid.props.rowHeight);
@@ -33,8 +37,8 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
     const ch: number = this.view.clientHeight - this.grid.colHeaderHeight;
     //const ch: number = this.grid.root.clientHeight - this.grid.colHeaderHeight;
 
-    this.canvas.width = cw * window.devicePixelRatio;
-    this.canvas.height = ch * window.devicePixelRatio;
+    this.canvas.width = cw * dpr;
+    this.canvas.height = ch * dpr;
     this.canvas.style.left = `${0}px`;
     this.canvas.style.top = `${this.grid.colHeaderHeight}px`;
     this.canvas.style.width = `${cw}px`;
@@ -44,8 +48,8 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
     const ctx = this.canvas.getContext('2d')!;
 
     // Here we will render range of leaves
-    const lengthRatio: number = window.devicePixelRatio * (cw - this.leftPadding - this.rightPadding) / this.totalLength; // px/[length unit]
-    const stepRatio: number = window.devicePixelRatio * this.grid.props.rowHeight; // px/[step unit, row]
+    const lengthRatio: number = dpr * (cw - this.leftPadding - this.rightPadding) / this.placer.totalLength; // px/[length unit]
+    const stepRatio: number = dpr * this.grid.props.rowHeight; // px/[step unit, row]
 
     ctx.save();
     try {
@@ -60,6 +64,13 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
       // ctx.lineTo(ctx.canvas.width, 0);
       // ctx.stroke();
 
+      if (this.hover) {
+        renderNode(ctx, this.hover.node,
+          this.placer.top, this.placer.bottom,
+          this.placer.padding.left, lengthRatio, stepRatio, this.highlightStyler,
+          this.placer.totalLength, this.hover.nodeHeight);
+      }
+
       renderNode(ctx, this.treeRoot as MarkupNodeType,
         firstRowIndex - 0.5, lastRowIndex + 0.5, this.leftPadding,
         lengthRatio, stepRatio, this.styler,
@@ -70,9 +81,18 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
     }
   }
 
-  public static create(
-    tree: NodeType, treeDiv: HTMLElement, grid: DG.Grid
-  ): GridTreeRendererBase<MarkupNodeType> {
+  // -- View --
+
+  public override attach(view: HTMLElement) {
+    super.attach(view);
+
+    this.view!.style.setProperty('overflow-y', 'hidden', 'important');
+    this.canvas!.style.position = 'absolute';
+  }
+
+  // --
+
+  public static create(tree: NodeType, grid: DG.Grid): GridTreeRendererBase<MarkupNodeType> {
     // TODO: adapt tree: bio.NodeType to MarkupNodeType
     markupNode(tree);
     const totalLength: number = (tree as MarkupNodeType).subtreeLength!;
@@ -89,6 +109,25 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
       onStylingChanged: Observable<void> = new Subject<void>();
     }();
 
-    return new LeafRangeGridTreeRenderer(tree as MarkupNodeType, totalLength, treeDiv, grid, styler);
+    const highlightStyler = new class implements ITreeStyler {
+      lineWidth: number = 5;
+      nodeSize: number = 7;
+      showGrid: boolean = true;
+      strokeColor: string = '#FFFF0040';
+      fillColor: string = '#FFFF0040';
+      onStylingChanged: Observable<void> = new Subject<void>();
+    }();
+
+    const selectionStyler = new class implements ITreeStyler {
+      lineWidth: number = 3;
+      nodeSize: number = 5;
+      showGrid: boolean = true;
+      strokeColor: string = '#88FF88C0';
+      fillColor: string = '#88FF88C0';
+      onStylingChanged: Observable<void> = new Subject<void>();
+    }();
+
+    return new LeafRangeGridTreeRenderer(tree as MarkupNodeType, totalLength, grid,
+      styler, highlightStyler, selectionStyler);
   }
 }

@@ -6,6 +6,7 @@ import {isLeaf, NodeType} from '@datagrok-libraries/bio';
 import * as rxjs from 'rxjs';
 import {GridTreeRendererBase} from '../grid-tree-renderer';
 import {Unsubscribable} from 'rxjs';
+import {RectangleTreeHoverType} from './rectangle-tree-placer';
 
 export type TreeRendererEventArgsType<TNode extends NodeType> = {
   target: TreeRendererBase<TNode>,
@@ -16,12 +17,9 @@ export type TreeRendererEventArgsType<TNode extends NodeType> = {
 
 export abstract class TreeRendererBase<TNode extends NodeType> {
 
+  public view?: HTMLElement;
+
   private _treeRoot: TNode;
-  private readonly _view: HTMLElement;
-
-  /** Tree hierarchical structure */
-  protected _totalLength: number;
-
   get treeRoot(): TNode { return this._treeRoot; }
 
   set treeRoot(value: TNode) {
@@ -29,24 +27,39 @@ export abstract class TreeRendererBase<TNode extends NodeType> {
     this.render();
   }
 
-  get totalLength(): number { return this._totalLength; }
+  protected _hoveredNode: TNode | null;
+  get hoveredNode(): TNode | null { return this._hoveredNode; }
 
-  get view(): HTMLElement { return this._view; }
+  protected _onHoverChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
+  get onHoverChanged(): rxjs.Observable<void> { return this._onHoverChanged; };
+
+  protected _selectedNodes: TNode[] = [];
+  get selectedNodes(): TNode[] { return this._selectedNodes; }
+
+  protected _onSelectedChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
+  get onSelectedChanged(): rxjs.Observable<void> { return this._onSelectedChanged; }
 
   protected subs: Unsubscribable[] = [];
 
-  protected constructor(treeRoot: TNode, totalLength: number, view: HTMLElement) {
+  protected constructor(treeRoot: TNode) {
     this._treeRoot = treeRoot;
-    this._view = view;
-    this._totalLength = totalLength;
-
-    this.subs.push(
-      ui.onSizeChanged(this.view).subscribe(this.viewOnSizeChanged.bind(this)));
 
     this._onAfterRender = new rxjs.Subject<TreeRendererEventArgsType<TNode>>();
+  }
 
-    // initial render
-    window.setTimeout(this.render.bind(this), 0 /* next event cycle */);
+  // -- View --
+
+  public attach(view: HTMLElement): void {
+    this.view = view;
+    this.subs.push(ui.onSizeChanged(this.view).subscribe(this.viewOnSizeChanged.bind(this)));
+
+    // Postponed call to initial render after attach completed (e.g. canvas created)
+    window.setTimeout(() => { this.render(); }, 0 /* next event cycle */);
+  }
+
+  public detach(): void {
+    for (const sub of this.subs) sub.unsubscribe();
+    delete this.view;
   }
 
   public abstract render(): void;

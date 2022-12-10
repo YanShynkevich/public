@@ -89,6 +89,7 @@ export class DendrogramApp {
         // showLeafLabels: true,
         // padding: 0,
         // treeToCanvasRatio: 1,
+        nodeColumnName: 'node',
       })) as DG.JsViewer;
       this.treeDn = this.tv.dockManager.dock(this.treeViewer, DG.DOCK_TYPE.RIGHT);
       let k = 11;
