@@ -16,9 +16,9 @@ export interface ITreeHelper {
 
   toNewick(node: NodeType | null): string;
 
-  getLeafList(node: NodeType): NodeType[];
+  getLeafList<TNode extends NodeType>(node: TNode): TNode[];
 
-  getNodeList(node: NodeType): NodeType[];
+  getNodeList<TNode extends NodeType>(node: TNode): TNode[];
 
   treeFilterByLeaves(node: NodeType, leaves: { [name: string]: any }): NodeType | null;
 
