@@ -1,7 +1,11 @@
-import { category, expect, test } from '@datagrok-libraries/utils/src/test';
+import {category, expect, test} from '@datagrok-libraries/utils/src/test';
 
 
 category('Examples', () => {
+  test('chemSpaceOpens', async () => {
+    await _testChemSpaceReturnsResult(smallDf, 'UMAP');
+  });
+
   test('Success', async () => {
     expect(1, 1);
   });
@@ -11,6 +15,6 @@ category('Examples', () => {
   });
 
   test('Skipped', async () => {
-    expect(1 === 1 , false);
+    expect(1 === 1, false);
   }, {skipReason: 'TASK-ID'});
 });

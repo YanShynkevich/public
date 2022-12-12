@@ -1,9 +1,11 @@
 import './tests/test-examples';
-import * as DG from "datagrok-api/dg";
+import * as DG from 'datagrok-api/dg';
 import {runTests, tests} from '@datagrok-libraries/utils/src/test';
 
 export let _package = new DG.Package();
 export {tests};
+
+import './tests/test-examples';
 
 //name: test
 //output: dataframe result
