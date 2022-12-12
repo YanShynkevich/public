@@ -1,46 +1,56 @@
 {
-	"name": "dmytro-sequence",
-	"friendlyName": "dmytro-sequence",
-	"version": "0.0.1",
-	"description": "",
-	"dependencies": {
-		"datagrok-api": "latest",
-		"cash-dom": "latest",
-		"dayjs": "latest",
-		"@datagrok-libraries/utils": "latest"
-	},
-	"devDependencies": {
-		"webpack": "latest",
-		"webpack-cli": "latest",
-		"ts-loader": "latest",
-		"typescript": "latest",
-		"eslint": "latest",
-		"eslint-config-google": "latest",
-		"@typescript-eslint/eslint-plugin": "latest",
-		"@typescript-eslint/parser": "latest"
-	},
-	"scripts": {
-		"link-all": "",
-		"debug-dmytro-sequence": "webpack && grok publish",
-		"release-dmytro-sequence": "webpack && grok publish --release",
-		"build-dmytro-sequence": "webpack",
-		"build": "webpack",
-		"debug-dmytro-sequence-dev": "webpack && grok publish dev",
-		"release-dmytro-sequence-dev": "webpack && grok publish dev --release",
-		"debug-dmytro-sequence-local": "webpack && grok publish local",
-		"release-dmytro-sequence-local": "webpack && grok publish local --release",
-		"lint": "eslint src --ext .ts",
-		"lint-fix": "eslint src --ext .ts --fix"
-	},
-	"canEdit": [
-		"Developers"
-	],
-	"canView": [
-		"All users"
-	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/LaykDimon/public.git",
-		"directory": "packages/dmytro-sequence"
-	}
+  "name": "dmytro-sequence",
+  "friendlyName": "dmytro-sequence",
+  "version": "0.0.1",
+  "description": "",
+  "dependencies": {
+    "datagrok-api": "latest",
+    "cash-dom": "latest",
+    "dayjs": "latest",
+    "@datagrok-libraries/utils": "latest"
+  },
+  "devDependencies": {
+    "webpack": "latest",
+    "webpack-cli": "latest",
+    "ts-loader": "latest",
+    "typescript": "latest",
+    "eslint": "latest",
+    "eslint-config-google": "latest",
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
+    "jest-html-reporter": "^3.5.0",
+    "jest": "^27.0.0",
+    "@types/jest": "^27.0.0",
+    "js-yaml": "^4.1.0",
+    "@types/js-yaml": "^4.0.5",
+    "@types/node-fetch": "^2.6.2",
+    "node-fetch": "^2.6.7",
+    "ts-jest": "^27.0.0",
+    "puppeteer": "^13.7.0"
+  },
+  "scripts": {
+    "link-all": "",
+    "debug-dmytro-sequence": "webpack && grok publish",
+    "release-dmytro-sequence": "webpack && grok publish --release",
+    "build-dmytro-sequence": "webpack",
+    "build": "webpack",
+    "debug-dmytro-sequence-dev": "webpack && grok publish dev",
+    "release-dmytro-sequence-dev": "webpack && grok publish dev --release",
+    "debug-dmytro-sequence-local": "webpack && grok publish local",
+    "release-dmytro-sequence-local": "webpack && grok publish local --release",
+    "lint": "eslint src --ext .ts",
+    "lint-fix": "eslint src --ext .ts --fix",
+    "test": "jest"
+  },
+  "canEdit": [
+    "Developers"
+  ],
+  "canView": [
+    "All users"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LaykDimon/public.git",
+    "directory": "packages/dmytro-sequence"
+  }
 }

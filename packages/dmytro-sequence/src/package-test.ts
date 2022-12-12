@@ -1,3 +1,4 @@
+import './tests/test-examples';
 import * as DG from "datagrok-api/dg";
 import {runTests, tests} from '@datagrok-libraries/utils/src/test';
 
