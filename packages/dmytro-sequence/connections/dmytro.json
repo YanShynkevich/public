@@ -1,0 +1,17 @@
+{
+    "name": "dmytro",
+    "#type": "DataConnection",
+    "parameters": {
+      "server": "datagrok-public.cfxegszwqqvz.us-east-2.rds.amazonaws.com",
+      "db": "northwind"
+    },
+    "credentials" : {
+      "parameters": {
+        "login": "northwind",
+        "password": "northwind"
+      }
+    },
+    "dataSource": "PostgreSQL",
+    "description": "#northwind db",
+    "tags": ["demo"]
+}
