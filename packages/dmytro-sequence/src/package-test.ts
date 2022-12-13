@@ -3,6 +3,7 @@ import {runTests, TestContext, tests} from '@datagrok-libraries/utils/src/test';
 
 import './tests/nucleotide-conversion-tests';
 import './tests/detector-tests';
+import './tests/subsequence-count-tests';
 
 export let _package = new DG.Package();
 export {tests};

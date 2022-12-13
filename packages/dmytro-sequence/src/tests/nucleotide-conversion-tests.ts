@@ -3,7 +3,7 @@ import {complement} from '../package';
 
 
 category('NucleotideConversion', () => {
-  test('complementWorksProperly', async () => {
+  test('complementWorksCorrectly', async () => {
     expect(complement('ATGCGCTAGCTCATTT'), 'TACGCGATCGAGTAAA');
   });
 
