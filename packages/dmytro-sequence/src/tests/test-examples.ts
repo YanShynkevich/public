@@ -1,20 +1,12 @@
 import {category, expect, test} from '@datagrok-libraries/utils/src/test';
+import {complement} from '../package';
 
 
-category('Examples', () => {
-  test('chemSpaceOpens', async () => {
-    await _testChemSpaceReturnsResult(smallDf, 'UMAP');
+category('NucleotideConversion', () => {
+  test('complementWorksProperly', async () => {
+    expect(complement('ATGCGCTAGCTCATTT'), 'TACGCGATCGAGTAAA');
   });
-
-  test('Success', async () => {
-    expect(1, 1);
+  test('complementThrowsError', async () => {
+    expect(complement('ARTQDF'), 'String is not a nucleotide.');
   });
-
-  test('Fail', () => {
-    throw 'Exception';
-  });
-
-  test('Skipped', async () => {
-    expect(1 === 1, false);
-  }, {skipReason: 'TASK-ID'});
 });
