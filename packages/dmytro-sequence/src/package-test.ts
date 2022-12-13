@@ -1,7 +1,8 @@
 import * as DG from 'datagrok-api/dg';
 import {runTests, TestContext, tests} from '@datagrok-libraries/utils/src/test';
 
-import './tests/test-examples';
+import './tests/nucleotide-conversion-tests';
+import './tests/detector-tests';
 
 export let _package = new DG.Package();
 export {tests};
