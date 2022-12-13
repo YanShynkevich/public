@@ -5,8 +5,6 @@ import {runTests, tests} from '@datagrok-libraries/utils/src/test';
 export let _package = new DG.Package();
 export {tests};
 
-import './tests/test-examples';
-
 //name: test
 //output: dataframe result
 export async function test(): Promise<DG.DataFrame> {
