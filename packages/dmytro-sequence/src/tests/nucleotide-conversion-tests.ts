@@ -4,10 +4,10 @@ import {complement} from '../package';
 
 category('NucleotideConversion', () => {
   test('complementWorksCorrectly', async () => {
-    expect(complement('ATGCGCTAGCTCATTT'), 'TACGCGATCGAGTAAA');
+    await expect(complement('ATGCGCTAGCTCATTT'), 'TACGCGATCGAGTAAA');
   });
 
   test('complementThrowsError', async () => {
-    expect(complement('ARTQDF'), 'String is not a nucleotide.');
+    await expect(complement('ARTQDF'), 'String is not a nucleotide.');
   });
 });

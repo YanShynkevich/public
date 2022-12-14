@@ -12,8 +12,8 @@ category('detectors', () => {
       TTTAGGC, 2021
     `);
 
-    const column = table.columns.byName('sequence');
     await grok.data.detectSemanticTypes(table);
-    expect(column.semType, 'dna_nucleotide');
+    const column = table.columns.byName('sequence');
+    await expect(column.semType, 'dna_nucleotide');
   });
 });

@@ -23,17 +23,14 @@ category('Subsequence count', () => {
 
   before(async () => {
     pythonSubsequenceScriptResult = await grok.functions.call(`${packageName}:${pythonSubsequenceScriptName}`,
-      {'sequence': 'ATGATC', 'subsequence': 'AT'})
-      .then((result) => {return result;});
+      {'sequence': 'ATGATC', 'subsequence': 'AT'});
 
     pythonDataframeSubsequenceScriptResult = await grok.functions.call(`${packageName}:
       ${pythonDataframeSubsequenceScriptName}`, {'sequences': pythonDataframeSubsequenceTable, 'columnName': 'Sequence',
-      'subsequence': 'acc'})
-      .then((result) => {return result;});
+      'subsequence': 'acc'});
 
     jsSubsequenceScriptResult = await grok.functions.call(`${packageName}:${jsSubsequenceScriptName}`,
-      {'sequence': 'ATGATC', 'subsequence': 'AT'})
-      .then((result) => {return result;});
+      {'sequence': 'ATGATC', 'subsequence': 'AT'});
   });
 
 

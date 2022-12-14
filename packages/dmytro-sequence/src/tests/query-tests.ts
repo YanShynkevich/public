@@ -13,11 +13,10 @@ category('DatabaseQueries', () => {
   let jsFunctionQueryResult: DG.DataFrame;
 
   before(async () => {
-    queryResult = await grok.data.query(`${packageName}:${queryName}`, {country: 'Belgium'})
-      .then((result) => {return result;});
+    queryResult = await grok.data.query(`${packageName}:${queryName}`, {country: 'Belgium'});
     queryResult.col('sum')!.tags[DG.TAGS.FORMAT] = '#.0000000000000';
 
-    jsFunctionQueryResult = await getOrders().then((result) => {return result;});
+    jsFunctionQueryResult = await getOrders();
     jsFunctionQueryResult.col('sum')!.tags[DG.TAGS.FORMAT] = '#.0000000000000';
   });
 
