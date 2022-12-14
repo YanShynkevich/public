@@ -19,15 +19,19 @@ export function info() {
 export function complement(nucleotides: string): string {
   const complementDictionary: any = {
     'A': 'T',
+    'a': 't',
     'T': 'A',
+    't': 'a',
     'G': 'C',
+    'g': 'c',
     'C': 'G',
+    'c': 'g',
   };
 
-  const regex = '^[ATGC]+$';
+  const regex = new RegExp('^[ACGTacgt\\s]+$');
   if (!nucleotides.match(regex)) return 'String is not a nucleotide.';
 
-  return nucleotides.replace(/A|T|G|C/g, function(matched) {
+  return nucleotides.replace(/A|a|T|t|G|g|C|c/g, function(matched) {
     return complementDictionary[matched];
   });
 }
@@ -56,8 +60,7 @@ export async function getOrders() {
 export function fuzzyJoin(df1: DataFrame, df2: DataFrame, N: number) {
   // let col1 = df1.columns.bySemType('dna_nucleotide');
   // let col2 = df2.columns.bySemType('dna_nucleotide');
-  let df = df1;
-  df = df.append(df2);
+  let df = df1.append(df2);
 
   grok.shell.addTableView(df);
 }
