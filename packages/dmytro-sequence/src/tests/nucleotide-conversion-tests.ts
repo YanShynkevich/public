@@ -3,8 +3,16 @@ import {complement} from '../package';
 
 
 category('NucleotideConversion', () => {
-  test('complementWorksCorrectly', async () => {
+  test('uppercaseComplementWorksCorrectly', async () => {
     await expect(complement('ATGCGCTAGCTCATTT'), 'TACGCGATCGAGTAAA');
+  });
+
+  test('lowercaseComplementWorksCorrectly', async () => {
+    await expect(complement('atgcgctagctcattt'), 'tacgcgatcgagtaaa');
+  });
+
+  test('complementSequencesWorksCorrectly', async () => {
+    await expect(complement('atgcgctagctcattt atgctgctattcgact'), 'tacgcgatcgagtaaa tacgacgataagctga');
   });
 
   test('complementThrowsError', async () => {
