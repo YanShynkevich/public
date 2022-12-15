@@ -9,11 +9,10 @@ category('detectors', () => {
       `sequence, id
       GATTACA, 1997
       ATTCGGA, 1984
-      TTTAGGC, 2021
-    `);
+      TTTAGGC, 2021`);
 
-    await grok.data.detectSemanticTypes(table);
     const column = table.columns.byName('sequence');
+    await grok.data.detectSemanticTypes(table);
     await expect(column.semType, 'dna_nucleotide');
   });
 });
