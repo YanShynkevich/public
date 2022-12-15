@@ -3,7 +3,7 @@ import * as ui from 'datagrok-api/ui';
 
 import {NodeType} from '@datagrok-libraries/bio';
 import {GridTreeRendererBase} from '../grid-tree-renderer';
-import {ITreeStyler, markupNode, MarkupNodeType, renderNode} from './markup';
+import {ITreeStyler, markupNode, MarkupNodeType, renderNode, TreeStylerBase} from './markup';
 import {Observable, Subject} from 'rxjs';
 
 /** Draws only nodes/leaves visible in leaf range */
@@ -11,7 +11,8 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
 
   constructor(
     tree: MarkupNodeType, totalLength: number, grid: DG.Grid,
-    styler: ITreeStyler, highlightStyler: ITreeStyler, selectionStyler: ITreeStyler
+    styler: ITreeStyler<MarkupNodeType>, highlightStyler: ITreeStyler<MarkupNodeType>,
+    selectionStyler: ITreeStyler<MarkupNodeType>
   ) {
     super(tree, totalLength, grid, styler, highlightStyler, selectionStyler);
   }
@@ -65,14 +66,17 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
       if (this.hover) {
         renderNode(ctx, this.hover.node,
           this.placer.top, this.placer.bottom,
-          this.placer.padding.left, lengthRatio, stepRatio, this.highlightStyler,
-          this.placer.totalLength, this.hover.nodeHeight);
+          this.placer.padding.left, lengthRatio, stepRatio, this.lightStyler,
+          this.placer.totalLength, this.hover.nodeHeight,
+          []);
       }
 
       renderNode(ctx, this.treeRoot as MarkupNodeType,
         firstRowIndex - 0.5, lastRowIndex + 0.5, this.leftPadding,
-        lengthRatio, stepRatio, this.styler,
-        this.treeRoot.subtreeLength!, 0);
+        lengthRatio, stepRatio, this.mainStyler,
+        this.treeRoot.subtreeLength!, 0,
+        []);
+
     } finally {
       ctx.restore();
       this._onAfterRender.next({target: this, context: ctx, lengthRatio,});
@@ -98,32 +102,22 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
     if (Number.isNaN(totalLength))
       throw new Error('Can not calculate totalLength for the tree.');
 
-    const styler = new class implements ITreeStyler {
-      lineWidth: number = 1;
-      nodeSize: number = 3;
-      showGrid: boolean = true;
-      strokeColor: string = '#000000';
-      fillColor: string = '#000000';
-      onStylingChanged: Observable<void> = new Subject<void>();
-    }();
+    const styler = new TreeStylerBase<MarkupNodeType>(1, 3, true, '#000000', '#000000');
+    styler.onTooltipShow.subscribe(({node, e}) => {
+      if (node) {
+        const tooltip = ui.divV([
+          ui.div(`${node.name}`)]);
+        ui.tooltip.show(tooltip, e.clientX + 16, e.clientY + 16);
+      } else {
+        ui.tooltip.hide();
+      }
+    });
 
-    const highlightStyler = new class implements ITreeStyler {
-      lineWidth: number = 5;
-      nodeSize: number = 7;
-      showGrid: boolean = true;
-      strokeColor: string = '#FFFF0040';
-      fillColor: string = '#FFFF0040';
-      onStylingChanged: Observable<void> = new Subject<void>();
-    }();
+    const highlightStyler = new TreeStylerBase<MarkupNodeType>(
+      5, 7, true, '#FFFF0040', '#FFFF0040');
 
-    const selectionStyler = new class implements ITreeStyler {
-      lineWidth: number = 3;
-      nodeSize: number = 5;
-      showGrid: boolean = true;
-      strokeColor: string = '#88FF88C0';
-      fillColor: string = '#88FF88C0';
-      onStylingChanged: Observable<void> = new Subject<void>();
-    }();
+    const selectionStyler = new TreeStylerBase<MarkupNodeType>(
+      3, 5, true, '#88FF88C0', '#88FF88C0');
 
     return new LeafRangeGridTreeRenderer(tree as MarkupNodeType, totalLength, grid,
       styler, highlightStyler, selectionStyler);

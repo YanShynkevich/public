@@ -7,15 +7,16 @@ import * as rxjs from 'rxjs';
 import {GridTreeRendererBase} from '../grid-tree-renderer';
 import {Unsubscribable} from 'rxjs';
 import {RectangleTreeHoverType} from './rectangle-tree-placer';
+import {HoverType, MarkupNodeType} from './markup';
 
-export type TreeRendererEventArgsType<TNode extends NodeType> = {
-  target: TreeRendererBase<TNode>,
+export type TreeRendererEventArgsType<TNode extends NodeType, THover extends HoverType<TNode>> = {
+  target: TreeRendererBase<TNode, THover>,
   context: CanvasRenderingContext2D,
   lengthRatio: number,
 };
 
 
-export abstract class TreeRendererBase<TNode extends NodeType> {
+export abstract class TreeRendererBase<TNode extends NodeType, THover extends HoverType<TNode>> {
 
   public view?: HTMLElement;
 
@@ -28,7 +29,6 @@ export abstract class TreeRendererBase<TNode extends NodeType> {
   }
 
   protected _hoveredNode: TNode | null;
-  get hoveredNode(): TNode | null { return this._hoveredNode; }
 
   protected _onHoverChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
   get onHoverChanged(): rxjs.Observable<void> { return this._onHoverChanged; };
@@ -36,18 +36,34 @@ export abstract class TreeRendererBase<TNode extends NodeType> {
   protected _selectedNodes: TNode[] = [];
   get selectedNodes(): TNode[] { return this._selectedNodes; }
 
-  protected _onSelectedChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
-  get onSelectedChanged(): rxjs.Observable<void> { return this._onSelectedChanged; }
+  protected _onSelectionChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
+  get onSelectionChanged(): rxjs.Observable<void> { return this._onSelectionChanged; }
+
+  private _hover: THover | null;
+  public get hover(): THover | null { return this._hover; }
+
+  public set hover(value: THover | null) {
+    this._hover = value;
+    this.render();
+    this._onHoverChanged.next();
+  }
+
+  private _selections: THover[] = [];
+  public get selections(): THover[] { return this._selections; }
+
+  public set selections(value: THover[]) {
+    this._selections = value;
+    this._selectedNodes = this._selections.map((h) => h.node);
+    this.render();
+    this._onSelectionChanged.next();
+  }
 
   protected subs: Unsubscribable[] = [];
 
   protected constructor(treeRoot: TNode) {
     this._treeRoot = treeRoot;
 
-    this._onAfterRender = new rxjs.Subject<TreeRendererEventArgsType<TNode>>();
-
-    // initial render
-    window.setTimeout(this.render.bind(this), 0 /* next event cycle */);
+    this._onAfterRender = new rxjs.Subject<TreeRendererEventArgsType<TNode, THover>>();
   }
 
   // -- View --
@@ -67,9 +83,9 @@ export abstract class TreeRendererBase<TNode extends NodeType> {
 
   public abstract render(): void;
 
-  protected readonly _onAfterRender: rxjs.Subject<TreeRendererEventArgsType<TNode>>;
+  protected readonly _onAfterRender: rxjs.Subject<TreeRendererEventArgsType<TNode, THover>>;
 
-  get onAfterRender(): rxjs.Observable<TreeRendererEventArgsType<TNode>> { return this._onAfterRender; }
+  get onAfterRender(): rxjs.Observable<TreeRendererEventArgsType<TNode, THover>> { return this._onAfterRender; }
 
   // -- Handle events --
 

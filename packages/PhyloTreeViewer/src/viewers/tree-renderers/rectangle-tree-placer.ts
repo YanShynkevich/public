@@ -9,7 +9,7 @@ import {NodeType} from '@datagrok-libraries/bio';
 
 export type RectangleTreeHoverType<TNode extends NodeType> = HoverType<TNode> & { nodeHeight: number };
 
-export abstract class RectangleTreePlacer implements ITreePlacer<MarkupNodeType, RectangleTreeHoverType<MarkupNodeType>> {
+export class RectangleTreePlacer<TNode extends MarkupNodeType> implements ITreePlacer<TNode, RectangleTreeHoverType<TNode>> {
   private _top: number;
   get top(): number { return this._top; }
 
@@ -58,10 +58,10 @@ export abstract class RectangleTreePlacer implements ITreePlacer<MarkupNodeType,
       this._onChanged.next();
   }
 
-  getNode(node: MarkupNodeType, point: DG.Point, nodeSize: number): RectangleTreeHoverType<MarkupNodeType> | null {
+  getNode(treeRoot: TNode, point: DG.Point, nodeSize: number): RectangleTreeHoverType<TNode> | null {
     function getNodeInt(
       node: MarkupNodeType, point: DG.Point, currentHeight: number
-    ): RectangleTreeHoverType<MarkupNodeType> | null {
+    ): RectangleTreeHoverType<TNode> | null {
       // console.debug('DendrogramTreePlacer.getNode() ' +
       //   `point = ${JSON.stringify(point)}, currentHeight = ${currentHeight}, ` +
       //   `node = ${JSON.stringify({
@@ -72,14 +72,14 @@ export abstract class RectangleTreePlacer implements ITreePlacer<MarkupNodeType,
       //   })}`);
 
       if (((node.minIndex ?? node.index) - 0.25) <= point.y && point.y <= ((node.maxIndex ?? node.index) + 0.25)) {
-        let res: RectangleTreeHoverType<MarkupNodeType> | null = null;
+        let res: RectangleTreeHoverType<TNode> | null = null;
         const nodePoint: DG.Point = new DG.Point(currentHeight + node.branch_length!, node.index);
         if (
           (Math.abs(point.y - node.index) < 0.1 &&
             currentHeight < point.x && point.x < currentHeight + node.branch_length!) ||
           (Math.pow(nodePoint.x - point.x, 2) + Math.pow(nodePoint.y - point.y, 2)) < Math.pow(nodeSize / 2, 2)
         ) {
-          res = {nodeHeight: currentHeight, node: node};
+          res = {nodeHeight: currentHeight, node: node as TNode};
         }
 
         if (!res) {
@@ -95,7 +95,28 @@ export abstract class RectangleTreePlacer implements ITreePlacer<MarkupNodeType,
       return null;
     }
 
-    const res = getNodeInt(node, point, 0);
+    const res = getNodeInt(treeRoot, point, 0);
+    return res;
+  }
+
+  getNodeHeight(treeRoot: MarkupNodeType, node: MarkupNodeType): number | undefined {
+    function getNodeHeightInt(
+      currentNode: MarkupNodeType, node: MarkupNodeType, currentHeight: number
+    ): number | undefined {
+      let res: number | undefined = undefined;
+      if (currentNode == node) {
+        res = currentHeight;
+      } else {
+        for (const childNode of (currentNode.children ?? [])) {
+          res = getNodeHeightInt(childNode, node, currentHeight + currentNode.branch_length!);
+          if (res !== undefined) break;
+        }
+      }
+
+      return res;
+    }
+
+    const res: number | undefined = getNodeHeightInt(treeRoot, node, 0);
     return res;
   }
 }

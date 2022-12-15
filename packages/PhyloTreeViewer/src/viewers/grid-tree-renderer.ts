@@ -14,7 +14,7 @@ import {RectangleTreeHoverType, RectangleTreePlacer} from './tree-renderers/rect
 //   lengthRatio: number,
 // };
 
-class GridTreePlacer extends RectangleTreePlacer {
+class GridTreePlacer<TNode extends MarkupNodeType> extends RectangleTreePlacer<TNode> {
 
   private readonly grid: DG.Grid;
 
@@ -65,9 +65,10 @@ export abstract class GridTreeRendererBase<TNode extends MarkupNodeType> extends
 
   protected constructor(
     treeRoot: TNode, totalLength: number, grid: DG.Grid,
-    styler: ITreeStyler, highlightStyler: ITreeStyler, selectionStyler: ITreeStyler
+    styler: ITreeStyler<TNode>, highlightStyler: ITreeStyler<TNode>, selectionStyler: ITreeStyler<TNode>
   ) {
-    super(treeRoot, new GridTreePlacer(grid, totalLength), styler, highlightStyler, selectionStyler);
+    const placer: RectangleTreePlacer<TNode> = new GridTreePlacer<TNode>(grid, totalLength);
+    super(treeRoot, placer, styler, highlightStyler, selectionStyler);
 
     this.th = new TreeHelper();
     this._grid = grid;
