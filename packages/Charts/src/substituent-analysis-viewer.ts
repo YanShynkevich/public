@@ -7,6 +7,7 @@ import {tTest} from '@datagrok-libraries/statistics/src/tests';
 const AGGR_TYPE = 'Aggregate';
 const CHART_TYPE = 'Chart';
 const STAT_TYPE = 'Statistics';
+const ROW_HEIGHT = 70;
 
 const COL_TYPES = {
   [AGGR_TYPE]: {
@@ -16,7 +17,7 @@ const COL_TYPES = {
     'count': (query: DG.GroupByBuilder, colName: string, resColName?: string): DG.GroupByBuilder => {return query.count(resColName);},
   },
   [CHART_TYPE]: {
-    histogram: {viewer: DG.VIEWER.HISTOGRAM, params: {split: 'group'}},
+    histogram: {viewer: DG.VIEWER.HISTOGRAM, params: {split: 'group', marginTop: 5, marginBottom: 5}},
     barchart: {viewer: DG.VIEWER.BAR_CHART, params: {split: 'group', showCategorySelector: false, showValueAxis: false}},
     piechart: {viewer: DG.VIEWER.PIE_CHART, params: {category: 'group'}},
   },
@@ -93,12 +94,12 @@ export class SubstituentAnalysisViewer extends DG.JsViewer {
     const columnInput = ui.columnInput('Column', this.dataFrame, this.dataFrame.columns.byIndex(0));
     columnInput.input.style.width = '100px';
 
-    const colTypeInput = ui.choiceInput('Column Type', Object.keys(COL_TYPES)[0], Object.keys(COL_TYPES));
+    const colTypeInput = ui.choiceInput('Column type', Object.keys(COL_TYPES)[0], Object.keys(COL_TYPES));
 
-    const aggrTypesChoice = ui.choiceInput('', Object.keys(COL_TYPES[AGGR_TYPE])[0], Object.keys(COL_TYPES[AGGR_TYPE]));
-    const chartTypesChoice = ui.choiceInput('', Object.keys(COL_TYPES[CHART_TYPE])[0],
+    const aggrTypesChoice = ui.choiceInput('Function', Object.keys(COL_TYPES[AGGR_TYPE])[0], Object.keys(COL_TYPES[AGGR_TYPE]));
+    const chartTypesChoice = ui.choiceInput('Chart', Object.keys(COL_TYPES[CHART_TYPE])[0],
       Object.keys(COL_TYPES[CHART_TYPE]));
-    const statTypesChoice = ui.choiceInput('', Object.keys(COL_TYPES[STAT_TYPE])[0], Object.keys(COL_TYPES[STAT_TYPE]));
+    const statTypesChoice = ui.choiceInput('Statistic', Object.keys(COL_TYPES[STAT_TYPE])[0], Object.keys(COL_TYPES[STAT_TYPE]));
     const columnTypeDiv = ui.div();
     columnTypeDiv.append(aggrTypesChoice.root);
 
@@ -130,7 +131,7 @@ export class SubstituentAnalysisViewer extends DG.JsViewer {
     });
 
     ui.dialog('Add column')
-      .add(ui.narrowForm([
+      .add(ui.form([
         columnInput,
         colTypeInput,
         //@ts-ignore
