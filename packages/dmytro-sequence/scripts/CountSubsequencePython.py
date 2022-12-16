@@ -6,9 +6,8 @@
 #output: int count
 
 count = start = 0
-while True:
-    start = sequence.find(subsequence, start) + 1
-    if start > 0:
+while start != -1:
+    start = sequence.find(subsequence, start)
+    if start > -1:
         count += 1
-    else:
-        break
+        start += 1

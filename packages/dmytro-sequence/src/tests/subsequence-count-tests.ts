@@ -17,12 +17,12 @@ category('Subsequence count', () => {
     MT412305.1,attaaaggtt tataccttcc caggtaacaa accaatcaac tttcgatctc ttgtagatct gttctctaaa cgaactttaa aatctgtgtg`);
   const jsSubsequenceScriptName = 'CountSubsequenceJS';
 
-  let pythonSubsequenceScriptResult: Number;
-  let pythonSubsequenceScriptResultWithOverlapping: Number;
+  let pythonSubsequenceScriptResult: number;
+  let pythonSubsequenceScriptResultWithOverlapping: number;
   let pythonDataframeSubsequenceScriptResult: DG.DataFrame;
   let pythonDataframeSubsequenceScriptResultWithOverlapping: DG.DataFrame;
-  let jsSubsequenceScriptResult: Number;
-  let jsSubsequenceScriptResultWithOverlapping: Number;
+  let jsSubsequenceScriptResult: number;
+  let jsSubsequenceScriptResultWithOverlapping: number;
 
   before(async () => {
     pythonSubsequenceScriptResult = await grok.functions.call(`${packageName}:${pythonSubsequenceScriptName}`,

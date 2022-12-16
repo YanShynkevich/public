@@ -1,10 +1,10 @@
 import * as DG from 'datagrok-api/dg';
 
 export function getSubsequenceCountInColumn(subsequenceColumn: DG.Column, sequenceColumn: DG.Column,
-  subsequenceLength: number): number[] {
+  subsequenceLength: number): Int32Array {
   const subsequenceColumnCategoryIndexesArray = subsequenceColumn?.getRawData();
   const sequenceColumnCategoryIndexesArray = sequenceColumn?.getRawData();
-  const countList: number[] = [];
+  const countList = new Int32Array(subsequenceColumn.length);
 
   for (let i = 0; i < subsequenceColumn!.length; i++) {
     let count = 0;
@@ -12,13 +12,13 @@ export function getSubsequenceCountInColumn(subsequenceColumn: DG.Column, sequen
       categories[subsequenceColumnCategoryIndexesArray![i]]!, subsequenceLength);
 
     for (let j = 0; j < sequenceColumn!.length; j++) {
-      subsequenceList.forEach((element) => {
+      for (let k = 0; k < subsequenceList.length; k++) {
         count += substringOccurencesInString(sequenceColumn?.
-          categories[sequenceColumnCategoryIndexesArray![j]]!, element);
-      });
+          categories[sequenceColumnCategoryIndexesArray![j]]!, subsequenceList[k]);
+      }
     }
 
-    countList.push(count);
+    countList[i] = count;
   }
 
   return countList;
@@ -28,29 +28,26 @@ export function extractSubsequencesFromString(sequence: string, length: number):
   const elements = sequence.split(' ');
   const subsequenceSet = new Set<string>;
 
-  elements.forEach((element) => {
+  for (let i = 0; i < elements.length; i++) {
     const regex = new RegExp('(.{'+length.toString()+'})');
-    for (let i = 0; i < element.length; i++) {
-      const pieces = element.split(regex).filter((elem) => elem.length === length);
+    for (let j = 0; j < elements[i].length; j++) {
+      const pieces = elements[i].split(regex).filter((elem) => elem.length === length);
       for (const p of pieces)
         subsequenceSet.add(p);
-      element = element.substring(1);
+      elements[i] = elements[i].substring(1);
     }
-  });
+  }
 
   return Array.from(subsequenceSet);
 }
 
 export function substringOccurencesInString(string: string, substring: string): number {
   let count = 0;
-  let index = 0;
 
-  while (true) {
+  for (let index = 0; ; index++) {
     index = string.indexOf(substring, index);
-    if (index >= 0) {
-      count++;
-      index++;
-    } else break;
+    if (index === -1) break;
+    count++;
   }
 
   return count;

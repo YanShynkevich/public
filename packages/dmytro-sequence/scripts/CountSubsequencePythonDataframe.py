@@ -8,13 +8,13 @@
 
 def occurences(string, substring):
     count = start = 0
-    while True:
-        start = string.find(substring, start) + 1
-        if start > 0:
+    while start != -1:
+        start = string.find(substring, start)
+        if start > -1:
             count += 1
-        else:
-            break
+            start += 1
     return count
+
 
 processed_df = pd.DataFrame(data=sequences)
 result = pd.DataFrame()

@@ -7,11 +7,8 @@
 
 count = 0;
 
-let index = 0;
-while (true) {
+for (let index = 0; ; index++) {
   index = sequence.indexOf(subsequence, index);
-  if (index >= 0) {
-    count++;
-    index++;
-  } else break;
+  if (index === -1) break;
+  count++;
 }
