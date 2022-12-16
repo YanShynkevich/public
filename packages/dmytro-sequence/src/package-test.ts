@@ -5,6 +5,7 @@ import './tests/nucleotide-conversion-tests';
 import './tests/detector-tests';
 import './tests/subsequence-count-tests';
 import './tests/query-tests';
+import './tests/string-manipulation-tests';
 
 export let _package = new DG.Package();
 export {tests};
