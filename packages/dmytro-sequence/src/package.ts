@@ -4,6 +4,8 @@ import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
 import {DataFrame} from 'datagrok-api/dg';
 
+import {getSubsequenceCountInColumn} from './utils/string-manipulation';
+
 export const _package = new DG.Package();
 const packageName = 'DmytroSequence';
 
@@ -57,10 +59,16 @@ export async function getOrders() {
 //input: dataframe df1
 //input: dataframe df2
 //input: int N
-export function fuzzyJoin(df1: DataFrame, df2: DataFrame, N: number) {
-  // let col1 = df1.columns.bySemType('dna_nucleotide');
-  // let col2 = df2.columns.bySemType('dna_nucleotide');
-  let df = df1.append(df2);
+export function fuzzyJoin(df1: DataFrame, df2: DataFrame, N: number): DG.DataFrame {
+  const col1 = df1.columns.bySemType('dna_nucleotide');
+  const col2 = df2.columns.bySemType('dna_nucleotide');
+  const df = df1.append(df2);
+
+  const countList = [...getSubsequenceCountInColumn(col1!, col2!, N), ...getSubsequenceCountInColumn(col2!, col1!, N)];
+
+  const column = DG.Column.fromList('int', 'Counts', countList);
+  df.columns.add(column);
 
   grok.shell.addTableView(df);
+  return df;
 }
