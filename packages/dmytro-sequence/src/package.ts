@@ -19,7 +19,7 @@ export function info() {
 //input: string nucleotides {semType: dna_nucleotide}
 //output: string result {semType: dna_nucleotide}
 export function complement(nucleotides: string): string {
-  const complementDictionary: any = {
+  const complementDictionary: {[letterToChange: string]: string} = {
     'A': 'T',
     'a': 't',
     'T': 'A',
