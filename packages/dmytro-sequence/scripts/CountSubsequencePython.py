@@ -5,4 +5,10 @@
 #input: string subsequence
 #output: int count
 
-count = sequence.count(subsequence)
+count = start = 0
+while True:
+    start = sequence.find(subsequence, start) + 1
+    if start > 0:
+        count += 1
+    else:
+        break

@@ -5,5 +5,13 @@
 //input: string subsequence
 //output: int count
 
-const regex = new RegExp(subsequence, 'g');
-count = (sequence.match(regex) || []).length;
+count = 0;
+
+let index = 0;
+while (true) {
+  index = sequence.indexOf(subsequence, index);
+  if (index >= 0) {
+    count++;
+    index++;
+  } else break;
+}

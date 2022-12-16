@@ -18,19 +18,32 @@ category('Subsequence count', () => {
   const jsSubsequenceScriptName = 'CountSubsequenceJS';
 
   let pythonSubsequenceScriptResult: Number;
+  let pythonSubsequenceScriptResultWithOverlapping: Number;
   let pythonDataframeSubsequenceScriptResult: DG.DataFrame;
+  let pythonDataframeSubsequenceScriptResultWithOverlapping: DG.DataFrame;
   let jsSubsequenceScriptResult: Number;
+  let jsSubsequenceScriptResultWithOverlapping: Number;
 
   before(async () => {
     pythonSubsequenceScriptResult = await grok.functions.call(`${packageName}:${pythonSubsequenceScriptName}`,
       {'sequence': 'ATGATC', 'subsequence': 'AT'});
 
+    pythonSubsequenceScriptResultWithOverlapping = await grok.functions
+      .call(`${packageName}:${pythonSubsequenceScriptName}`, {'sequence': 'ctacaagaga', 'subsequence': 'aga'});
+
     pythonDataframeSubsequenceScriptResult = await grok.functions.call(`${packageName}:
       ${pythonDataframeSubsequenceScriptName}`, {'sequences': pythonDataframeSubsequenceTable, 'columnName': 'Sequence',
       'subsequence': 'acc'});
 
+    pythonDataframeSubsequenceScriptResultWithOverlapping = await grok.functions.call(`${packageName}:
+      ${pythonDataframeSubsequenceScriptName}`, {'sequences': pythonDataframeSubsequenceTable, 'columnName': 'Sequence',
+      'subsequence': 'aga'});
+
     jsSubsequenceScriptResult = await grok.functions.call(`${packageName}:${jsSubsequenceScriptName}`,
       {'sequence': 'ATGATC', 'subsequence': 'AT'});
+
+    jsSubsequenceScriptResultWithOverlapping = await grok.functions.call(`${packageName}:${jsSubsequenceScriptName}`,
+      {'sequence': 'ctacaagaga', 'subsequence': 'aga'});
   });
 
 
@@ -38,6 +51,9 @@ category('Subsequence count', () => {
     await expect(pythonSubsequenceScriptResult, 2);
   });
 
+  test('pythonSubsequenceScriptWorksCorrectlyWithOverlapping', async () => {
+    await expect(pythonSubsequenceScriptResultWithOverlapping, 2);
+  });
 
   test('pythonDataframeSubsequenceScriptWorksCorrectly', async () => {
     const expectedTable = DG.DataFrame.fromCsv(
@@ -52,7 +68,24 @@ category('Subsequence count', () => {
     await expect(pythonDataframeSubsequenceScriptResult.toCsv(), expectedTable.toCsv());
   });
 
+  test('pythonDataframeSubsequenceScriptWorksCorrectlyWithOverlapping', async () => {
+    const expectedTable = DG.DataFrame.fromCsv(
+      `N(aga)
+      3
+      1
+      1
+      1
+      0
+      1`);
+
+    await expect(pythonDataframeSubsequenceScriptResultWithOverlapping.toCsv(), expectedTable.toCsv());
+  });
+
   test('jsSubsequenceScriptWorksCorrectly', async () => {
     await expect(jsSubsequenceScriptResult, 2);
+  });
+
+  test('jsSubsequenceScriptWorksCorrectlyWithOverlapping', async () => {
+    await expect(jsSubsequenceScriptResultWithOverlapping, 2);
   });
 });
