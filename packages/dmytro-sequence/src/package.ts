@@ -5,6 +5,7 @@ import * as DG from 'datagrok-api/dg';
 import {DataFrame} from 'datagrok-api/dg';
 
 import {getSubsequenceCountInColumn} from './utils/string-manipulation';
+import {NucleotideBoxCellRenderer} from './utils/cell-renderer';
 
 export const _package = new DG.Package();
 const packageName = 'DmytroSequence';
@@ -71,4 +72,12 @@ export function fuzzyJoin(df1: DataFrame, df2: DataFrame, N: number): DG.DataFra
 
   grok.shell.addTableView(df);
   return df;
+}
+
+//name: nucleotideBoxCellRenderer
+//tags: cellRenderer
+//meta.cellType: dna_nucleotide
+//output: grid_cell_renderer result
+export function nucleotideBoxCellRenderer() {
+  return new NucleotideBoxCellRenderer();
 }
