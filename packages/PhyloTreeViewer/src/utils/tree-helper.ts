@@ -65,6 +65,19 @@ export class TreeHelper implements ITreeHelper {
     }
   }
 
+  includes<TNode extends NodeType>(node: TNode, sub: TNode): boolean {
+    if (node == sub) return true;
+
+    let res: boolean = false;
+    for (const childNode of (node.children ?? [])) {
+      if (this.includes(childNode, sub)) {
+        res = true;
+        break;
+      }
+    }
+    return res;
+  }
+
   treeFilterByLeaves(node: NodeType, leaves: { [name: string]: any }): NodeType | null {
     // copy node because phylocanvas.gl changes data structure completely
     const resNode = Object.assign({}, node); // shallow copy

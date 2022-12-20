@@ -15,6 +15,7 @@ export type MarkupNodeType = NodeType & {
   maxIndex: number,
   /** node's branch_length with max subtreeLength of children */
   subtreeLength?: number,
+  desc?: string,
 };
 
 /**
@@ -53,11 +54,10 @@ export function markupNode(
   const t1: number = Date.now();
   markupNodeInt(node as MarkupNodeType, currentLeafIndex);
   const t2: number = Date.now();
-  console.debug('PhyloTreeViewer: LeafRangeTreeRenderer.markupNode() ' + `ET: ${((t2 - t1) / 1000).toString()} s`);
+  console.debug('PhyloTreeViewer: markupNode() ' + `ET: ${((t2 - t1) / 1000).toString()} s`);
 }
 
-export type HoverType<TNode> = { node: TNode };
-
+export type HoverType<TNode> = { get node(): TNode };
 
 export interface ITreePlacer<TNode, THover extends HoverType<TNode>> {
 
@@ -86,6 +86,8 @@ export interface ITreePlacer<TNode, THover extends HoverType<TNode>> {
 }
 
 export interface ITreeStyler<TNode extends NodeType> {
+  get name(): string;
+
   get lineWidth(): number;
 
   get nodeSize(): number;
@@ -104,6 +106,8 @@ export interface ITreeStyler<TNode extends NodeType> {
 }
 
 export class TreeStylerBase<TNode extends NodeType> implements ITreeStyler<TNode> {
+  protected _name: string;
+  get name(): string { return this._name; }
 
   protected _lineWidth: number;
   get lineWidth(): number { return this._lineWidth; }
@@ -128,7 +132,8 @@ export class TreeStylerBase<TNode extends NodeType> implements ITreeStyler<TNode
   get onTooltipShow(): rxjs.Observable<{ node: TNode; e: MouseEvent }> { return this._onTooltipShow; }
 
   //  constructor();
-  constructor(lineWidth?: number, nodeSize?: number, showGrid?: boolean, strokeColor?: string, fillColor?: string) {
+  constructor(name?: string, lineWidth?: number, nodeSize?: number, showGrid?: boolean, strokeColor?: string, fillColor?: string) {
+    this._name = name ?? '';
     this._lineWidth = lineWidth ?? 1;
     this._nodeSize = nodeSize ?? 3;
     this._showGrid = showGrid ?? false;
@@ -166,106 +171,129 @@ export function renderNode<TNode extends MarkupNodeType>(
 ): RenderNodeResultType<TNode> {
   const dpr: number = window.devicePixelRatio;
   const res: RenderNodeResultType<TNode> = {
-    traceback: traceList.length == 1 && traceList[0].target == node ? [traceList[0].styler] : [],
+    traceback: traceList.filter((t) => t.target == node).map((t) => t.styler)
   };
 
-  if (isLeaf(node)) {
-    if (firstRowIndex <= node.index && node.index <= lastRowIndex) {
-      const minX = currentLength * lengthRatio + leftPadding * dpr;
-      const maxX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * dpr;
+  const beginX = currentLength * lengthRatio + leftPadding * dpr;
+  const endX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * dpr;
+  const posY = (node.index - firstRowIndex) * stepRatio;
 
-      const posY = (node.index - firstRowIndex) * stepRatio;
-      if (styler.showGrid) {
-        // plot leaf grid
-        ctx.beginPath();
-        ctx.strokeStyle = '#C0C0C0';
-        ctx.lineWidth = 1;
-        ctx.lineCap = 'round';
-        ctx.moveTo(maxX, posY);
-        ctx.lineTo(ctx.canvas.width, posY);
-        ctx.stroke();
-      }
+  if (node.name == 'node-l1-l2') {
+    console.debug('PhyloTreeViewer: renderNode() \n' +
+      `node.name = ${node.name}, stylers = [${res.traceback.map((s) => s.name).join(', ')}]`);
+  }
 
-      // plot branch
-      ctx.beginPath();
-      ctx.strokeStyle = styler.strokeColor;
-      ctx.lineWidth = styler.lineWidth;
-      ctx.lineCap = 'round';
-      ctx.moveTo(minX, posY);
-      ctx.lineTo(maxX, posY);
-      ctx.stroke();
+  if (firstRowIndex <= node.maxIndex && node.minIndex <= lastRowIndex) {
+    //#region Plot join
+    const joinMinIndex = node.children[0].index;
+    const joinMaxIndex = node.children[node.children.length - 1].index;
+    const posX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * dpr;
+    const minY = Math.max((joinMinIndex - firstRowIndex) * stepRatio, 0);
+    const maxY = Math.min((joinMaxIndex - firstRowIndex) * stepRatio, ctx.canvas.height);
 
-      // plot leaf (marker?)
-      ctx.beginPath();
-      ctx.fillStyle = styler.fillColor;
-      ctx.ellipse(maxX, posY, styler.nodeSize / 2, styler.nodeSize / 2,
-        0, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-  } else {
-    if (firstRowIndex <= node.maxIndex && node.minIndex <= lastRowIndex) {
-      // plot join
-      const joinMinIndex = node.children[0].index;
-      const joinMaxIndex = node.children[node.children.length - 1].index;
-      const posX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * dpr;
-      const minY = Math.max((joinMinIndex - firstRowIndex) * stepRatio, 0);
-      const maxY = Math.min((joinMaxIndex - firstRowIndex) * stepRatio, ctx.canvas.height);
+    ctx.beginPath();
+    ctx.strokeStyle = styler.strokeColor;
+    ctx.lineWidth = styler.lineWidth * dpr;
+    ctx.lineCap = 'round';
+    ctx.moveTo(posX, minY);
+    ctx.lineTo(posX, maxY);
+    ctx.stroke();
+    //#endregion
 
-      ctx.beginPath();
-      ctx.strokeStyle = styler.strokeColor;
-      ctx.lineWidth = styler.lineWidth * dpr;
-      ctx.lineCap = 'round';
-      ctx.moveTo(posX, minY);
-      ctx.lineTo(posX, maxY);
-      ctx.stroke();
-
-      // plot node's branch
-      const beginX = currentLength * lengthRatio + leftPadding * dpr;
-      const endX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * dpr;
-      const posY = (node.index - firstRowIndex) * stepRatio;
-
-      ctx.beginPath();
-      ctx.strokeStyle = styler.strokeColor;
-      ctx.lineWidth = styler.lineWidth * dpr;
-      ctx.lineCap = 'round';
-      ctx.moveTo(endX, posY);
-      ctx.lineTo(beginX, posY);
-      ctx.stroke();
-
+    if ((node.maxIndex - node.minIndex) * stepRatio > 1) {
       for (const childNode of node.children) {
         const childTraceList = traceList.filter((trace) => {
           return (childNode.minIndex ?? childNode.index) <= trace.target.index &&
             trace.target.index <= (childNode.maxIndex ?? childNode.index);
         });
-
         const childRenderRes = renderNode<TNode>(ctx, childNode as TNode,
           firstRowIndex, lastRowIndex,
           leftPadding, lengthRatio, stepRatio, styler,
           totalLength, currentLength + node.branch_length!,
           childTraceList);
-
-        for (const styler of childRenderRes.traceback) {
-          console.debug('PhyloTreeViewer: renderNode() traceback ' +
-            `child '${childNode.name}' with styler ${styler.strokeColor} `);
+        for (const effStyler of childRenderRes.traceback) {
           const childPosY = (childNode.index - firstRowIndex) * stepRatio;
-          const childPosX = (currentLength + node.branch_length! + childNode.branch_length!) * lengthRatio + leftPadding * dpr;
 
-          // Draw trace
           ctx.beginPath();
-          ctx.strokeStyle = styler.strokeColor;
-          ctx.lineWidth = styler.lineWidth * dpr;
+          ctx.strokeStyle = effStyler.strokeColor;
+          ctx.lineWidth = effStyler.lineWidth * dpr;
           ctx.lineCap = 'round';
-          ctx.moveTo(childPosX, childPosY);
-          ctx.lineTo(posX, childPosY);
+          ctx.moveTo(endX, childPosY);
           ctx.lineTo(endX, posY);
-          ctx.lineTo(beginX, posY);
           ctx.stroke();
         }
-
         res.traceback.push(...childRenderRes.traceback);
       }
+    } else {
+      const finishX: number = node.subtreeLength! * lengthRatio + leftPadding * dpr;
+      ctx.beginPath();
+      ctx.strokeStyle = styler.strokeColor;
+      ctx.lineWidth = styler.lineWidth * dpr;
+      ctx.lineCap = 'round';
+      ctx.moveTo(beginX, posY);
+      ctx.lineTo(finishX, posY);
+      ctx.stroke();
     }
   }
 
+  // if (res.traceback.length > 0) {
+  //   let k = 11;
+  // }
+
+  if (node.name == 'node-l1-l2-l3' && res.traceback.length > 1) {
+    let k = 11;
+  }
+
+  for (const effStyler of [styler, ...res.traceback]) {
+    // Draw trace
+    ctx.beginPath();
+    ctx.strokeStyle = effStyler.strokeColor;
+    ctx.lineWidth = effStyler.lineWidth * dpr;
+    ctx.lineCap = 'round';
+    // ctx.moveTo(posX, childPosY);
+    ctx.moveTo(endX, posY);
+    ctx.lineTo(beginX, posY);
+    ctx.stroke();
+
+    //#region Plot branch
+    ctx.beginPath();
+    ctx.strokeStyle = effStyler.strokeColor;
+    ctx.lineWidth = effStyler.lineWidth * dpr;
+    ctx.lineCap = 'round';
+    ctx.moveTo(endX, posY);
+    ctx.lineTo(beginX, posY);
+    ctx.stroke();
+    //#endregion
+
+    if (isLeaf(node)) {
+      //#region Plot leaf grid
+      if (effStyler.showGrid) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#C0C0C0';
+        ctx.lineWidth = 1;
+        ctx.lineCap = 'round';
+        ctx.moveTo(endX, posY);
+        ctx.lineTo(ctx.canvas.width, posY);
+        ctx.stroke();
+      }
+      //#endregion
+
+      //#region Plot leaf (marker?)
+      ctx.beginPath();
+      ctx.strokeStyle = effStyler.strokeColor;
+      ctx.fillStyle = effStyler.fillColor;
+      ctx.beginPath();
+      ctx.ellipse(endX, posY, effStyler.nodeSize * dpr / 2, effStyler.nodeSize * dpr / 2,
+        0, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(endX, posY, effStyler.nodeSize * dpr / 2, effStyler.nodeSize * dpr / 2,
+        0, 0, 2 * Math.PI);
+      ctx.stroke();
+      //#endregion
+    }
+
+    node.desc += effStyler.name + ', ';
+  }
   return res;
 }

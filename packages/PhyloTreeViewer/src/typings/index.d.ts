@@ -12,9 +12,9 @@ declare module 'phylotree' {
 declare module 'phylotree/src/formats/newick' {
   import {PhylotreeNode} from 'phylotree';
 
-  function newickParser(newick: string): { json: PhylotreeNode, error: string | null } ;
+  function newickParserInt(newick: string): { json: PhylotreeNode, error: string | null } ;
 
-  export = newickParser; // default
+  export = newickParserInt; // default
 }
 
 declare module 'phylotree' {

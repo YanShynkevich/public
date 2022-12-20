@@ -26,6 +26,7 @@
     "mjolnir.js": "^2.7.0",
     "phylotree": "1.0.20",
     "rxjs": "^6.5.5",
+    "tinycolor2": "^1.4.2",
     "wu": "latest"
   },
   "devDependencies": {

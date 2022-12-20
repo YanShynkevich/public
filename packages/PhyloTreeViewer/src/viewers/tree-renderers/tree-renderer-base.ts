@@ -25,38 +25,87 @@ export abstract class TreeRendererBase<TNode extends NodeType, THover extends Ho
 
   set treeRoot(value: TNode) {
     this._treeRoot = value;
-    this.render();
+
+    this._current = null;
+    this._mouseOver = null;
+    this._selections = [];
+
+    this.render('set treeRoot()');
   }
 
-  protected _hoveredNode: TNode | null;
+  //#region current
 
-  protected _onHoverChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
-  get onHoverChanged(): rxjs.Observable<void> { return this._onHoverChanged; };
+  public get currentNode(): TNode | null { return this._current ? this._current.node : null; }
 
+  protected _onCurrentChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
+  get onCurrentChanged(): rxjs.Observable<void> { return this._onCurrentChanged; }
+
+  protected _current: THover | null = null;
+  public get current(): THover | null { return this._current; }
+
+  public set current(value: THover | null) {
+    if (
+      (value != null && this._current == null) ||
+      (value == null && this._current != null) ||
+      (value != null && this._current != null && value.node != this._current.node)
+    ) {
+      this._current = value;
+      this.render('set current()');
+      this._onCurrentChanged.next();
+    }
+  }
+
+  //#endregion current
+
+  //#region mouseOver
+
+  public get mouseOverNode(): TNode | null { return this._mouseOver ? this._mouseOver.node : null; }
+
+  protected _onMouseOverChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
+  get onMouseOverChanged(): rxjs.Observable<void> { return this._onMouseOverChanged; }
+
+  protected _mouseOver: THover | null = null;
+  public get mouseOver(): THover | null { return this._mouseOver; }
+
+  public set mouseOver(value: THover | null) {
+    if (
+      (value != null && this._mouseOver == null) ||
+      (value == null && this._mouseOver != null) ||
+      (value != null && this._mouseOver != null && value.node != this._mouseOver.node)
+    ) {
+      const msg = `this._mouseOver.node.name = '${this._mouseOver ? this._mouseOver.node.name : '<null>'}', ` +
+        `value.node.name = '${value ? value.node.name : '<null>'}'`;
+      this._mouseOver = value;
+      this.render('set mouseOver() ' + msg);
+      this._onMouseOverChanged.next();
+    }
+  }
+
+  //#endregion mouseOver
+
+  //#region selections
   protected _selectedNodes: TNode[] = [];
   get selectedNodes(): TNode[] { return this._selectedNodes; }
 
   protected _onSelectionChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
   get onSelectionChanged(): rxjs.Observable<void> { return this._onSelectionChanged; }
 
-  private _hover: THover | null;
-  public get hover(): THover | null { return this._hover; }
-
-  public set hover(value: THover | null) {
-    this._hover = value;
-    this.render();
-    this._onHoverChanged.next();
-  }
-
-  private _selections: THover[] = [];
+  protected _selections: THover[] = [];
   public get selections(): THover[] { return this._selections; }
 
   public set selections(value: THover[]) {
-    this._selections = value;
-    this._selectedNodes = this._selections.map((h) => h.node);
-    this.render();
-    this._onSelectionChanged.next();
+    if (
+      value.length != this.selections.length ||
+      value.some((v, i) => v.node != this.selections[i].node)
+    ) {
+      this._selections = value;
+      this._selectedNodes = this._selections.map((h) => h.node);
+      this.render('set selections()');
+      this._onSelectionChanged.next();
+    }
   }
+
+  //#endregion selections
 
   protected subs: Unsubscribable[] = [];
 
@@ -73,7 +122,7 @@ export abstract class TreeRendererBase<TNode extends NodeType, THover extends Ho
     this.subs.push(ui.onSizeChanged(this.view).subscribe(this.viewOnSizeChanged.bind(this)));
 
     // Postponed call to initial render after attach completed (e.g. canvas created)
-    window.setTimeout(() => { this.render(); }, 0 /* next event cycle */);
+    window.setTimeout(() => { this.render('attach()'); }, 0 /* next event cycle */);
   }
 
   public detach(): void {
@@ -81,7 +130,7 @@ export abstract class TreeRendererBase<TNode extends NodeType, THover extends Ho
     delete this.view;
   }
 
-  public abstract render(): void;
+  public abstract render(purpose: string): void;
 
   protected readonly _onAfterRender: rxjs.Subject<TreeRendererEventArgsType<TNode, THover>>;
 
@@ -92,7 +141,7 @@ export abstract class TreeRendererBase<TNode extends NodeType, THover extends Ho
   private viewOnSizeChanged(): void {
     console.debug('PhyloTreeViewer: TreeRendererBase.viewOnSizeChanged()');
 
-    this.render();
+    this.render('viewOnSizeChanged');
   }
 }
 

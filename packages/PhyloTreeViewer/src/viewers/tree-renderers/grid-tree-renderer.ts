@@ -5,16 +5,20 @@ import {NodeType} from '@datagrok-libraries/bio';
 import {GridTreeRendererBase} from '../grid-tree-renderer';
 import {ITreeStyler, markupNode, MarkupNodeType, renderNode, TreeStylerBase} from './markup';
 import {Observable, Subject} from 'rxjs';
+import {toRgba, trans} from '../../utils';
+
+const TRANS_ALPHA = 0.7;
 
 /** Draws only nodes/leaves visible in leaf range */
 export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeType> {
 
   constructor(
     tree: MarkupNodeType, totalLength: number, grid: DG.Grid,
-    styler: ITreeStyler<MarkupNodeType>, highlightStyler: ITreeStyler<MarkupNodeType>,
+    mainStyler: ITreeStyler<MarkupNodeType>, lightStyler: ITreeStyler<MarkupNodeType>,
+    currentStyler: ITreeStyler<MarkupNodeType>, mouseOverStyler: ITreeStyler<MarkupNodeType>,
     selectionStyler: ITreeStyler<MarkupNodeType>
   ) {
-    super(tree, totalLength, grid, styler, highlightStyler, selectionStyler);
+    super(tree, totalLength, grid, mainStyler, lightStyler, currentStyler, mouseOverStyler, selectionStyler);
   }
 
   public render(): void {
@@ -63,11 +67,11 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
       // ctx.lineTo(ctx.canvas.width, 0);
       // ctx.stroke();
 
-      if (this.hover) {
-        renderNode(ctx, this.hover.node,
+      if (this.mouseOver) {
+        renderNode(ctx, this.mouseOver.node,
           this.placer.top, this.placer.bottom,
           this.placer.padding.left, lengthRatio, stepRatio, this.lightStyler,
-          this.placer.totalLength, this.hover.nodeHeight,
+          this.placer.totalLength, this.mouseOver.nodeHeight,
           []);
       }
 
@@ -102,8 +106,8 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
     if (Number.isNaN(totalLength))
       throw new Error('Can not calculate totalLength for the tree.');
 
-    const styler = new TreeStylerBase<MarkupNodeType>(1, 3, true, '#000000', '#000000');
-    styler.onTooltipShow.subscribe(({node, e}) => {
+    const mainStyler = new TreeStylerBase<MarkupNodeType>('main', 1, 3, true, '#000000', '#000000');
+    mainStyler.onTooltipShow.subscribe(({node, e}) => {
       if (node) {
         const tooltip = ui.divV([
           ui.div(`${node.name}`)]);
@@ -113,13 +117,25 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
       }
     });
 
-    const highlightStyler = new TreeStylerBase<MarkupNodeType>(
-      5, 7, true, '#FFFF0040', '#FFFF0040');
+    const lightStyler = new TreeStylerBase<MarkupNodeType>('light',
+      5, 7, false, '#FFFF0040', '#FFFF0040');
 
-    const selectionStyler = new TreeStylerBase<MarkupNodeType>(
-      3, 5, true, '#88FF88C0', '#88FF88C0');
+    const currentStyler = new TreeStylerBase<MarkupNodeType>('current',
+      3, 5, false,
+      toRgba(trans(DG.Color.currentRow, TRANS_ALPHA)),
+      toRgba(trans(DG.Color.currentRow, TRANS_ALPHA)));
+
+    const mouseOverStyler = new TreeStylerBase<MarkupNodeType>('mouseOver',
+      3, 5, false,
+      toRgba(trans(DG.Color.mouseOverRows, TRANS_ALPHA)),
+      toRgba(trans(DG.Color.mouseOverRows, TRANS_ALPHA)));
+
+    const selectionStyler = new TreeStylerBase<MarkupNodeType>('selection',
+      3, 5, false,
+      toRgba(trans(DG.Color.selectedRows, TRANS_ALPHA)),
+      toRgba(trans(DG.Color.selectedRows, TRANS_ALPHA)));
 
     return new LeafRangeGridTreeRenderer(tree as MarkupNodeType, totalLength, grid,
-      styler, highlightStyler, selectionStyler);
+      mainStyler, lightStyler, currentStyler, mouseOverStyler, selectionStyler);
   }
 }

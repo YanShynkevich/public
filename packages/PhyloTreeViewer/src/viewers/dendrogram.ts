@@ -10,20 +10,29 @@ import {TREE_TAGS} from '../consts';
 import {ITreeStyler, markupNode, MarkupNodeType, TreeStylerBase} from './tree-renderers/markup';
 import {CanvasTreeRenderer} from './tree-renderers/canvas-tree-renderer';
 import {TreeRendererBase} from './tree-renderers/tree-renderer-base';
-import {Newick} from '@datagrok-libraries/bio';
+import {ITreeHelper, Newick} from '@datagrok-libraries/bio';
 import {RectangleTreeHoverType, RectangleTreePlacer} from './tree-renderers/rectangle-tree-placer';
 import {TreeHelper} from '../utils/tree-helper';
+import {toRgba, trans} from '../utils';
+import {TreeForGridApp} from '../apps/tree-for-grid-app';
 
-enum ColorNames {
+const LINE_WIDTH = 1;
+const TRANS_ALPHA = 0.4;
+
+enum TreeColorNames {
   Main = 'Main',
   Light = 'Light',
+  Current = 'Current',
+  MouseOver = 'MouseOver',
   Selection = 'Selection',
 }
 
 const TreeDefaultPalette: { [name: string]: number } = {
-  [ColorNames.Main]: DG.Color.categoricalPalette[12],
-  [ColorNames.Light]: DG.Color.categoricalPalette[13],
-  [ColorNames.Selection]: DG.Color.selectedRows,
+  [TreeColorNames.Main]: DG.Color.categoricalPalette[12],
+  [TreeColorNames.Light]: DG.Color.categoricalPalette[13],
+  [TreeColorNames.Current]: DG.Color.currentRow,
+  [TreeColorNames.MouseOver]: DG.Color.mouseOverRows,
+  [TreeColorNames.Selection]: DG.Color.selectedRows,
 };
 
 // Obtained with DG.Color.toRgb(DG.Color.categoricalPalette[12])
@@ -55,34 +64,32 @@ export enum PROPS_CATS {
 }
 
 export enum PROPS {
-  lineWidth = 'lineWidth',
-  nodeSize = 'nodeSize',
-  mainStrokeColor = 'mainStrokeColor',
-  mainFillColor = 'mainFillColor',
-  lightStrokeColor = 'lightStrokeColor',
-  lightFillColor = 'lightFillColor',
-  selectedStrokeColor = 'selectedStrokeColor',
-  selectedFillColor = 'selectedFillColor',
-
-  font = 'font',
-
-  showGrid = 'showGrid',
-  showLabels = 'showLabels',
-
-  firstLeaf = 'firstLeaf',
-  step = 'step',
-  stepZoom = 'stepZoom',
-
   // -- Data --
   newick = 'newick',
   newickTag = 'newickTag',
   nodeColumnName = 'nodeColumnName',
   colorColumnName = 'colorColumnName',
   colorAggrType = 'colorAggrType',
+
+  // -- Appearance --
+  lineWidth = 'lineWidth',
+  nodeSize = 'nodeSize',
+  mainColor = 'mainColor',
+  lightColor = 'lightColor',
+  currentColor = 'currentColor',
+  mouseOverColor = 'mouseOverColor',
+  selectionsColor = 'selectionsColor',
+  font = 'font',
+  showGrid = 'showGrid',
+  showLabels = 'showLabels',
+  firstLeaf = 'firstLeaf',
+  step = 'step',
+
+  // -- Behavior --
+  stepZoom = 'stepZoom',
 }
 
 class DendrogramTreeStyler extends TreeStylerBase<MarkupNodeType> {
-
   override get lineWidth(): number { return this._lineWidth; }
 
   set lineWidth(value: number) {
@@ -118,13 +125,10 @@ class DendrogramTreeStyler extends TreeStylerBase<MarkupNodeType> {
     this._onStylingChanged.next();
   }
 
-  constructor(lineWidth: number, nodeSize: number, showGrid: boolean, strokeColor: string, fillColor: string) {
-    super();
-    this._lineWidth = lineWidth;
-    this._nodeSize = nodeSize;
-    this._showGrid = showGrid;
-    this._strokeColor = strokeColor;
-    this._fillColor = fillColor;
+  constructor(name: string,
+    lineWidth: number, nodeSize: number, showGrid: boolean, strokeColor: string, fillColor: string
+  ) {
+    super(name, lineWidth, nodeSize, showGrid, strokeColor, fillColor);
   }
 }
 
@@ -133,24 +137,6 @@ const newickDefault: string = ';';
 export class Dendrogram extends DG.JsViewer {
   private viewed: boolean = false;
 
-  [PROPS.lineWidth]: number;
-  [PROPS.nodeSize]: number;
-  [PROPS.showGrid]: boolean;
-  [PROPS.mainStrokeColor]: number;
-  [PROPS.mainFillColor]: number;
-  [PROPS.lightStrokeColor]: number;
-  [PROPS.lightFillColor]: number;
-  [PROPS.selectedStrokeColor]: number;
-  [PROPS.selectedFillColor]: number;
-
-  [PROPS.font]: string;
-
-  [PROPS.showLabels]: boolean;
-
-  [PROPS.firstLeaf]: number;
-  [PROPS.step]: number;
-  [PROPS.stepZoom]: number;
-
   // -- Data --
   [PROPS.newick]: string;
   [PROPS.newickTag]: string;
@@ -158,46 +144,34 @@ export class Dendrogram extends DG.JsViewer {
   [PROPS.colorColumnName]: string;
   [PROPS.colorAggrType]: string;
 
+  // -- Appearance --
+  [PROPS.lineWidth]: number;
+  [PROPS.nodeSize]: number;
+  [PROPS.showGrid]: boolean;
+  [PROPS.mainColor]: number;
+  [PROPS.lightColor]: number;
+  [PROPS.currentColor]: number;
+  [PROPS.mouseOverColor]: number;
+  [PROPS.selectionsColor]: number;
+
+  [PROPS.font]: string;
+
+  [PROPS.showLabels]: boolean;
+
+  [PROPS.firstLeaf]: number;
+  [PROPS.step]: number;
+
+  // -- Behavior --
+  [PROPS.stepZoom]: number;
+
   mainStyler: DendrogramTreeStyler;
   lightStyler: DendrogramTreeStyler;
-  selectedStyler: DendrogramTreeStyler;
+  currentStyler: DendrogramTreeStyler;
+  mouseOverStyler: DendrogramTreeStyler;
+  selectionsStyler: DendrogramTreeStyler;
 
   constructor() {
     super();
-
-    // ITreeStyler
-
-    this.lineWidth = this.float(PROPS.lineWidth, 1,
-      {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 16, step: 0.1});
-    this.nodeSize = this.float(PROPS.nodeSize, 3,
-      {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 16, step: 0.1});
-
-    this.showGrid = this.bool(PROPS.showGrid, false, {category: PROPS_CATS.APPEARANCE,});
-
-    this.mainStrokeColor = this.int(PROPS.mainStrokeColor, TreeDefaultPalette[ColorNames.Main],
-      {category: PROPS_CATS.APPEARANCE});
-    this.mainFillColor = this.int(PROPS.mainFillColor, TreeDefaultPalette[ColorNames.Main],
-      {category: PROPS_CATS.APPEARANCE,});
-
-    this.lightStrokeColor = this.int(PROPS.lightStrokeColor, TreeDefaultPalette[ColorNames.Light],
-      {category: PROPS_CATS.APPEARANCE});
-    this.lightFillColor = this.int(PROPS.lightFillColor, TreeDefaultPalette[ColorNames.Light],
-      {category: PROPS_CATS.APPEARANCE});
-
-    this.selectedStrokeColor = this.int(PROPS.selectedStrokeColor, TreeDefaultPalette[ColorNames.Selection],
-      {category: PROPS_CATS.APPEARANCE});
-    this.selectedFillColor = this.int(PROPS.selectedFillColor, TreeDefaultPalette[ColorNames.Selection],
-      {category: PROPS_CATS.APPEARANCE});
-
-    this.showLabels = this.bool(PROPS.showLabels, false, {category: PROPS_CATS.APPEARANCE});
-
-    this.font = this.string(PROPS.font, 'monospace 10pt', {category: PROPS_CATS.APPEARANCE});
-
-    this.stepZoom = this.float(PROPS.stepZoom, 0,
-      {category: PROPS_CATS.BEHAVIOR, editor: 'slider', min: -4, max: 4, step: 0.1});
-
-    this.step = this.float(PROPS.step, 28,
-      {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 64, step: 0.1});
 
     // -- Data --, not userEditable option is not displayed in Property panel, but can be set through setOptions()
     this.newick = this.string(PROPS.newick, newickDefault,
@@ -211,16 +185,58 @@ export class Dendrogram extends DG.JsViewer {
     this.colorAggrType = this.string(PROPS.colorAggrType, null,
       {category: PROPS_CATS.DATA, choices: [DG.AGG.AVG, DG.AGG.MIN, DG.AGG.MAX, DG.AGG.MED, DG.AGG.TOTAL_COUNT]});
 
-    this.mainStyler = new DendrogramTreeStyler(
+    this.lineWidth = this.float(PROPS.lineWidth, 1,
+      {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 16, step: 0.1});
+    this.nodeSize = this.float(PROPS.nodeSize, 3,
+      {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 16, step: 0.1});
+
+    this.showGrid = this.bool(PROPS.showGrid, false, {category: PROPS_CATS.APPEARANCE,});
+
+    this.mainColor = this.int(PROPS.mainColor, TreeDefaultPalette[TreeColorNames.Main],
+      {category: PROPS_CATS.APPEARANCE});
+
+    this.lightColor = this.int(PROPS.lightColor, TreeDefaultPalette[TreeColorNames.Light],
+      {category: PROPS_CATS.APPEARANCE});
+
+    this.currentColor = this.int(PROPS.currentColor, TreeDefaultPalette[TreeColorNames.Current],
+      {category: PROPS_CATS.APPEARANCE});
+
+    this.mouseOverColor = this.int(PROPS.mouseOverColor, TreeDefaultPalette[TreeColorNames.MouseOver],
+      {category: PROPS_CATS.APPEARANCE});
+
+    this.selectionsColor = this.int(PROPS.selectionsColor, TreeDefaultPalette[TreeColorNames.Selection],
+      {category: PROPS_CATS.APPEARANCE});
+
+    this.showLabels = this.bool(PROPS.showLabels, false, {category: PROPS_CATS.APPEARANCE});
+
+    this.font = this.string(PROPS.font, 'monospace 10pt', {category: PROPS_CATS.APPEARANCE});
+
+    this.stepZoom = this.float(PROPS.stepZoom, 0,
+      {category: PROPS_CATS.BEHAVIOR, editor: 'slider', min: -4, max: 4, step: 0.1});
+
+    this.step = this.float(PROPS.step, 28,
+      {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 64, step: 0.1});
+
+    this.mainStyler = new DendrogramTreeStyler('main',
       this.lineWidth, this.nodeSize, this.showGrid,
-      DG.Color.toRgb(this.mainStrokeColor) /* `#${(this.strokeColor & 0xFFFFFF).toString(16).padStart(6, '0')}`*/,
-      DG.Color.toRgb(this.mainFillColor) /* `#${(this.fillColor & 0xFFFFFF).toString(16).padStart(6, '0')}`*/);
-    this.lightStyler = new DendrogramTreeStyler(
-      this.lineWidth, this.nodeSize,
-      false, DG.Color.toRgb(this.lightStrokeColor), DG.Color.toRgb(this.lightFillColor));
-    this.selectedStyler = new DendrogramTreeStyler(
-      this.lineWidth, this.nodeSize,
-      false, DG.Color.toRgb(this.selectedStrokeColor), DG.Color.toRgb(this.selectedFillColor));
+      toRgba(trans(this.mainColor, TRANS_ALPHA)),
+      toRgba(trans(this.mainColor, TRANS_ALPHA)));
+    this.lightStyler = new DendrogramTreeStyler('light',
+      this.lineWidth, this.nodeSize, false,
+      toRgba(trans(this.lightColor, TRANS_ALPHA)),
+      toRgba(trans(this.lightColor, TRANS_ALPHA)));
+    this.currentStyler = new DendrogramTreeStyler('current',
+      this.lineWidth, this.nodeSize, false,
+      toRgba(trans(this.currentColor, TRANS_ALPHA)),
+      toRgba(trans(this.currentColor, TRANS_ALPHA)));
+    this.mouseOverStyler = new DendrogramTreeStyler('mouseOver',
+      this.lineWidth + 2, this.nodeSize + 2, false,
+      toRgba(trans(this.mouseOverColor, TRANS_ALPHA)),
+      toRgba(trans(this.mouseOverColor, TRANS_ALPHA)));
+    this.selectionsStyler = new DendrogramTreeStyler('selections',
+      this.lineWidth, this.nodeSize, false,
+      toRgba(trans(this.selectionsColor, TRANS_ALPHA)),
+      toRgba(trans(this.selectionsColor, TRANS_ALPHA)));
   }
 
   private _newick: string;
@@ -261,39 +277,43 @@ export class Dendrogram extends DG.JsViewer {
 
     switch (property.name) {
     case PROPS.lineWidth:
-      this.mainStyler.lineWidth = this.lightStyler.lineWidth = this.selectedStyler.lineWidth = this.lineWidth;
+      this.mainStyler.lineWidth = this.lineWidth;
+      this.lightStyler.lineWidth = this.lineWidth;
+      this.currentStyler.lineWidth = this.lineWidth;
+      this.mouseOverStyler.lineWidth = this.lineWidth;
+      this.selectionsStyler.lineWidth = this.lineWidth;
       break;
 
     case PROPS.nodeSize:
-      this.mainStyler.nodeSize = this.lightStyler.nodeSize = this.selectedStyler.nodeSize = this.nodeSize;
+      this.mainStyler.nodeSize = this.nodeSize;
+      this.lightStyler.nodeSize = this.nodeSize;
+      this.currentStyler.nodeSize = this.nodeSize;
+      this.mouseOverStyler.nodeSize = this.nodeSize;
+      this.selectionsStyler.nodeSize = this.nodeSize;
       break;
 
     case PROPS.showGrid:
       this.mainStyler.showGrid = this.showGrid;
       break;
 
-    case PROPS.mainStrokeColor:
-      this.mainStyler.strokeColor = `#${(this.mainStrokeColor & 0xFFFFFF).toString(16).padStart(6, '0')}`;
+    case PROPS.mainColor:
+      this.mainStyler.strokeColor = toRgba(trans(this.mainColor, TRANS_ALPHA));
+      this.mainStyler.fillColor = toRgba(trans(this.mainColor, TRANS_ALPHA));
       break;
 
-    case PROPS.mainFillColor:
-      this.mainStyler.fillColor = `#${(this.mainFillColor & 0xFFFFFF).toString(16).padStart(6, '0')}`;
+    case PROPS.lightColor:
+      this.lightStyler.strokeColor = toRgba(trans(this.lightColor, TRANS_ALPHA));
+      this.lightStyler.fillColor = toRgba(trans(this.lightColor, TRANS_ALPHA));
       break;
 
-    case PROPS.lightStrokeColor:
-      this.lightStyler.strokeColor = DG.Color.toRgb(this.lightStrokeColor);
+    case PROPS.currentColor:
+      this.currentStyler.strokeColor = toRgba(trans(this.currentColor, TRANS_ALPHA));
+      this.currentStyler.fillColor = toRgba(trans(this.currentColor, TRANS_ALPHA));
       break;
 
-    case PROPS.lightFillColor:
-      this.lightStyler.fillColor = DG.Color.toRgb(this.lightFillColor);
-      break;
-
-    case PROPS.selectedStrokeColor:
-      this.selectedStyler.strokeColor = DG.Color.toRgb(this.selectedStrokeColor);
-      break;
-
-    case PROPS.selectedFillColor:
-      this.selectedStyler.fillColor = DG.Color.toRgb(this.selectedFillColor);
+    case PROPS.selectionsColor:
+      this.selectionsStyler.strokeColor = toRgba(trans(this.selectionsColor, TRANS_ALPHA));
+      this.selectionsStyler.fillColor = toRgba(trans(this.selectionsColor, TRANS_ALPHA));
       break;
 
     case PROPS.font:
@@ -375,8 +395,11 @@ export class Dendrogram extends DG.JsViewer {
     this.placer = new RectangleTreePlacer<MarkupNodeType>(
       treeRoot.minIndex - 0.5, treeRoot.maxIndex + 0.5, totalLength);
     this.renderer = new CanvasTreeRenderer(
-      treeRoot, this.placer, this.mainStyler, this.lightStyler, this.selectedStyler);
-    this.viewSubs.push(this.renderer.onHoverChanged.subscribe(this.rendererOnHoverChanged.bind(this)));
+      treeRoot, this.placer,
+      this.mainStyler, this.lightStyler,
+      this.currentStyler, this.mouseOverStyler, this.selectionsStyler);
+    this.viewSubs.push(this.renderer.onCurrentChanged.subscribe(this.rendererOnCurrentChanged.bind(this)));
+    this.viewSubs.push(this.renderer.onMouseOverChanged.subscribe(this.rendererOnMouseOverChanged.bind(this)));
     this.viewSubs.push(this.renderer.onSelectionChanged.subscribe(this.rendererOnSelectionChanged.bind(this)));
     this.renderer.attach(this.treeDiv);
 
@@ -385,26 +408,68 @@ export class Dendrogram extends DG.JsViewer {
     this.viewSubs.push(this.mainStyler.onTooltipShow.subscribe(this.stylerOnTooltipShow.bind(this)));
 
     this.viewSubs.push(this.dataFrame.onSelectionChanged.subscribe(this.dataFrameOnSelectionChanged.bind(this)));
+    this.viewSubs.push(this.dataFrame.onCurrentRowChanged.subscribe(this.dataFrameOnCurrentRowChanged.bind(this)));
+    this.viewSubs.push(this.dataFrame.onMouseOverRowChanged.subscribe(this.dataFrameOnMouseOverRowChanged.bind(this)));
   }
 
   // -- Handle controls events --
 
-  private rootOnSizeChanged() {
+  private rootOnSizeChanged(): void {
     console.debug('PhyloTreeViewer: Dendrogram.rootOnSizeChanged()');
 
     this.treeDiv!.style.width = `${this.root.clientWidth}px`;
     this.treeDiv!.style.height = `${this.root.clientHeight}px`;
   }
 
-  private rendererOnHoverChanged() {
+  private rendererOnCurrentChanged(): void {
     window.setTimeout(() => {
       if (!this.renderer) return;
 
-      // TODO: Handle hover
+      const oldCurrentRowIdx: number = this.dataFrame.currentRowIdx;
+      if (!this.renderer.currentNode) {
+        this.dataFrame.currentRowIdx = -1;
+      } else {
+        if (this.nodeColumnName) {
+          const rowCount = this.dataFrame.rowCount;
+          const nodeCol: DG.Column = this.dataFrame.getCol(this.nodeColumnName);
+          const nodeName = this.renderer.currentNode.name;
+
+          const newCurrentRowIdx = wu.count(0).take(rowCount)
+            .find((rowI) => nodeCol.get(rowI) == nodeName) ?? -1;
+
+          if (newCurrentRowIdx != oldCurrentRowIdx) {
+            this.dataFrame.currentRowIdx = newCurrentRowIdx;
+          }
+        }
+      }
     });
   }
 
-  private rendererOnSelectionChanged() {
+  private rendererOnMouseOverChanged(): void {
+    window.setTimeout(() => {
+      if (!this.renderer) return;
+
+      const oldMouseOverRowIdx: number = this.dataFrame.mouseOverRowIdx;
+      if (!this.renderer.mouseOverNode) {
+        this.dataFrame.mouseOverRowIdx = -1;
+      } else {
+        if (this.nodeColumnName) {
+          const rowCount = this.dataFrame.rowCount;
+          const nodeCol: DG.Column = this.dataFrame.getCol(this.nodeColumnName);
+          const nodeName = this.renderer.mouseOverNode.name;
+
+          const newMouseOverRowIdx = wu.count(0).take(rowCount)
+            .find((rowI) => nodeCol.get(rowI) == nodeName) ?? -1;
+
+          if (newMouseOverRowIdx != oldMouseOverRowIdx) {
+            this.dataFrame.mouseOverRowIdx = newMouseOverRowIdx;
+          }
+        }
+      }
+    });
+  }
+
+  private rendererOnSelectionChanged(): void {
     window.setTimeout(() => {
       if (!this.renderer) return;
 
@@ -447,34 +512,117 @@ export class Dendrogram extends DG.JsViewer {
     }, 0 /* next event cycle*/);
   }
 
-  private dataFrameOnSelectionChanged(value: any) {
+  private dataFrameOnSelectionChanged(value: any): void {
+    if (!this.renderer || !this.placer) return;
+
+    /* Here we get selected rows from dataFrame.
+     * Some of selected nodes can be in subtree of others.
+     * We need to merge nodes to form selections object.
+     * Node rows can be selected or deselected.
+     */
+    const th: TreeHelper = new TreeHelper();
+    if (this.nodeColumnName) {
+      const nodeList: MarkupNodeType[] = th.getNodeList(this.renderer.treeRoot);
+      const nodeDict: { [name: string]: MarkupNodeType } = {};
+      for (const treeNode of nodeList) {
+        if (treeNode.name in nodeDict)
+          throw new Error('Non unique key tree node name');
+        nodeDict[treeNode.name] = treeNode;
+      }
+
+      const rowDict: { [name: string]: number } = {};
+      const nodeCol: DG.Column = this.dataFrame.getCol(this.nodeColumnName);
+      for (let rowI = 0; rowI < nodeCol.length; rowI++) {
+        const nodeName: string = nodeCol.get(rowI);
+        rowDict[nodeName] = rowI;
+      }
+
+      const selections: RectangleTreeHoverType<MarkupNodeType>[] = [];
+      for (const selRowI of this.dataFrame.selection.getSelectedIndexes()) {
+        const nodeName: string = nodeCol.get(selRowI);
+        const node: MarkupNodeType = nodeDict[nodeName];
+
+        // add new node to selections structure
+        // if a new node is subnode of one of the nodes already in selection so skip add
+        // if a there are nodes in selections which are subnodes of adding so we should remove existing and add new
+
+        const toDeleteList: number[] = [];
+        let addSkip: boolean = false;
+        for (let selI = 0; selI < selections.length; selI++) {
+          const selection = selections[selI];
+
+          if (th.includes(node, selection.node))
+            toDeleteList.push(selI);
+
+          if (th.includes(selection.node, node))
+            addSkip = true;
+        }
+        for (let toDeleteI = toDeleteList.length - 1; toDeleteI >= 0; toDeleteI--) {
+          selections.splice(toDeleteList[toDeleteI]);
+        }
+
+        if (!addSkip)
+          selections.push({node: node, nodeHeight: this.placer.getNodeHeight(this.renderer.treeRoot, node)!});
+      }
+
+      function selectSubs(df: DG.DataFrame, rowDict: { [name: string]: number }, node: MarkupNodeType) {
+        const rowI = rowDict[node.name];
+        df.selection.set(rowI, true, false);
+        for (const childNode of (node.children ?? []))
+          selectSubs(df, rowDict, childNode);
+      }
+
+      for (const selection of selections) {
+        selectSubs(this.dataFrame, rowDict, selection.node);
+      }
+
+      this.renderer.selections = selections;
+    }
+  }
+
+  private dataFrameOnCurrentRowChanged(value: any): void {
     if (!this.renderer) return;
 
     if (this.nodeColumnName) {
-      const rowCount: number = this.dataFrame.rowCount;
       const nodeCol: DG.Column = this.dataFrame.getCol(this.nodeColumnName);
-      const nodeNameSet = new Set<string>(
-        wu(this.dataFrame.selection.getSelectedIndexes()).map((rowI) => nodeCol.get(rowI)));
+      const currentNodeName = nodeCol.get(this.dataFrame.currentRowIdx);
 
-      const th: TreeHelper = new TreeHelper();
-      const selections: RectangleTreeHoverType<MarkupNodeType>[] = th
-        .getNodeList(this.renderer.treeRoot)
-        .filter((node) => nodeNameSet.has(node.name))
-        .map((node) => {
-          return {
-            node: node as MarkupNodeType,
-            nodeHeight: this.placer!.getNodeHeight(this.renderer!.treeRoot, node)!
-          };
-        });
+      const th: ITreeHelper = new TreeHelper();
+      const currentNode: MarkupNodeType | null = th.getNodeList(this.renderer.treeRoot)
+        .find((node) => currentNodeName == node.name) ?? null;
+      const current: RectangleTreeHoverType<MarkupNodeType> | null = currentNode ? {
+        node: currentNode,
+        nodeHeight: this.placer!.getNodeHeight(this.renderer.treeRoot, currentNode)!
+      } : null;
 
-      this.renderer.selections = selections;
+      this.renderer.current = current;
+    }
+  }
+
+  private dataFrameOnMouseOverRowChanged(value: any): void {
+    if (!this.renderer) return;
+
+    if (this.nodeColumnName) {
+      const nodeCol: DG.Column = this.dataFrame.getCol(this.nodeColumnName);
+      const mouseOverNodeName: string = nodeCol.get(this.dataFrame.mouseOverRowIdx);
+
+      const th: ITreeHelper = new TreeHelper();
+      const mouseOverNode: MarkupNodeType | null = th.getNodeList(this.renderer.treeRoot)
+        .find((node) => mouseOverNodeName == node.name) ?? null;
+      const mouseOver: RectangleTreeHoverType<MarkupNodeType> | null = mouseOverNode ? {
+        node: mouseOverNode,
+        nodeHeight: this.placer!.getNodeHeight(this.renderer.treeRoot, mouseOverNode)!
+      } : null;
+
+      this.renderer.mouseOver = mouseOver;
     }
   }
 
   private stylerOnTooltipShow({node, e}: { node: MarkupNodeType, e: MouseEvent }): void {
     if (node) {
       const tooltip = ui.divV([
-        ui.div(`${node.name}`)]);
+        ui.div(`${node.name}`),
+        ui.div(`desc: ${node.desc}`)]);
       ui.tooltip.show(tooltip, e.clientX + 16, e.clientY + 16);
     } else {
       ui.tooltip.hide();

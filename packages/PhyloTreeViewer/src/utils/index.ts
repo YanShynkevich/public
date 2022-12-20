@@ -4,9 +4,43 @@ import * as DG from 'datagrok-api/dg';
 
 import * as d3 from 'd3';
 
-import {default as newickParser} from 'phylotree/src/formats/newick';
+import {default as newickParserInt} from 'phylotree/src/formats/newick';
 import {PhylotreeNode} from 'phylotree';
 
+export function trans(color: number, alpha: number): number {
+  return 0 |
+    Math.round(DG.Color.a(color) * alpha) << 24 |
+    DG.Color.r(color) << 16 |
+    DG.Color.g(color) << 8 |
+    DG.Color.b(color);
+}
+
+export function toRgba(color: number): string {
+  return `rgba(${DG.Color.r(color)}, ${DG.Color.g(color)}, ${DG.Color.b(color)}, ${DG.Color.a(color) / 255})`;
+}
+
+/** Newick parser from phylotree patched for root name */
+export function phylotreeNewickParser(newick: string) {
+  const res = newickParserInt(newick);
+
+  let rootName: string | null = null;
+
+  const rootDataStart: number = newick.lastIndexOf(')');
+  const rootDataEnd: number = newick.lastIndexOf(';');
+  if (rootDataStart != -1 && rootDataEnd != -1) {
+    const rootData: string = newick.substring(rootDataStart + 1, rootDataEnd);
+    const rootDataParts: string[] = rootData.split(':');
+    rootName = rootDataParts[0];
+  }
+
+  if (rootName)
+    res.json.name = rootName;
+  else
+    //@ts-ignore
+    delete res.json.name;
+
+  return res;
+}
 
 export function newickToDf(
   newick: string, dfName?: string, nodePrefix?: string, skipEmptyParentRoot?: boolean
@@ -17,7 +51,7 @@ export function newickToDf(
   let parent: string | null = null;
   let i = 0;
 
-  const parsedNewick = newickParser(newick);
+  const parsedNewick = phylotreeNewickParser(newick);
   if (parsedNewick.error)
     throw parsedNewick.error;
 

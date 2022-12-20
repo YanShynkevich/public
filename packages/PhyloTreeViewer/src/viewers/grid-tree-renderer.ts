@@ -65,10 +65,11 @@ export abstract class GridTreeRendererBase<TNode extends MarkupNodeType> extends
 
   protected constructor(
     treeRoot: TNode, totalLength: number, grid: DG.Grid,
-    styler: ITreeStyler<TNode>, highlightStyler: ITreeStyler<TNode>, selectionStyler: ITreeStyler<TNode>
+    mainStyler: ITreeStyler<TNode>, lightStyler: ITreeStyler<TNode>,
+    currentStyler: ITreeStyler<TNode>, mouseOverStyler: ITreeStyler<TNode>, selectionStyler: ITreeStyler<TNode>
   ) {
     const placer: RectangleTreePlacer<TNode> = new GridTreePlacer<TNode>(grid, totalLength);
-    super(treeRoot, placer, styler, highlightStyler, selectionStyler);
+    super(treeRoot, placer, mainStyler, lightStyler, currentStyler, mouseOverStyler, selectionStyler);
 
     this.th = new TreeHelper();
     this._grid = grid;

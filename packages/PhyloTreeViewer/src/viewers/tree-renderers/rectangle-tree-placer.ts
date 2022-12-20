@@ -7,7 +7,10 @@ import {HoverType, ITreePlacer, MarkupNodeType} from './markup';
 import {Subject} from 'rxjs';
 import {NodeType} from '@datagrok-libraries/bio';
 
-export type RectangleTreeHoverType<TNode extends NodeType> = HoverType<TNode> & { nodeHeight: number };
+export type RectangleTreeHoverType<TNode extends NodeType> = HoverType<TNode> & {
+  /** Node position along height axis */
+  nodeHeight: number
+};
 
 export class RectangleTreePlacer<TNode extends MarkupNodeType> implements ITreePlacer<TNode, RectangleTreeHoverType<TNode>> {
   private _top: number;
@@ -62,6 +65,7 @@ export class RectangleTreePlacer<TNode extends MarkupNodeType> implements ITreeP
     function getNodeInt(
       node: MarkupNodeType, point: DG.Point, currentHeight: number
     ): RectangleTreeHoverType<TNode> | null {
+      const dpr: number = window.devicePixelRatio;
       // console.debug('DendrogramTreePlacer.getNode() ' +
       //   `point = ${JSON.stringify(point)}, currentHeight = ${currentHeight}, ` +
       //   `node = ${JSON.stringify({
@@ -77,7 +81,7 @@ export class RectangleTreePlacer<TNode extends MarkupNodeType> implements ITreeP
         if (
           (Math.abs(point.y - node.index) < 0.1 &&
             currentHeight < point.x && point.x < currentHeight + node.branch_length!) ||
-          (Math.pow(nodePoint.x - point.x, 2) + Math.pow(nodePoint.y - point.y, 2)) < Math.pow(nodeSize / 2, 2)
+          (Math.pow(nodePoint.x - point.x, 2) + Math.pow(nodePoint.y - point.y, 2)) < Math.pow(nodeSize * dpr / 2, 2)
         ) {
           res = {nodeHeight: currentHeight, node: node as TNode};
         }

@@ -13,6 +13,7 @@ import {
 import {NodeCuttedType} from '@datagrok-libraries/bio';
 import {markupNode, MarkupNodeType} from './tree-renderers/markup';
 import {LeafRangeGridTreeRenderer} from './tree-renderers/grid-tree-renderer';
+import {PROPS_CATS as D_PROPS_CATS, PROPS as D_PROPS} from './dendrogram';
 
 
 export function injectTreeForGridUI2(
@@ -109,12 +110,12 @@ export function injectTreeForGridUI2(
 
   // -- Inject properties --
 
-  // const lineWidthProperty = DG.Property.int(D_PROPS.lineWidth,
-  //   (obj) => { },
-  //   (obj, value) => { },
-  //   1);
-  // lineWidthProperty.category = `Datagram ${D_PROPS_CATS.APPEARANCE}`;
-  // DG.Property.registerAttachedProperty('TreeForGrid', lineWidthProperty);
+  const lineWidthProperty = DG.Property.int(D_PROPS.lineWidth,
+    (obj) => { },
+    (obj, value) => { },
+    1);
+  lineWidthProperty.category = `Datagram ${D_PROPS_CATS.APPEARANCE}`;
+  DG.Property.registerAttachedProperty('TreeForGrid', lineWidthProperty);
 
   return treeN;
 }

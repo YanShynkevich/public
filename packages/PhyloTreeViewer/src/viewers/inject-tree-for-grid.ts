@@ -98,7 +98,7 @@ export function injectTreeForGridUI(
       markupNode(newickRootCutted!);
       treeRenderer.treeRoot = newickRootCutted as MarkupNodeType;
 
-      treeRenderer.render();
+      treeRenderer.render('cutSlider');
     });
   }
 
