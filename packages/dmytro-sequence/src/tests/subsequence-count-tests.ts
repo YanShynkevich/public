@@ -5,6 +5,7 @@ import * as DG from 'datagrok-api/dg';
 const packageName = 'DmytroSequence';
 
 category('Subsequence count', () => {
+  //asynchronous script names
   const pythonSubsequenceScriptName = 'CountSubsequencePython';
   const pythonDataframeSubsequenceScriptName = 'CountSubsequencePythonDataframe';
   const pythonDataframeSubsequenceTable = DG.DataFrame.fromCsv(
@@ -17,6 +18,7 @@ category('Subsequence count', () => {
     MT412305.1,attaaaggtt tataccttcc caggtaacaa accaatcaac tttcgatctc ttgtagatct gttctctaaa cgaactttaa aatctgtgtg`);
   const jsSubsequenceScriptName = 'CountSubsequenceJS';
 
+  //asynchronous script results
   let pythonSubsequenceScriptResult: number;
   let pythonSubsequenceScriptResultWithOverlapping: number;
   let pythonDataframeSubsequenceScriptResult: DG.DataFrame;

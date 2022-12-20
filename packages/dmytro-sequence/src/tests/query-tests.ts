@@ -1,14 +1,15 @@
 import {before, category, expect, test} from '@datagrok-libraries/utils/src/test';
 import * as grok from 'datagrok-api/grok';
 import * as DG from 'datagrok-api/dg';
-import {getOrders} from '../package';
 
+import {getOrders} from '../package';
 
 const packageName = 'DmytroSequence';
 
 category('DatabaseQueries', () => {
   const queryName = 'ordersByCountry';
 
+  //asynchronous query results
   let queryResult: DG.DataFrame;
   let jsFunctionQueryResult: DG.DataFrame;
 

@@ -2,20 +2,24 @@
 import * as grok from 'datagrok-api/grok';
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
+
 import {DataFrame} from 'datagrok-api/dg';
 
 import {getSubsequenceCountInColumn} from './utils/string-manipulation';
 import {NucleotideBoxCellRenderer} from './utils/cell-renderer';
-import { parseENA } from './utils/ena-parser';
+import {parseENA} from './utils/ena-parser';
 
 export const _package = new DG.Package();
 const packageName = 'DmytroSequence';
+
+//function for info
 
 //name: info
 export function info() {
   grok.shell.info(_package.webRoot);
 }
 
+//function for nucleotide complement
 
 //name: complement
 //input: string nucleotides {semType: dna_nucleotide}
@@ -40,6 +44,8 @@ export function complement(nucleotides: string): string {
   });
 }
 
+//widget for nucleotide complement
+
 //name: complementWidget
 //tags: panel, widgets
 //input: string nucleotides {semType: dna_nucleotide}
@@ -49,6 +55,7 @@ export function complementWidget(nucleotides: string) {
   return new DG.Widget(ui.divText(complement(nucleotides)));
 }
 
+//function for database query
 
 //name: getOrders
 //output: dataframe df
@@ -56,6 +63,9 @@ export async function getOrders() {
   const queryName = 'ordersByCountry';
   return await grok.data.query(`${packageName}:${queryName}`, {country: 'USA'});
 }
+
+/*function for joining 2 dataframes and adding count of specific row subsequences of length N of first dataframe
+  in all sequences of the second dataframe*/
 
 //name: fuzzyJoin
 //input: dataframe df1
@@ -75,6 +85,8 @@ export function fuzzyJoin(df1: DataFrame, df2: DataFrame, N: number): DG.DataFra
   return df;
 }
 
+//cell renderer of dna_nucleotide semantic type cells
+
 //name: nucleotideBoxCellRenderer
 //tags: cellRenderer
 //meta.cellType: dna_nucleotide
@@ -83,12 +95,15 @@ export function nucleotideBoxCellRenderer() {
   return new NucleotideBoxCellRenderer();
 }
 
+//widget for ENA sequence of specific ENA id
+
 //name: ENA Sequence
 //tags: panel, widgets
 //input: string cellText {semType: EnaID}
 //output: widget result
 //condition: true
 export async function enaSequence(cellText: string) {
+  //get the ENA
   const fasta = await parseENA(cellText);
 
   if (fasta.includes('error=Not Found'))

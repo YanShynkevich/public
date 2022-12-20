@@ -11,17 +11,18 @@ import matplotlib.pyplot as plt
 processed_df = pd.DataFrame(data=t)
 sequences = [elem for elem in processed_df[sequenceColumnName]]
 
-trio_sequences = [elem.split() for elem in sequences]
+splitted_sequences = [elem.split() for elem in sequences]
 
 total = []
-for i in trio_sequences:
+for i in splitted_sequences:
     total += i
 
-end = []
+final = []
+# finding all the combinations of 3 elements
 for elem in total:
-    end += re.findall('...', elem[0:])
-    end += re.findall('...', elem[1:])
-    end += re.findall('...', elem[2:])
+    final += re.findall('...', elem[0:])
+    final += re.findall('...', elem[1:])
+    final += re.findall('...', elem[2:])
 
-plt.hist(end, bins=55)
+plt.hist(final, bins=55)
 plt.show()
