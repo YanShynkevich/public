@@ -6,6 +6,7 @@ import {DataFrame} from 'datagrok-api/dg';
 
 import {getSubsequenceCountInColumn} from './utils/string-manipulation';
 import {NucleotideBoxCellRenderer} from './utils/cell-renderer';
+import { parseENA } from './utils/ena-parser';
 
 export const _package = new DG.Package();
 const packageName = 'DmytroSequence';
@@ -80,4 +81,36 @@ export function fuzzyJoin(df1: DataFrame, df2: DataFrame, N: number): DG.DataFra
 //output: grid_cell_renderer result
 export function nucleotideBoxCellRenderer() {
   return new NucleotideBoxCellRenderer();
+}
+
+//name: ENA Sequence
+//tags: panel, widgets
+//input: string cellText {semType: EnaID}
+//output: widget result
+//condition: true
+export async function enaSequence(cellText: string) {
+  const fasta = await parseENA(cellText);
+
+  if (fasta.includes('error=Not Found'))
+    return new DG.Widget(ui.divText(`ENA id ${cellText} not found.`));
+
+  let headerText = '';
+  let nucleotide = '';
+  for (let i = 0; i < fasta.length; i++) {
+    if (fasta[i] === '\n') {
+      headerText = fasta.substring(0, i);
+      nucleotide = fasta.substring(i + 1, fasta.length);
+      break;
+    }
+  }
+
+  const header = ui.h3(headerText);
+  const textArea = ui.textInput('', nucleotide).root;
+  textArea.style.height = '260px';
+  textArea.style.width = '245px';
+
+  const element = ui.divV([header, textArea]);
+  const widget = new DG.Widget(element);
+
+  return widget;
 }

@@ -18,4 +18,26 @@ class DmytroSequencePackageDetectors extends DG.Package {
     }
     return null;
   }
+
+  //tags: semTypeDetector
+  //input: column col
+  //output: string semType
+  detectEnaID(col) {
+    const regex = '^[A-Z]{2}[0-9]{6}$';
+    if (col.type === DG.TYPE.STRING && col.categories.every((category) => category.match(regex))) {
+      col.semType = 'EnaID';
+      return col.semType;
+    }
+    return null;
+  }
+
+  // //input: string str
+  // //output: bool result
+  // isPotentialENAId(str) {
+  //   // returns true, if name is of the form [A-Z]{2}[0-9]{6}
+  //   const regex = '^[A-Z]{2}[0-9]{6}$';
+  //   console.log(str.match(regex));
+  //   if (str.match(regex)) return true;
+  //   return false;
+  // }
 }
