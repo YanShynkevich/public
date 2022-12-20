@@ -6,6 +6,7 @@ import './tests/detector-tests';
 import './tests/subsequence-count-tests';
 import './tests/query-tests';
 import './tests/string-manipulation-tests';
+import './tests/ena-parse-tests';
 
 export let _package = new DG.Package();
 export {tests};
