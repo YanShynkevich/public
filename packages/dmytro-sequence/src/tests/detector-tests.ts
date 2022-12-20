@@ -15,4 +15,17 @@ category('detectors', () => {
     await grok.data.detectSemanticTypes(table);
     await expect(column.semType, 'dna_nucleotide');
   });
+
+  test('detectEnaId', async () => {
+    const table = DG.DataFrame.fromCsv(
+      `enaID
+      LR794596
+      AA046425
+      LR794608
+      AA000000`);
+
+    const column = table.columns.byName('enaID');
+    await grok.data.detectSemanticTypes(table);
+    await expect(column.semType, 'EnaID');
+  });
 });
