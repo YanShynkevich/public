@@ -1,6 +1,7 @@
 import * as DG from 'datagrok-api/dg';
 import {runTests, TestContext, tests} from '@datagrok-libraries/utils/src/test';
 
+//test imports
 import './tests/nucleotide-conversion-tests';
 import './tests/detector-tests';
 import './tests/subsequence-count-tests';

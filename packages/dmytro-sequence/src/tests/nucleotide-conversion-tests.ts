@@ -1,7 +1,6 @@
 import {category, expect, test} from '@datagrok-libraries/utils/src/test';
 import {complement} from '../package';
 
-
 category('NucleotideConversion', () => {
   test('uppercaseComplementWorksCorrectly', async () => {
     await expect(complement('ATGCGCTAGCTCATTT'), 'TACGCGATCGAGTAAA');

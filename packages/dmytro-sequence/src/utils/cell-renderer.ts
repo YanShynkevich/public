@@ -16,12 +16,14 @@ export class NucleotideBoxCellRenderer extends DG.GridCellRenderer {
       'c': 'blue',
     };
 
+    //"grid" parameteres of dna rendering in cell
     const rowsAmount = 4;
     const dy = 20;
     const xBegin = x;
 
     let i = 0;
     for (let n = 1; n <= rowsAmount; n++) {
+      //Math.ceil() for getting the right amount of elements in a "row"
       for (; i < Math.ceil(gridCell.cell.value.length * (n / rowsAmount)); i++) {
         const ch = gridCell.cell.value.charAt(i);
         g.fillStyle = complementDictionary[ch.toLowerCase()];

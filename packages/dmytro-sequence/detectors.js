@@ -7,6 +7,8 @@
  */
 
 class DmytroSequencePackageDetectors extends DG.Package {
+  //nucleotide detector
+
   //tags: semTypeDetector
   //input: column col
   //output: string semType
@@ -19,6 +21,8 @@ class DmytroSequencePackageDetectors extends DG.Package {
     return null;
   }
 
+  //enaId detector
+
   //tags: semTypeDetector
   //input: column col
   //output: string semType
@@ -30,6 +34,8 @@ class DmytroSequencePackageDetectors extends DG.Package {
     }
     return null;
   }
+
+  //check if string is a potential ena id
 
   // //input: string str
   // //output: bool result

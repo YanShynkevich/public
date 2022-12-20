@@ -1,13 +1,14 @@
 import {category, expect, test} from '@datagrok-libraries/utils/src/test';
 import * as DG from 'datagrok-api/dg';
 import * as grok from 'datagrok-api/grok';
+
 import {fuzzyJoin} from '../package';
-import {substringOccurencesInString, extractSubsequencesFromString,
+import {substringOccurencesInStringWithOverlapping, extractSubsequencesFromString,
   getSubsequenceCountInColumn} from '../utils/string-manipulation';
 
 category('StringManipulations', () => {
   test('substringOccurencesWorksCorrectly', async () => {
-    await expect(substringOccurencesInString('ctacaagaga', 'aga'), 2);
+    await expect(substringOccurencesInStringWithOverlapping('ctacaagaga', 'aga'), 2);
   });
 
   test('extractSubsequencesWorksCorrectly', async () => {
