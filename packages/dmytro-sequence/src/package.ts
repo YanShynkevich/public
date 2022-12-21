@@ -7,7 +7,7 @@ import {DataFrame} from 'datagrok-api/dg';
 
 import {getSubsequenceCountInColumn} from './utils/string-manipulation';
 import {NucleotideBoxCellRenderer} from './utils/cell-renderer';
-import {parseENA} from './utils/ena-parser';
+import {parseFastaENA} from './utils/ena-fasta-parser';
 
 export const _package = new DG.Package();
 const packageName = 'DmytroSequence';
@@ -104,7 +104,7 @@ export function nucleotideBoxCellRenderer() {
 //condition: true
 export async function enaSequence(cellText: string) {
   //get the ENA
-  const fasta = await parseENA(cellText);
+  const fasta = await parseFastaENA(cellText);
 
   if (fasta.includes('error=Not Found'))
     return new DG.Widget(ui.divText(`ENA id ${cellText} not found.`));
