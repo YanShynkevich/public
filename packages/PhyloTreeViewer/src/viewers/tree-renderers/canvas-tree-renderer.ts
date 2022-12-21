@@ -90,6 +90,7 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
     const lengthRatio: number = window.devicePixelRatio * plotWidth / this.placer.totalLength; // px/[length unit]
     const stepRatio: number = window.devicePixelRatio * (ch / (this.placer.bottom - this.placer.top)); // px/[step unit, row]
 
+    const t1: number = Date.now();
     ctx.save();
     try {
       (function clearNodeDesc(node: TNode) {
@@ -127,27 +128,33 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
       const styler: ITreeStyler<TNode> = !this.mouseOver ? this.mainStyler : this.lightStyler;
       const selectionTraceList: TraceTargetType<TNode>[] = this.selections.map(
         (sel) => { return {target: sel.node, styler: this.selectionStyler};});
-      renderNode(ctx, this.treeRoot,
-        this.placer.top, this.placer.bottom,
-        this.placer.padding.left, lengthRatio, stepRatio, styler,
-        this.placer.totalLength, 0,
-        [...selectionTraceList,]);
+      renderNode({
+          ctx: ctx,
+          firstRowIndex: this.placer.top, lastRowIndex: this.placer.bottom,
+          leftPadding: this.placer.padding.left, lengthRatio: lengthRatio, stepRatio: stepRatio,
+          totalLength: this.placer.totalLength, styler: styler,
+        },
+        this.treeRoot, 0, [...selectionTraceList,]);
 
       for (const selection of this.selections) {
-        renderNode(ctx, selection.node,
-          this.placer.top, this.placer.bottom,
-          this.placer.padding.left, lengthRatio, stepRatio, this.selectionStyler,
-          this.placer.totalLength, selection.nodeHeight,
-          []);
+        renderNode({
+            ctx: ctx,
+            firstRowIndex: this.placer.top, lastRowIndex: this.placer.bottom,
+            leftPadding: this.placer.padding.left, lengthRatio: lengthRatio, stepRatio: stepRatio,
+            styler: this.selectionStyler, totalLength: this.placer.totalLength
+          },
+          selection.node, selection.nodeHeight, []);
       }
 
       if (this.current) {
         const currentTraceList: TraceTargetType<TNode>[] = [{target: this.current.node, styler: this.currentStyler}];
-        renderNode(ctx, this.treeRoot,
-          this.placer.top, this.placer.bottom,
-          this.placer.padding.left, lengthRatio, stepRatio, invisibleStyler,
-          this.placer.totalLength, 0,
-          [...currentTraceList]);
+        renderNode({
+            ctx: ctx,
+            firstRowIndex: this.placer.top, lastRowIndex: this.placer.bottom,
+            leftPadding: this.placer.padding.left, lengthRatio: lengthRatio, stepRatio: stepRatio,
+            totalLength: this.placer.totalLength, styler: invisibleStyler,
+          },
+          this.treeRoot, 0, [...currentTraceList]);
 
         // children
         // renderNode(ctx, this.current.node,
@@ -160,17 +167,20 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
       if (this.mouseOver) {
         const mouseOverTraceList: TraceTargetType<TNode>[] = [
           {target: this.mouseOver.node, styler: this.mouseOverStyler}];
-        renderNode(ctx, this.treeRoot,
-          this.placer.top, this.placer.bottom,
-          this.placer.padding.left, lengthRatio, stepRatio, invisibleStyler,
-          this.placer.totalLength, 0,
-          [...mouseOverTraceList]);
+        renderNode({
+            ctx: ctx, firstRowIndex: this.placer.top, lastRowIndex: this.placer.bottom,
+            leftPadding: this.placer.padding.left, lengthRatio: lengthRatio, stepRatio: stepRatio,
+            totalLength: this.placer.totalLength, styler: invisibleStyler,
+          },
+          this.treeRoot, 0, [...mouseOverTraceList]);
 
         // children
-        renderNode(ctx, this.mouseOver.node,
-          this.placer.top, this.placer.bottom,
-          this.placer.padding.left, lengthRatio, stepRatio, this.mouseOverStyler,
-          this.placer.totalLength, this.mouseOver.nodeHeight,
+        renderNode({
+            ctx: ctx, firstRowIndex: this.placer.top, lastRowIndex: this.placer.bottom,
+            leftPadding: this.placer.padding.left, lengthRatio: lengthRatio, stepRatio: stepRatio,
+            totalLength: this.placer.totalLength, styler: this.mouseOverStyler,
+          },
+          this.mouseOver.node, this.mouseOver.nodeHeight,
           []);
       }
 
@@ -178,6 +188,8 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
       console.debug('');
     } finally {
       ctx.restore();
+      const t2: number = Date.now();
+      console.debug('PhyloTreeViewer: CanvasTreeRenderer.render(), ' + `ET: ${((t2 - t1) / 1000).toFixed(3)}`);
       this._onAfterRender.next({target: this, context: ctx, lengthRatio,});
     }
   }

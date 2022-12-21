@@ -149,70 +149,79 @@ export class TreeStylerBase<TNode extends NodeType> implements ITreeStyler<TNode
 export type RenderNodeResultType<TNode extends NodeType> = { traceback: ITreeStyler<TNode>[], };
 export type TraceTargetType<TNode extends NodeType> = { target: TNode, styler: ITreeStyler<TNode> };
 
+export type RectangleRenderOptions<TNode extends MarkupNodeType> = {
+  get ctx(): CanvasRenderingContext2D;
+  get firstRowIndex(): number;
+  get lastRowIndex(): number;
+  get leftPadding(): number;
+  get lengthRatio(): number;
+  get stepRatio(): number;
+  get styler(): ITreeStyler<TNode>;
+
+  /** Total (whole) tree length (height) */
+  get totalLength(): number;
+}
+
 /**
- * @param ctx
+ * @param {RectangleRenderOptions} opts
  * @param node
- * @param firstRowIndex
- * @param lastRowIndex
- * @param leftPadding
- * @param lengthRatio
- * @param stepRatio
- * @param {ITreeStyler} styler    Styler object
- * @param {number} totalLength    Total (whole) tree length (height)
- * @param currentLength
- * @param {Array} traceTargets    List of target nodes to trace back to root
+ * @param {nnumber} currentLength
+ * @param {Array} traceList    List of target nodes to trace back to root
  * @private
  */
 export function renderNode<TNode extends MarkupNodeType>(
-  ctx: CanvasRenderingContext2D, node: TNode,
-  firstRowIndex: number, lastRowIndex: number,
-  leftPadding: number, lengthRatio: number, stepRatio: number, styler: ITreeStyler<TNode>,
-  totalLength: number, currentLength: number = 0, traceList: TraceTargetType<TNode>[]
+  opts: RectangleRenderOptions<TNode>,
+  node: TNode, currentLength: number = 0, traceList: TraceTargetType<TNode>[]
 ): RenderNodeResultType<TNode> {
   const dpr: number = window.devicePixelRatio;
   const res: RenderNodeResultType<TNode> = {
     traceback: traceList.filter((t) => t.target == node).map((t) => t.styler)
   };
 
-  const beginX = currentLength * lengthRatio + leftPadding * dpr;
-  const endX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * dpr;
-  const posY = (node.index - firstRowIndex) * stepRatio;
+  const beginX = currentLength * opts.lengthRatio + opts.leftPadding * dpr;
+  const endX = (currentLength + node.branch_length!) * opts.lengthRatio + opts.leftPadding * dpr;
+  const posY = (node.index - opts.firstRowIndex) * opts.stepRatio;
 
   if (node.name == 'node-l1-l2') {
     console.debug('PhyloTreeViewer: renderNode() \n' +
       `node.name = ${node.name}, stylers = [${res.traceback.map((s) => s.name).join(', ')}]`);
   }
 
-  if (firstRowIndex <= node.maxIndex && node.minIndex <= lastRowIndex) {
+  if (node.name == 'node-92161' || (traceList.length == 1 && traceList[0].target.name == 'node-92161')) {
+    let k = 11;
+  }
+  const ctx: CanvasRenderingContext2D = opts.ctx;
+
+  const maxIndex = node.maxIndex ?? node.index;
+  const minIndex = node.minIndex ?? node.index;
+  if (!isLeaf(node) && opts.firstRowIndex <= maxIndex && minIndex <= opts.lastRowIndex) {
     //#region Plot join
     const joinMinIndex = node.children[0].index;
     const joinMaxIndex = node.children[node.children.length - 1].index;
-    const posX = (currentLength + node.branch_length!) * lengthRatio + leftPadding * dpr;
-    const minY = Math.max((joinMinIndex - firstRowIndex) * stepRatio, 0);
-    const maxY = Math.min((joinMaxIndex - firstRowIndex) * stepRatio, ctx.canvas.height);
+    const posX = (currentLength + node.branch_length!) * opts.lengthRatio + opts.leftPadding * dpr;
+    const minY = Math.max((joinMinIndex - opts.firstRowIndex) * opts.stepRatio, 0);
+    const maxY = Math.min((joinMaxIndex - opts.firstRowIndex) * opts.stepRatio, opts.ctx.canvas.height);
 
     ctx.beginPath();
-    ctx.strokeStyle = styler.strokeColor;
-    ctx.lineWidth = styler.lineWidth * dpr;
+    ctx.strokeStyle = opts.styler.strokeColor;
+    ctx.lineWidth = opts.styler.lineWidth * dpr;
     ctx.lineCap = 'round';
     ctx.moveTo(posX, minY);
     ctx.lineTo(posX, maxY);
     ctx.stroke();
     //#endregion
 
-    if ((node.maxIndex - node.minIndex) * stepRatio > 1) {
-      for (const childNode of node.children) {
+    if (minIndex == maxIndex || (maxIndex - minIndex) * opts.stepRatio > 1) {
+      for (const childNode of (node.children ?? [])) {
         const childTraceList = traceList.filter((trace) => {
           return (childNode.minIndex ?? childNode.index) <= trace.target.index &&
             trace.target.index <= (childNode.maxIndex ?? childNode.index);
         });
-        const childRenderRes = renderNode<TNode>(ctx, childNode as TNode,
-          firstRowIndex, lastRowIndex,
-          leftPadding, lengthRatio, stepRatio, styler,
-          totalLength, currentLength + node.branch_length!,
+        const childRenderRes = renderNode<TNode>(opts, childNode as TNode,
+          currentLength + node.branch_length!,
           childTraceList);
         for (const effStyler of childRenderRes.traceback) {
-          const childPosY = (childNode.index - firstRowIndex) * stepRatio;
+          const childPosY = (childNode.index - opts.firstRowIndex) * opts.stepRatio;
 
           ctx.beginPath();
           ctx.strokeStyle = effStyler.strokeColor;
@@ -225,10 +234,10 @@ export function renderNode<TNode extends MarkupNodeType>(
         res.traceback.push(...childRenderRes.traceback);
       }
     } else {
-      const finishX: number = node.subtreeLength! * lengthRatio + leftPadding * dpr;
+      const finishX: number = (currentLength + node.subtreeLength!) * opts.lengthRatio + opts.leftPadding * dpr;
       ctx.beginPath();
-      ctx.strokeStyle = styler.strokeColor;
-      ctx.lineWidth = styler.lineWidth * dpr;
+      ctx.strokeStyle = opts.styler.strokeColor;
+      ctx.lineWidth = opts.styler.lineWidth * dpr;
       ctx.lineCap = 'round';
       ctx.moveTo(beginX, posY);
       ctx.lineTo(finishX, posY);
@@ -244,7 +253,7 @@ export function renderNode<TNode extends MarkupNodeType>(
     let k = 11;
   }
 
-  for (const effStyler of [styler, ...res.traceback]) {
+  for (const effStyler of [opts.styler, ...res.traceback]) {
     // Draw trace
     ctx.beginPath();
     ctx.strokeStyle = effStyler.strokeColor;

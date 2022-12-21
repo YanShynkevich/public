@@ -230,7 +230,7 @@ export class Dendrogram extends DG.JsViewer {
       toRgba(trans(this.currentColor, TRANS_ALPHA)),
       toRgba(trans(this.currentColor, TRANS_ALPHA)));
     this.mouseOverStyler = new DendrogramTreeStyler('mouseOver',
-      this.lineWidth + 2, this.nodeSize + 2, false,
+      this.lineWidth, this.nodeSize, false,
       toRgba(trans(this.mouseOverColor, TRANS_ALPHA)),
       toRgba(trans(this.mouseOverColor, TRANS_ALPHA)));
     this.selectionsStyler = new DendrogramTreeStyler('selections',

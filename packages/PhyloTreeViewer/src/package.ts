@@ -19,6 +19,7 @@ import {TreeCutAsTreeApp} from './apps/tree-cut-as-tree-app';
 import {TreeForGridFilterApp} from './apps/tree-for-grid-filter-app';
 import {Dendrogram, MyViewer} from './viewers/dendrogram';
 import {DendrogramApp} from './apps/dendrogram-app';
+import {HierarchicalClusteringApp} from './apps/hierarchical-clustering-app';
 import {hierarchicalClusteringUI} from './utils/hierarchical-clustering';
 
 export const _package = new DG.Package();
@@ -101,6 +102,42 @@ export async function dendrogramApp(): Promise<void> {
     await app.init();
   } catch (err: unknown) {
     const msg: string = 'PhyloTreeViewer dendrogramApp() error: ' +
+      `${err instanceof Error ? err.message : (err as Object).toString()}`;
+    grok.shell.error(msg);
+    console.error(msg);
+  } finally {
+    pi.close();
+  }
+}
+
+//name: dendrogramLargeApp
+//description: Test/demo app for Dendrogram Large
+export async function dendrogramLargeApp(): Promise<void> {
+  const pi = DG.TaskBarProgressIndicator.create('open Dendrogram Large app');
+  try {
+    const largeNewickStr: string = await _package.files.readAsText('data/tree-gen-100000.nwk');
+    const largeTreeDf: DG.DataFrame = newickToDf(largeNewickStr, 'large');
+    const app = new DendrogramApp();
+    await app.init(largeTreeDf, 'dendrogramLargeApp');
+  } catch (err: unknown) {
+    const msg: string = 'PhyloTreeViewer dendrogramLargeApp() error: ' +
+      `${err instanceof Error ? err.message : (err as Object).toString()}`;
+    grok.shell.error(msg);
+    console.error(msg);
+  } finally {
+    pi.close();
+  }
+}
+
+//name:hierarchicalClusteringApp
+//description: Test/demo app for hierarchical clustering (inject tree to grid)
+export async function hierarchicalClusteringApp(): Promise<void> {
+  const pi = DG.TaskBarProgressIndicator.create('opem Hierarchical Clustering app');
+  try {
+    const app = new HierarchicalClusteringApp();
+    await app.init();
+  } catch (err: unknown) {
+    const msg: string = 'PhyloTreeViewer hierarchicalClusteringApp() error: ' +
       `${err instanceof Error ? err.message : (err as Object).toString()}`;
     grok.shell.error(msg);
     console.error(msg);

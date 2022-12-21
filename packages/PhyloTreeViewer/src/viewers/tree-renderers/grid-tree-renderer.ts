@@ -68,18 +68,22 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
       // ctx.stroke();
 
       if (this.mouseOver) {
-        renderNode(ctx, this.mouseOver.node,
-          this.placer.top, this.placer.bottom,
-          this.placer.padding.left, lengthRatio, stepRatio, this.lightStyler,
-          this.placer.totalLength, this.mouseOver.nodeHeight,
-          []);
+        renderNode({
+            ctx: ctx,
+            firstRowIndex: this.placer.top, lastRowIndex: this.placer.bottom,
+            leftPadding: this.placer.padding.left, lengthRatio: lengthRatio, stepRatio: stepRatio,
+            totalLength: this.placer.totalLength, styler: this.lightStyler,
+          },
+          this.mouseOver.node, this.mouseOver.nodeHeight, []);
       }
 
-      renderNode(ctx, this.treeRoot as MarkupNodeType,
-        firstRowIndex - 0.5, lastRowIndex + 0.5, this.leftPadding,
-        lengthRatio, stepRatio, this.mainStyler,
-        this.treeRoot.subtreeLength!, 0,
-        []);
+      renderNode({
+          ctx: ctx,
+          firstRowIndex: firstRowIndex - 0.5, lastRowIndex: lastRowIndex + 0.5,
+          leftPadding: this.leftPadding, lengthRatio: lengthRatio, stepRatio: stepRatio,
+          totalLength: this.treeRoot.subtreeLength!, styler: this.mainStyler,
+        },
+        this.treeRoot as MarkupNodeType, 0, []);
 
     } finally {
       ctx.restore();

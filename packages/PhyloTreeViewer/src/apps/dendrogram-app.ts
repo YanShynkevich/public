@@ -7,7 +7,9 @@ import {newickToDf} from '../utils';
 import {_package} from '../package';
 
 export class DendrogramApp {
-  private viewed: boolean;
+  private viewed: boolean = false;
+
+  private _funcName: string;
 
   _treeDf!: DG.DataFrame;
 
@@ -15,18 +17,17 @@ export class DendrogramApp {
 
   constructor() {}
 
-  async init(df?: DG.DataFrame): Promise<void> {
+  async init(df?: DG.DataFrame, funcName: string = 'dendrogramApp'): Promise<void> {
+    this._funcName = funcName;
     await this.loadData(df);
   }
 
   async loadData(df?: DG.DataFrame): Promise<void> {
-    if (df) {
-      await this.setData(df!);
-    } else {
+    if (!df) {
       const newickStr: string = await _package.files.readAsText('data/tree95.nwk');
-      const treeDf: DG.DataFrame = newickToDf(newickStr, 'tree95');
-      await this.setData(treeDf);
+      df = newickToDf(newickStr, 'tree95');
     }
+    await this.setData(df);
   }
 
   async setData(treeDf: DG.DataFrame): Promise<void> {
@@ -36,6 +37,7 @@ export class DendrogramApp {
     }
 
     this._treeDf = treeDf;
+
     if (!this.viewed) {
       await this.buildView();
       this.viewed = true;
@@ -78,7 +80,7 @@ export class DendrogramApp {
       // filter for leafs only, to align tree with grid
 
       this.tv = grok.shell.addTableView(this.treeDf, DG.DOCK_TYPE.FILL);
-      this.tv.path = this.tv.basePath = '/func/PhyloTreeViewer.DendrogramApp';
+      this.tv.path = this.tv.basePath = `/func/PhyloTreeViewer.${this._funcName}`;
     }
 
     if (!this.treeViewer) {
