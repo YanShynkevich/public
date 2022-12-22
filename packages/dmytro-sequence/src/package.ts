@@ -7,7 +7,7 @@ import {DataFrame} from 'datagrok-api/dg';
 
 import {getSubsequenceCountInColumn} from './utils/string-manipulation';
 import {NucleotideBoxCellRenderer} from './utils/cell-renderer';
-import {parseFastaENA} from './utils/ena-fasta-parser';
+import {parseFastaENA, _fetchENASequence} from './utils/ena-parser';
 
 export const _package = new DG.Package();
 const packageName = 'DmytroSequence';
@@ -36,7 +36,7 @@ export function complement(nucleotides: string): string {
     'c': 'g',
   };
 
-  const regex = new RegExp('^[ACGTacgt\\s]+$');
+  const regex = new RegExp('^[ACGTRNDacgtrnd\\s]+$');
   if (!nucleotides.match(regex)) return 'String is not a nucleotide.';
 
   return nucleotides.replace(/A|a|T|t|G|g|C|c/g, function(matched) {
@@ -102,22 +102,15 @@ export function nucleotideBoxCellRenderer() {
 //input: string cellText {semType: EnaID}
 //output: widget result
 //condition: true
-export async function enaSequence(cellText: string) {
+export async function enaSequence(cellText: string): Promise<DG.Widget> {
   //get the ENA
   const fasta = await parseFastaENA(cellText);
 
   if (fasta.includes('error=Not Found'))
     return new DG.Widget(ui.divText(`ENA id ${cellText} not found.`));
 
-  let headerText = '';
-  let nucleotide = '';
-  for (let i = 0; i < fasta.length; i++) {
-    if (fasta[i] === '\n') {
-      headerText = fasta.substring(0, i);
-      nucleotide = fasta.substring(i + 1, fasta.length);
-      break;
-    }
-  }
+  const headerText = fasta.substring(0, fasta.indexOf('\n'));
+  const nucleotide = fasta.substring(fasta.indexOf('\n') + 1, fasta.length - (fasta.indexOf('\n') + 1) - 1);
 
   const header = ui.h3(headerText);
   const textArea = ui.textInput('', nucleotide).root;
@@ -128,4 +121,39 @@ export async function enaSequence(cellText: string) {
   const widget = new DG.Widget(element);
 
   return widget;
+}
+
+//dialog function to see preview of query and then the full dataframe
+
+//name: formENADataTable
+//output: dataframe df
+export async function formENADataTable() {
+  let df = await _fetchENASequence('coronavirus', 10, 0, 60);
+  const grid = DG.Viewer.grid(df);
+
+  const queryInput = ui.stringInput('Query: ', 'coronavirus');
+  const limitInput = ui.intInput('How many rows: ', 100);
+  const offsetInput = ui.intInput('Nucleotides offset:', 0);
+  const sequenceInput = ui.intInput('How many nucleotides:', 60);
+
+  const button = ui.button('Search', async () => {
+    df = await _fetchENASequence(queryInput.value, 10, offsetInput.value!, sequenceInput.value!);
+    grid.dataFrame = df;
+  });
+  ui.dialog('Create sequences table')
+    .add(ui.divV([
+      ui.span([queryInput.root]),
+      ui.div([limitInput]),
+      ui.div([offsetInput]),
+      ui.div([sequenceInput]),
+      button,
+      ui.div([grid]),
+    ]))
+    .onOK(async () => {
+    // Display the resulting table
+      df = await _fetchENASequence(queryInput.value, limitInput.value!, offsetInput.value!, sequenceInput.value!);
+      console.log(df.toCsv());
+      grok.shell.addTableView(df);
+    })
+    .show();
 }
