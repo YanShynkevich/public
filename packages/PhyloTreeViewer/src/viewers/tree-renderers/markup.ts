@@ -211,7 +211,7 @@ export function renderNode<TNode extends MarkupNodeType>(
     ctx.stroke();
     //#endregion
 
-    if (minIndex == maxIndex || (maxIndex - minIndex) * opts.stepRatio > 1) {
+    if (minIndex == maxIndex || (maxIndex - minIndex) * opts.stepRatio > 1 || (traceList && traceList.length > 0)) {
       for (const childNode of (node.children ?? [])) {
         const childTraceList = traceList.filter((trace) => {
           return (childNode.minIndex ?? childNode.index) <= trace.target.index &&
