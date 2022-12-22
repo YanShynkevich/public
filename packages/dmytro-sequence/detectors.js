@@ -13,7 +13,7 @@ class DmytroSequencePackageDetectors extends DG.Package {
   //input: column col
   //output: string semType
   detectNucleotides(col) {
-    const regex = new RegExp('^[ACGTacgt\\s]+$');
+    const regex = new RegExp('^[ACGTRNDacgtrnd\\s]+$');
     if (col.type === DG.TYPE.STRING && col.categories.every((category) => category.match(regex))) {
       col.semType = 'dna_nucleotide';
       return col.semType;
