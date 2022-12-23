@@ -1,9 +1,11 @@
+import {before, category, expect, test} from '@datagrok-libraries/utils/src/test';
+
 import * as DG from 'datagrok-api/dg';
 
-import {before, category, expect, test} from '@datagrok-libraries/utils/src/test';
 import {parseFastaENA, parseEnaIdByQuery, _fetchENASequence} from '../utils/ena-parser';
 
 category('enaFastaParses', () => {
+  //asynchronous parse results
   let enaFastaParseResult: string;
   let enaIdParseByQueryResult: string;
   let enaSequenceFetchResult: DG.DataFrame;

@@ -1,4 +1,5 @@
 import {category, expect, test} from '@datagrok-libraries/utils/src/test';
+
 import * as DG from 'datagrok-api/dg';
 import * as grok from 'datagrok-api/grok';
 
@@ -40,10 +41,11 @@ category('StringManipulations', () => {
       `Sequence
       catgcaaatt
       cgaataactg`);
-    const length = 3;
+    const subsequenceLength = 3;
+    //semantic type detection
     await grok.data.detectSemanticTypes(df1);
     await grok.data.detectSemanticTypes(df2);
 
-    await expect(fuzzyJoin(df1, df2, length).toCsv(), expectedTable.toCsv());
+    await expect(fuzzyJoin(df1, df2, subsequenceLength).toCsv(), expectedTable.toCsv());
   });
 });

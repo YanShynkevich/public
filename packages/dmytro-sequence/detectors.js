@@ -34,16 +34,4 @@ class DmytroSequencePackageDetectors extends DG.Package {
     }
     return null;
   }
-
-  //check if string is a potential ena id
-
-  // //input: string str
-  // //output: bool result
-  // isPotentialENAId(str) {
-  //   // returns true, if name is of the form [A-Z]{2}[0-9]{6}
-  //   const regex = '^[A-Z]{2}[0-9]{6}$';
-  //   console.log(str.match(regex));
-  //   if (str.match(regex)) return true;
-  //   return false;
-  // }
 }

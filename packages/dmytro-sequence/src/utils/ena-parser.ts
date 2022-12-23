@@ -16,6 +16,7 @@ export async function _fetchENASequence(query: string, limit: number, offset: nu
   const sequenceList = Array<string>(outputIdList!.length);
 
   for (let i = 0; i < outputIdList!.length; i++) {
+    //get last 8 elements - id of sequence
     idList[i] = outputIdList![i].slice(-8);
 
     //extracting ENA sequences
@@ -34,6 +35,7 @@ export async function _fetchENASequence(query: string, limit: number, offset: nu
 
 export async function parseFastaENA(cellText: string): Promise<string> {
   const url = `https://www.ebi.ac.uk/ena/browser/api/fasta/${cellText}`;
+  //fasta - info about nucleotiode sequence and nucleotiode sequence itself
   const fasta = await (await grok.dapi.fetchProxy(url)).text();
 
   return fasta;

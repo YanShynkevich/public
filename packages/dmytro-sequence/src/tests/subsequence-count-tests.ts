@@ -1,4 +1,5 @@
 import {before, category, expect, test} from '@datagrok-libraries/utils/src/test';
+
 import * as grok from 'datagrok-api/grok';
 import * as DG from 'datagrok-api/dg';
 
@@ -8,6 +9,9 @@ category('Subsequence count', () => {
   //asynchronous script names
   const pythonSubsequenceScriptName = 'CountSubsequencePython';
   const pythonDataframeSubsequenceScriptName = 'CountSubsequencePythonDataframe';
+  const jsSubsequenceScriptName = 'CountSubsequenceJS';
+
+  //sequences dataframe
   const pythonDataframeSubsequenceTable = DG.DataFrame.fromCsv(
     `GenBank,Sequence
     MT079845.1,ctacaagaga tcgaaagttg gttggtttat accttcccag gtaacaaacc aaccaacttt cgatctcttg tagatctgtt ctctaaacga
@@ -16,7 +20,6 @@ category('Subsequence count', () => {
     MT358734.1,aagtaaggtt tataccttcc caggtaacaa accaaccaac tttcgatctc ttgtagatct gttctctaaa cgaactttaa aatctgtgtg
     MT385490.1,aacaaaccaa ccaactttcg atctcttgta gatctgttct ctaaacgaac tttaaaatct gtgtggctgt cactcggctg catgcttagt
     MT412305.1,attaaaggtt tataccttcc caggtaacaa accaatcaac tttcgatctc ttgtagatct gttctctaaa cgaactttaa aatctgtgtg`);
-  const jsSubsequenceScriptName = 'CountSubsequenceJS';
 
   //asynchronous script results
   let pythonSubsequenceScriptResult: number;

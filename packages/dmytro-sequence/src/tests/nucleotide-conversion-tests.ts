@@ -1,4 +1,5 @@
 import {category, expect, test} from '@datagrok-libraries/utils/src/test';
+
 import {complement} from '../package';
 
 category('NucleotideConversion', () => {
