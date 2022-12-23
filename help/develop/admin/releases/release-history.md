@@ -1,6 +1,18 @@
 <!-- TITLE: Release History -->
 <!-- SUBTITLE: -->
 
+# 2022-12-23 Dev build 1.11.1
+
+## Latest Docker Images
+
+* Datagrok: 
+  *  `docker pull datagrok/datagrok:1.11.1`
+* [Docker-Compose](https://datagrok.ai/help/develop/admin/docker-compose)
+
+## Addressed Issues
+
+
+
 # 2022-12-22 Dev build 1.11.0
 
 ## Latest Docker Images
