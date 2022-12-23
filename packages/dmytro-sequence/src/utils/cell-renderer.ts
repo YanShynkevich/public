@@ -6,14 +6,9 @@ export class NucleotideBoxCellRenderer extends DG.GridCellRenderer {
 
   render(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number,
     gridCell: DG.GridCell, cellStyle: DG.GridCellStyle) {
-    //make canvas cell rectangle
-    g.save();
-    g.beginPath();
-    g.rect(x, y, w, h);
-    g.clip();
+    //set canvas parameters
     g.font = '16px monospace';
     g.textBaseline = 'top';
-    g.restore();
 
     //paint the nucleotides
     const complementDictionary: {[letterToPaint: string]: string} = {
@@ -30,8 +25,8 @@ export class NucleotideBoxCellRenderer extends DG.GridCellRenderer {
     const rowsAmount = 4;
     const dy = 20;
     const xBegin = x;
-    const xPadding = 3;
-    const yPadding = 15;
+    const xPadding = 5;
+    const yPadding = 5;
 
     let i = 0;
     for (let n = 1; n <= rowsAmount; n++) {
