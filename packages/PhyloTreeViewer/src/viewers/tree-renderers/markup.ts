@@ -82,7 +82,8 @@ export interface ITreePlacer<TNode, THover extends HoverType<TNode>> {
    * @param point
    * @param nodeSize Units of leaves axis scale
    */
-  getNode(node: TNode, point: DG.Point, nodeSize: number): THover | null;
+  getNode(node: TNode, point: DG.Point, lineWidth: number, nodeSize: number,
+    treeToCanvas: (treeP: DG.Point) => DG.Point): THover | null;
 }
 
 export interface ITreeStyler<TNode extends NodeType> {

@@ -10,7 +10,7 @@ import {TREE_TAGS} from '../consts';
 import {ITreeStyler, markupNode, MarkupNodeType, TreeStylerBase} from './tree-renderers/markup';
 import {CanvasTreeRenderer} from './tree-renderers/canvas-tree-renderer';
 import {TreeRendererBase} from './tree-renderers/tree-renderer-base';
-import {ITreeHelper, Newick} from '@datagrok-libraries/bio';
+import {isLeaf, ITreeHelper, Newick} from '@datagrok-libraries/bio';
 import {RectangleTreeHoverType, RectangleTreePlacer} from './tree-renderers/rectangle-tree-placer';
 import {TreeHelper} from '../utils/tree-helper';
 import {toRgba, trans} from '../utils';
@@ -538,7 +538,8 @@ export class Dendrogram extends DG.JsViewer {
       }
 
       const selections: RectangleTreeHoverType<MarkupNodeType>[] = [];
-      for (const selRowI of this.dataFrame.selection.getSelectedIndexes()) {
+      const selectedIndexes = this.dataFrame.selection.getSelectedIndexes();
+      for (const selRowI of selectedIndexes) {
         const nodeName: string = nodeCol.get(selRowI);
         const node: MarkupNodeType = nodeDict[nodeName];
 
@@ -549,13 +550,20 @@ export class Dendrogram extends DG.JsViewer {
         const toDeleteList: number[] = [];
         let addSkip: boolean = false;
         for (let selI = 0; selI < selections.length; selI++) {
-          const selection = selections[selI];
+          const selNode = selections[selI].node;
 
-          if (th.includes(node, selection.node))
-            toDeleteList.push(selI);
-
-          if (th.includes(selection.node, node))
+          // if (th.includes(selNode, node))
+          if (((selNode.minIndex ?? selNode.index) <= (node.minIndex ?? node.index)) &&
+            // The adding node is in the subtree of already selected node
+            ((node.maxIndex ?? node.index) <= (selNode.maxIndex ?? selNode.index))) {
             addSkip = true;
+          } else
+            // if (th.includes(node, selNode))
+          if (((node.minIndex ?? node.index) <= (selNode.minIndex ?? selNode.index)) &&
+            // The already selected node is in the subtree of the adding node
+            ((selNode.maxIndex ?? selNode.index) <= (node.maxIndex ?? node.index))) {
+            toDeleteList.push(selI);
+          }
         }
         for (let toDeleteI = toDeleteList.length - 1; toDeleteI >= 0; toDeleteI--) {
           selections.splice(toDeleteList[toDeleteI]);
@@ -620,8 +628,10 @@ export class Dendrogram extends DG.JsViewer {
 
   private stylerOnTooltipShow({node, e}: { node: MarkupNodeType, e: MouseEvent }): void {
     if (node) {
+      const minMaxIndexStr: string = !isLeaf(node) ? ` (min: ${node.minIndex}, max: ${node.maxIndex})` : '';
       const tooltip = ui.divV([
         ui.div(`${node.name}`),
+        ui.div(`index: ${node.index}${minMaxIndexStr}`),
         ui.div(`desc: ${node.desc}`)]);
       ui.tooltip.show(tooltip, e.clientX + 16, e.clientY + 16);
     } else {

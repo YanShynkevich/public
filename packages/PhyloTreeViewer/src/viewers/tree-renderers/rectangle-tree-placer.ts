@@ -5,7 +5,7 @@ import * as rxjs from 'rxjs';
 
 import {HoverType, ITreePlacer, MarkupNodeType} from './markup';
 import {Subject} from 'rxjs';
-import {NodeType} from '@datagrok-libraries/bio';
+import {isLeaf, NodeType} from '@datagrok-libraries/bio';
 
 export type RectangleTreeHoverType<TNode extends NodeType> = HoverType<TNode> & {
   /** Node position along height axis */
@@ -61,9 +61,17 @@ export class RectangleTreePlacer<TNode extends MarkupNodeType> implements ITreeP
       this._onChanged.next();
   }
 
-  getNode(treeRoot: TNode, point: DG.Point, nodeSize: number): RectangleTreeHoverType<TNode> | null {
+  /**
+   * @param {NodeType} treeRoot
+   * @param {DG.Point} point
+   * @param {number} nodeSize Size of node in pixels (of styler)
+   */
+  getNode(
+    treeRoot: TNode, canvasPoint: DG.Point, lineWidth: number, nodeSize: number,
+    treeToCanvas: (treeP: DG.Point) => DG.Point
+  ): RectangleTreeHoverType<TNode> | null {
     function getNodeInt(
-      node: MarkupNodeType, point: DG.Point, currentHeight: number
+      node: MarkupNodeType, canvasPoint: DG.Point, currentHeight: number
     ): RectangleTreeHoverType<TNode> | null {
       const dpr: number = window.devicePixelRatio;
       // console.debug('DendrogramTreePlacer.getNode() ' +
@@ -74,21 +82,31 @@ export class RectangleTreePlacer<TNode extends MarkupNodeType> implements ITreeP
       //     maxIndex: node.maxIndex,
       //     branch_length: node.branch_length
       //   })}`);
-
-      if (((node.minIndex ?? node.index) - 0.25) <= point.y && point.y <= ((node.maxIndex ?? node.index) + 0.25)) {
+      // tree to canvas is linear transform, so searching node in canvas coords is correct
+      const minIndex: number = (node.minIndex ?? node.index) - 0.25;
+      const maxIndex: number = (node.maxIndex ?? node.index) + 0.25;
+      const leftTop: DG.Point = treeToCanvas(new DG.Point(currentHeight, minIndex));
+      const rightBottomP: DG.Point = treeToCanvas(new DG.Point(currentHeight + node.branch_length!, maxIndex));
+      if (leftTop.y <= canvasPoint.y && canvasPoint.y <= rightBottomP.y) {
         let res: RectangleTreeHoverType<TNode> | null = null;
-        const nodePoint: DG.Point = new DG.Point(currentHeight + node.branch_length!, node.index);
+        const beginP: DG.Point = treeToCanvas(new DG.Point(currentHeight, node.index));
+        const endP: DG.Point = treeToCanvas(new DG.Point(currentHeight + node.branch_length!, node.index));
+        const nodeR: number = nodeSize * dpr / 2; // in canvas pixels
+        const lineR: number = lineWidth * 1.5 * dpr / 2;
         if (
-          (Math.abs(point.y - node.index) < 0.1 &&
-            currentHeight < point.x && point.x < currentHeight + node.branch_length!) ||
-          (Math.pow(nodePoint.x - point.x, 2) + Math.pow(nodePoint.y - point.y, 2)) < Math.pow(nodeSize * dpr / 2, 2)
+          // node stick
+          (Math.abs(canvasPoint.y - beginP.y) < lineR &&
+            beginP.x - lineR <= canvasPoint.x && canvasPoint.x <= endP.x + lineR) ||
+          // leaf tip
+          (isLeaf(node) &&
+            (Math.pow((endP.x - canvasPoint.x) / nodeR, 2) + Math.pow((endP.y - canvasPoint.y) / nodeR, 2)) < 1)
         ) {
           res = {nodeHeight: currentHeight, node: node as TNode};
         }
 
         if (!res) {
           for (const childNode of (node.children ?? [])) {
-            res = getNodeInt(childNode, point, currentHeight + node.branch_length!);
+            res = getNodeInt(childNode, canvasPoint, currentHeight + node.branch_length!);
             if (res) break;
           }
         }
@@ -99,7 +117,7 @@ export class RectangleTreePlacer<TNode extends MarkupNodeType> implements ITreeP
       return null;
     }
 
-    const res = getNodeInt(treeRoot, point, 0);
+    const res = getNodeInt(treeRoot, canvasPoint, 0);
     return res;
   }
 

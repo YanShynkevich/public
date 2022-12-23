@@ -13,9 +13,20 @@ import {TreeHelper} from '../../utils/tree-helper';
 function canvasToTreePoint<TNode extends MarkupNodeType>(
   canvasPoint: DG.Point, canvas: HTMLCanvasElement, placer: RectangleTreePlacer<TNode>
 ): DG.Point {
+  const canvasWidth = canvas.clientWidth - placer.padding.left - placer.padding.right;
   const res: DG.Point = new DG.Point(
-    0 + placer.totalLength * canvasPoint.x / canvas.clientWidth,
-    placer.top + placer.height * canvasPoint.y / canvas.clientHeight);
+    (canvasPoint.x - placer.padding.left) * placer.totalLength / canvasWidth,
+    placer.top + canvasPoint.y * placer.height / canvas.clientHeight);
+  return res;
+}
+
+function treeToCanvasPoint<TNode extends MarkupNodeType>(
+  treePoint: DG.Point, canvas: HTMLCanvasElement, placer: RectangleTreePlacer<TNode>
+): DG.Point {
+  const canvasWidth = canvas.clientWidth - placer.padding.left - placer.padding.right;
+  const res: DG.Point = new DG.Point(
+    placer.padding.left + canvasWidth * treePoint.x / placer.totalLength,
+    canvas.clientHeight * (treePoint.y - placer.top) / placer.height);
   return res;
 }
 
@@ -225,7 +236,7 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
   }
 
   private canvasOnWheel(e: WheelEvent): void {
-    if (!this.canvas) return;
+    if (!this.canvas || this.mouseDragging) return;
     e.preventDefault();
 
     const pos = canvasToTreePoint(new DG.Point(e.offsetX, e.offsetY), this.canvas, this.placer);
@@ -256,7 +267,7 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
   private canvasOnMouseMove(e: MouseEvent) {
     if (!this.view || !this.canvas) return;
 
-    const pos = canvasToTreePoint(new DG.Point(e.offsetX, e.offsetY), this.canvas, this.placer);
+    const canvasPoint = new DG.Point(e.offsetX, e.offsetY);
 
     const md = this.mouseDragging;
     if (md) {
@@ -269,8 +280,9 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
       });
     } else {
       // console.debug('CanvasTreeRender.onMouseMove() --- getNode() ---');
-      const scaledNodeSize = 0.4 * this.placer.height / this.canvas.clientHeight;
-      this.mouseOver = this.placer.getNode(this.treeRoot, pos, scaledNodeSize);
+      this.mouseOver = this.placer.getNode(
+        this.treeRoot, canvasPoint, this.mainStyler.lineWidth, this.mainStyler.nodeSize,
+        (canvasP: DG.Point): DG.Point => { return treeToCanvasPoint(canvasP, this.canvas!, this.placer); });
 
       this.mainStyler.fireTooltipShow(this.mouseOver ? this.mouseOver.node : null, e);
     }
@@ -279,8 +291,6 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
   private selectedIds: string[] = [];
 
   private canvasOnClick(e: MouseEvent) {
-
-
     if (e.button == 0) {
       if (e.ctrlKey) {
         if (this.mouseOver) {
