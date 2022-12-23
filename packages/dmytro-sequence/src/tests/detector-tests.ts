@@ -13,7 +13,7 @@ category('detectors', () => {
 
     const column = table.columns.byName('sequence');
     await grok.data.detectSemanticTypes(table);
-    await expect(column.semType, 'dna_nucleotide');
+    expect(column.semType, 'dna_nucleotide');
   });
 
   test('detectEnaId', async () => {
@@ -26,6 +26,6 @@ category('detectors', () => {
 
     const column = table.columns.byName('enaID');
     await grok.data.detectSemanticTypes(table);
-    await expect(column.semType, 'EnaID');
+    expect(column.semType, 'EnaID');
   });
 });

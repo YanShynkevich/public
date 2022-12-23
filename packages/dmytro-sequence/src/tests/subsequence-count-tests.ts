@@ -53,11 +53,11 @@ category('Subsequence count', () => {
 
 
   test('pythonSubsequenceScriptWorksCorrectly', async () => {
-    await expect(pythonSubsequenceScriptResult, 2);
+    expect(pythonSubsequenceScriptResult, 2);
   });
 
   test('pythonSubsequenceScriptWorksCorrectlyWithOverlapping', async () => {
-    await expect(pythonSubsequenceScriptResultWithOverlapping, 2);
+    expect(pythonSubsequenceScriptResultWithOverlapping, 2);
   });
 
   test('pythonDataframeSubsequenceScriptWorksCorrectly', async () => {
@@ -70,7 +70,7 @@ category('Subsequence count', () => {
       1
       2`);
 
-    await expect(pythonDataframeSubsequenceScriptResult.toCsv(), expectedTable.toCsv());
+    expect(pythonDataframeSubsequenceScriptResult.toCsv(), expectedTable.toCsv());
   });
 
   test('pythonDataframeSubsequenceScriptWorksCorrectlyWithOverlapping', async () => {
@@ -83,14 +83,14 @@ category('Subsequence count', () => {
       0
       1`);
 
-    await expect(pythonDataframeSubsequenceScriptResultWithOverlapping.toCsv(), expectedTable.toCsv());
+    expect(pythonDataframeSubsequenceScriptResultWithOverlapping.toCsv(), expectedTable.toCsv());
   });
 
   test('jsSubsequenceScriptWorksCorrectly', async () => {
-    await expect(jsSubsequenceScriptResult, 2);
+    expect(jsSubsequenceScriptResult, 2);
   });
 
   test('jsSubsequenceScriptWorksCorrectlyWithOverlapping', async () => {
-    await expect(jsSubsequenceScriptResultWithOverlapping, 2);
+    expect(jsSubsequenceScriptResultWithOverlapping, 2);
   });
 });

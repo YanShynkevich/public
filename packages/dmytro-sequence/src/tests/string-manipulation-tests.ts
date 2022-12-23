@@ -9,11 +9,11 @@ import {substringOccurencesInStringWithOverlapping, extractSubsequencesFromStrin
 
 category('StringManipulations', () => {
   test('substringOccurencesWorksCorrectly', async () => {
-    await expect(substringOccurencesInStringWithOverlapping('ctacaagaga', 'aga'), 2);
+    expect(substringOccurencesInStringWithOverlapping('ctacaagaga', 'aga'), 2);
   });
 
   test('extractSubsequencesWorksCorrectly', async () => {
-    await expect(extractSubsequencesFromString('ctacaagaga', 3).toString(),
+    expect(extractSubsequencesFromString('ctacaagaga', 3).toString(),
       ['cta', 'caa', 'gag', 'tac', 'aag', 'aga', 'aca'].toString());
   });
 
@@ -22,7 +22,7 @@ category('StringManipulations', () => {
     const column2 = DG.Column.fromList('string', 'Counts', ['catgcaaatt', 'cgaataactg']);
     const length = 3;
 
-    await expect(getSubsequenceCountInColumn(column1, column2, length).toString(), [1, 3].toString());
+    expect(getSubsequenceCountInColumn(column1, column2, length).toString(), [1, 3].toString());
   });
 
   test('fuzzyJoinWorksCorrectly', async () => {
@@ -46,6 +46,6 @@ category('StringManipulations', () => {
     await grok.data.detectSemanticTypes(df1);
     await grok.data.detectSemanticTypes(df2);
 
-    await expect(fuzzyJoin(df1, df2, subsequenceLength).toCsv(), expectedTable.toCsv());
+    expect(fuzzyJoin(df1, df2, subsequenceLength).toCsv(), expectedTable.toCsv());
   });
 });

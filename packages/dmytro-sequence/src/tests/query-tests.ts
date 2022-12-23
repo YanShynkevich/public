@@ -35,7 +35,7 @@ category('DatabaseQueries', () => {
     ]`);
     expectedTable.col('sum')!.tags[DG.TAGS.FORMAT] = '#.0000000000000';
 
-    await expect(queryResult.toCsv(), expectedTable.toCsv());
+    expect(queryResult.toCsv(), expectedTable.toCsv());
   });
 
   test('jsFunctionQueryWorksCorrectly', async () => {
@@ -56,6 +56,6 @@ category('DatabaseQueries', () => {
       TRAIH,70.01000213623047`);
     expectedTable.col('sum')!.tags[DG.TAGS.FORMAT] = '#.0000000000000';
 
-    await expect(jsFunctionQueryResult.toCsv(), expectedTable.toCsv());
+    expect(jsFunctionQueryResult.toCsv(), expectedTable.toCsv());
   });
 });
