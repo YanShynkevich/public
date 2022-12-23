@@ -95,9 +95,9 @@ export interface ITreeStyler<TNode extends NodeType> {
 
   get showGrid(): boolean;
 
-  get strokeColor(): string;
+  getStrokeColor(node: TNode): string;
 
-  get fillColor(): string;
+  getFillColor(node: TNode): string;
 
   get onStylingChanged(): rxjs.Observable<void>;
 
@@ -119,11 +119,13 @@ export class TreeStylerBase<TNode extends NodeType> implements ITreeStyler<TNode
   protected _showGrid: boolean;
   get showGrid(): boolean { return this._showGrid; }
 
-  protected _fillColor;
-  get fillColor(): string { return this._fillColor; }
-
   protected _strokeColor;
-  get strokeColor(): string { return this._strokeColor; }
+
+  getStrokeColor(node: TNode): string { return this._strokeColor; }
+
+  protected _fillColor;
+
+  getFillColor(node: TNode): string { return this._fillColor; }
 
   protected _onStylingChanged: rxjs.Subject<void> = new rxjs.Subject<void>();
   get onStylingChanged(): rxjs.Observable<void> { return this._onStylingChanged; }
@@ -204,7 +206,7 @@ export function renderNode<TNode extends MarkupNodeType>(
     const maxY = Math.min((joinMaxIndex - opts.firstRowIndex) * opts.stepRatio, opts.ctx.canvas.height);
 
     ctx.beginPath();
-    ctx.strokeStyle = opts.styler.strokeColor;
+    ctx.strokeStyle = opts.styler.getStrokeColor(node);
     ctx.lineWidth = opts.styler.lineWidth * dpr;
     ctx.lineCap = 'round';
     ctx.moveTo(posX, minY);
@@ -225,7 +227,7 @@ export function renderNode<TNode extends MarkupNodeType>(
           const childPosY = (childNode.index - opts.firstRowIndex) * opts.stepRatio;
 
           ctx.beginPath();
-          ctx.strokeStyle = effStyler.strokeColor;
+          ctx.strokeStyle = effStyler.getStrokeColor(node);
           ctx.lineWidth = effStyler.lineWidth * dpr;
           ctx.lineCap = 'round';
           ctx.moveTo(endX, childPosY);
@@ -237,7 +239,7 @@ export function renderNode<TNode extends MarkupNodeType>(
     } else {
       const finishX: number = (currentLength + node.subtreeLength!) * opts.lengthRatio + opts.leftPadding * dpr;
       ctx.beginPath();
-      ctx.strokeStyle = opts.styler.strokeColor;
+      ctx.strokeStyle = opts.styler.getStrokeColor(node);
       ctx.lineWidth = opts.styler.lineWidth * dpr;
       ctx.lineCap = 'round';
       ctx.moveTo(beginX, posY);
@@ -257,7 +259,7 @@ export function renderNode<TNode extends MarkupNodeType>(
   for (const effStyler of [opts.styler, ...res.traceback]) {
     // Draw trace
     ctx.beginPath();
-    ctx.strokeStyle = effStyler.strokeColor;
+    ctx.strokeStyle = effStyler.getStrokeColor(node);
     ctx.lineWidth = effStyler.lineWidth * dpr;
     ctx.lineCap = 'round';
     // ctx.moveTo(posX, childPosY);
@@ -267,7 +269,7 @@ export function renderNode<TNode extends MarkupNodeType>(
 
     //#region Plot branch
     ctx.beginPath();
-    ctx.strokeStyle = effStyler.strokeColor;
+    ctx.strokeStyle = effStyler.getStrokeColor(node);
     ctx.lineWidth = effStyler.lineWidth * dpr;
     ctx.lineCap = 'round';
     ctx.moveTo(endX, posY);
@@ -288,10 +290,10 @@ export function renderNode<TNode extends MarkupNodeType>(
       }
       //#endregion
 
-      //#region Plot leaf (marker?)
+      //#region Plot leaf (marker)
       ctx.beginPath();
-      ctx.strokeStyle = effStyler.strokeColor;
-      ctx.fillStyle = effStyler.fillColor;
+      ctx.strokeStyle = effStyler.getStrokeColor(node);
+      ctx.fillStyle = effStyler.getFillColor(node);
       ctx.beginPath();
       ctx.ellipse(endX, posY, effStyler.nodeSize * dpr / 2, effStyler.nodeSize * dpr / 2,
         0, 0, 2 * Math.PI);

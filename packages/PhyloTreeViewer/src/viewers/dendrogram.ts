@@ -14,7 +14,7 @@ import {isLeaf, ITreeHelper, Newick} from '@datagrok-libraries/bio';
 import {RectangleTreeHoverType, RectangleTreePlacer} from './tree-renderers/rectangle-tree-placer';
 import {TreeHelper} from '../utils/tree-helper';
 import {toRgba, trans} from '../utils';
-import {TreeForGridApp} from '../apps/tree-for-grid-app';
+import {DendrogramColorCodingTreeStyler, DendrogramTreeStyler} from './tree-renderers/dendrogram-tree-styler';
 
 const LINE_WIDTH = 1;
 const TRANS_ALPHA = 0.4;
@@ -89,48 +89,6 @@ export enum PROPS {
   stepZoom = 'stepZoom',
 }
 
-class DendrogramTreeStyler extends TreeStylerBase<MarkupNodeType> {
-  override get lineWidth(): number { return this._lineWidth; }
-
-  set lineWidth(value: number) {
-    this._lineWidth = value;
-    this._onStylingChanged.next();
-  }
-
-  override get nodeSize(): number { return this._nodeSize; }
-
-  set nodeSize(value: number) {
-    this._nodeSize = value;
-    this._onStylingChanged.next();
-  }
-
-  override get showGrid(): boolean { return this._showGrid; }
-
-  set showGrid(value: boolean) {
-    this._showGrid = value;
-    this._onStylingChanged.next();
-  }
-
-  override get strokeColor(): string { return this._strokeColor; }
-
-  set strokeColor(value: string) {
-    this._strokeColor = value;
-    this._onStylingChanged.next();
-  }
-
-  override get fillColor(): string { return this._fillColor; }
-
-  set fillColor(value: string) {
-    this._fillColor = value;
-    this._onStylingChanged.next();
-  }
-
-  constructor(name: string,
-    lineWidth: number, nodeSize: number, showGrid: boolean, strokeColor: string, fillColor: string
-  ) {
-    super(name, lineWidth, nodeSize, showGrid, strokeColor, fillColor);
-  }
-}
 
 const newickDefault: string = ';';
 
@@ -165,6 +123,8 @@ export class Dendrogram extends DG.JsViewer {
   [PROPS.stepZoom]: number;
 
   mainStyler: DendrogramTreeStyler;
+  mainStylerOnTooltipShowSub: rxjs.Unsubscribable;
+
   lightStyler: DendrogramTreeStyler;
   currentStyler: DendrogramTreeStyler;
   mouseOverStyler: DendrogramTreeStyler;
@@ -217,10 +177,7 @@ export class Dendrogram extends DG.JsViewer {
     this.step = this.float(PROPS.step, 28,
       {category: PROPS_CATS.APPEARANCE, editor: 'slider', min: 0, max: 64, step: 0.1});
 
-    this.mainStyler = new DendrogramTreeStyler('main',
-      this.lineWidth, this.nodeSize, this.showGrid,
-      toRgba(trans(this.mainColor, TRANS_ALPHA)),
-      toRgba(trans(this.mainColor, TRANS_ALPHA)));
+    this.mainStyler = this.getMainStyler();
     this.lightStyler = new DendrogramTreeStyler('light',
       this.lineWidth, this.nodeSize, false,
       toRgba(trans(this.lightColor, TRANS_ALPHA)),
@@ -318,6 +275,19 @@ export class Dendrogram extends DG.JsViewer {
 
     case PROPS.font:
       break;
+
+    case PROPS.colorColumnName:
+    case PROPS.colorAggrType:
+      if (this.viewed) {
+        this.mainStylerOnTooltipShowSub.unsubscribe();
+      }
+
+      this.renderer!.mainStyler = this.mainStyler = this.getMainStyler();
+
+      if (this.viewed) {
+        this.mainStylerOnTooltipShowSub = this.mainStyler.onTooltipShow.subscribe(this.stylerOnTooltipShow.bind(this));
+      }
+      break;
     }
 
     // Rebuild view
@@ -360,10 +330,14 @@ export class Dendrogram extends DG.JsViewer {
   private treeDiv?: HTMLDivElement;
 
   private placer?: RectangleTreePlacer<MarkupNodeType>;
-  private renderer?: TreeRendererBase<MarkupNodeType, RectangleTreeHoverType<MarkupNodeType>>;
+  private renderer?: CanvasTreeRenderer<MarkupNodeType>;
 
   private destroyView(): void {
     console.debug('PhyloTreeViewer: Dendrogram.destroyView()');
+
+    this.mainStylerOnTooltipShowSub.unsubscribe();
+    for (const sub of this.viewSubs) sub.unsubscribe();
+    this.viewSubs = [];
 
     this.renderer!.detach();
     delete this.renderer;
@@ -372,8 +346,6 @@ export class Dendrogram extends DG.JsViewer {
 
     this.treeDiv!.remove();
     delete this.treeDiv;
-    for (const sub of this.viewSubs) sub.unsubscribe();
-    this.viewSubs = [];
   }
 
   private buildView(): void {
@@ -392,6 +364,7 @@ export class Dendrogram extends DG.JsViewer {
     const treeRoot: MarkupNodeType = Newick.parse_newick(this.treeNewick);
     markupNode(treeRoot);
     const totalLength: number = treeRoot.subtreeLength!;
+    this.mainStylerOnTooltipShowSub = this.mainStyler.onTooltipShow.subscribe(this.stylerOnTooltipShow.bind(this));
     this.placer = new RectangleTreePlacer<MarkupNodeType>(
       treeRoot.minIndex - 0.5, treeRoot.maxIndex + 0.5, totalLength);
     this.renderer = new CanvasTreeRenderer(
@@ -662,6 +635,25 @@ export class Dendrogram extends DG.JsViewer {
   // getSelectionStylerNodeSize(): number {
   //   return Math.max(this.mainStyler.nodeSize + 2, this.mainStyler.nodeSize * 1.4);
   // }
+
+  getMainStyler(): DendrogramTreeStyler {
+    let res: DendrogramTreeStyler;
+    if (this.colorColumnName) {
+      const colorCol: DG.Column = this.dataFrame.getCol(this.colorColumnName);
+      const nodeCol: DG.Column = this.dataFrame.getCol(this.nodeColumnName);
+      res = new DendrogramColorCodingTreeStyler('main-color-coding',
+        this.lineWidth, this.nodeSize, this.showGrid,
+        nodeCol, colorCol, this.colorAggrType,
+        toRgba(trans(this.mainColor, TRANS_ALPHA)),
+        toRgba(trans(this.mainColor, TRANS_ALPHA)));
+    } else {
+      res = new DendrogramTreeStyler('main',
+        this.lineWidth, this.nodeSize, this.showGrid,
+        toRgba(trans(this.mainColor, TRANS_ALPHA)),
+        toRgba(trans(this.mainColor, TRANS_ALPHA)));
+    }
+    return res;
+  }
 }
 
 export class MyViewer extends DG.JsViewer {

@@ -37,11 +37,27 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
 
   protected readonly placer: RectangleTreePlacer<TNode>;
 
-  protected readonly mainStyler: ITreeStyler<TNode>;
   protected readonly lightStyler: ITreeStyler<TNode>;
   protected readonly currentStyler: ITreeStyler<TNode>;
   protected readonly mouseOverStyler: ITreeStyler<TNode>;
   protected readonly selectionStyler: ITreeStyler<TNode>;
+
+  protected _mainStyler: ITreeStyler<TNode>;
+  protected _mainStylerOnChangedSub: rxjs.Unsubscribable;
+
+  get mainStyler(): ITreeStyler<TNode> { return this._mainStyler; }
+
+  set mainStyler(value: ITreeStyler<TNode>) {
+    if (this.view)
+      this._mainStylerOnChangedSub.unsubscribe();
+
+    this._mainStyler = value;
+
+    if (this.view) {
+      this._mainStylerOnChangedSub = this._mainStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this));
+      this.render('mainStyler');
+    }
+  }
 
   constructor(
     treeRoot: TNode, placer: RectangleTreePlacer<TNode>,
@@ -53,22 +69,11 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
     this.placer = placer;
     this.placer.onPlacingChanged.subscribe(this.placerOnChanged.bind(this));
 
-    this.mainStyler = mainStyler;
-    this.mainStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this));
-
+    this._mainStyler = mainStyler;
     this.lightStyler = lightStyler;
-    this.lightStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this));
-
     this.currentStyler = currentStyler;
-    this.currentStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this));
-
     this.mouseOverStyler = mouseOverStyler;
-    this.mouseOverStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this));
-
     this.selectionStyler = selectionStyler;
-    this.selectionStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this));
-
-    let k = 11;
 
     // this.view onSizeChanged event handled with ancestor TreeRenderBase calls this.render()
   }
@@ -122,21 +127,13 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
       // ctx.lineTo(ctx.canvas.width, 0);
       // ctx.stroke();
 
-      // if (this.hover) {
-      //   renderNode(ctx, this.hover.node,
-      //     this.placer.top, this.placer.bottom,
-      //     this.placer.padding.left, lengthRatio, stepRatio, this.lightStyler,
-      //     this.placer.totalLength, this.hover.nodeHeight,
-      //     []);
-      // }
-
       const invisibleStyler = new TreeStylerBase<TNode>('invisible', 0, 0, false, '#00000000', '#00000000');
 
       this.renderCounter++;
       console.debug(`*** ${this.renderCounter} PhyloTreeViewer: CanvasTreeRenderer.render(), ` +
         `main & light, traceback hover & selection, ` +
         `purpose ${purpose}`);
-      const styler: ITreeStyler<TNode> = !this.mouseOver ? this.mainStyler : this.lightStyler;
+      const styler: ITreeStyler<TNode> = !this.mouseOver ? this._mainStyler : this.lightStyler;
       const selectionTraceList: TraceTargetType<TNode>[] = this.selections.map(
         (sel) => { return {target: sel.node, styler: this.selectionStyler};});
       renderNode({
@@ -212,6 +209,12 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
     this.canvas = ui.canvas();
     this.view!.appendChild(this.canvas);
 
+    this._mainStylerOnChangedSub = this._mainStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this));
+    this.subs.push(this.lightStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this)));
+    this.subs.push(this.currentStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this)));
+    this.subs.push(this.mouseOverStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this)));
+    this.subs.push(this.selectionStyler.onStylingChanged.subscribe(this.stylerOnChanged.bind(this)));
+
     this.subs.push(rxjs.fromEvent<WheelEvent>(this.canvas, 'wheel').subscribe(this.canvasOnWheel.bind(this)));
     this.subs.push(rxjs.fromEvent<MouseEvent>(this.canvas, 'mousedown').subscribe(this.canvasOnMouseDown.bind(this)));
     this.subs.push(rxjs.fromEvent<MouseEvent>(this.canvas, 'mouseup').subscribe(this.canvasOnMouseUp.bind(this)));
@@ -222,6 +225,7 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
   public override detach(): void {
     this.canvas!.remove();
     delete this.canvas;
+    this._mainStylerOnChangedSub.unsubscribe();
     super.detach();
   }
 
@@ -281,10 +285,10 @@ export class CanvasTreeRenderer<TNode extends MarkupNodeType>
     } else {
       // console.debug('CanvasTreeRender.onMouseMove() --- getNode() ---');
       this.mouseOver = this.placer.getNode(
-        this.treeRoot, canvasPoint, this.mainStyler.lineWidth, this.mainStyler.nodeSize,
+        this.treeRoot, canvasPoint, this._mainStyler.lineWidth, this._mainStyler.nodeSize,
         (canvasP: DG.Point): DG.Point => { return treeToCanvasPoint(canvasP, this.canvas!, this.placer); });
 
-      this.mainStyler.fireTooltipShow(this.mouseOver ? this.mouseOver.node : null, e);
+      this._mainStyler.fireTooltipShow(this.mouseOver ? this.mouseOver.node : null, e);
     }
   }
 

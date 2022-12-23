@@ -81,7 +81,7 @@ export class LeafRangeGridTreeRenderer extends GridTreeRendererBase<MarkupNodeTy
           ctx: ctx,
           firstRowIndex: firstRowIndex - 0.5, lastRowIndex: lastRowIndex + 0.5,
           leftPadding: this.leftPadding, lengthRatio: lengthRatio, stepRatio: stepRatio,
-          totalLength: this.treeRoot.subtreeLength!, styler: this.mainStyler,
+          totalLength: this.treeRoot.subtreeLength!, styler: this._mainStyler,
         },
         this.treeRoot as MarkupNodeType, 0, []);
 
