@@ -35,9 +35,9 @@ export async function hierarchicalClusteringUI2(df: DG.DataFrame): Promise<void>
 
 /** Creates table view with injected tree of newick result */
 export async function hierarchicalClusteringUI(
-  df: DG.DataFrame, features: DG.ColumnList, distance: string, linkage: string
+  df: DG.DataFrame, colNameList: string[], distance: string, linkage: string
 ): Promise<void> {
-  const colNameSet: Set<string> = new Set(features.names());
+  const colNameSet: Set<string> = new Set(colNameList);
   const filteredDf: DG.DataFrame = hierarchicalClusteringFilterDfForNulls(df, colNameSet);
 
   let tv: DG.TableView = grok.shell.getTableView(df.name);

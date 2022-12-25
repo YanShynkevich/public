@@ -110,12 +110,16 @@ export function injectTreeForGridUI2(
 
   // -- Inject properties --
 
-  const lineWidthProperty = DG.Property.int(D_PROPS.lineWidth,
-    (obj) => { },
-    (obj, value) => { },
-    1);
-  lineWidthProperty.category = `Datagram ${D_PROPS_CATS.APPEARANCE}`;
-  DG.Property.registerAttachedProperty('TreeForGrid', lineWidthProperty);
+  // const lineWidthProperty = DG.Property.int(D_PROPS.lineWidth,
+  //   (obj) => {
+  //     let k = 11;
+  //   },
+  //   (obj, value) => {
+  //     let k = 11;
+  //   },
+  //   1);
+  // lineWidthProperty.category = `Datagram ${D_PROPS_CATS.APPEARANCE}`;
+  // DG.Property.registerAttachedProperty('TreeForGrid', lineWidthProperty);
 
   return treeN;
 }

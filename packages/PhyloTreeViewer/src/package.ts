@@ -344,5 +344,6 @@ export function myViewer(): DG.JsViewer {
 export async function hierarchicalClustering(
   table: DG.DataFrame, features: DG.ColumnList, distance: string, linkage: string
 ): Promise<void> {
-  await hierarchicalClusteringUI(table, features, distance, linkage);
+  const colNameList: string[] = features.names();
+  await hierarchicalClusteringUI(table, colNameList, distance, linkage);
 }

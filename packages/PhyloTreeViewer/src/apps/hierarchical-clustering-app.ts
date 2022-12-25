@@ -5,12 +5,13 @@ import * as bio from '@datagrok-libraries/bio';
 import {Unsubscribable} from 'rxjs';
 import {newickToDf} from '../utils';
 import {_package} from '../package';
+import {hierarchicalClusteringUI} from '../utils/hierarchical-clustering';
 
 export class HierarchicalClusteringApp {
   private viewed: boolean = false;
 
   private _df!: DG.DataFrame;
-  get df(): DG.DataFrame { return this.df; }
+  get df(): DG.DataFrame { return this._df; }
 
   constructor() {}
 
@@ -43,18 +44,20 @@ export class HierarchicalClusteringApp {
 
   // -- View --
 
-  tv!: DG.TableView;
+  tv?: DG.TableView;
 
   private async destroyView(): Promise<void> {
-
+    if (this.tv) {
+      this.tv.close();
+      delete this.tv;
+    }
   }
 
   private async buildView(): Promise<void> {
     if (!this.tv) {
       this.tv = grok.shell.addTableView(this.df, DG.DOCK_TYPE.FILL);
-      this.tv.path = this.tv.basePath = '/func/PhyloTreeViewer.hierarchicalClusteringApp';
     }
-
-
+    this.tv.path = this.tv.basePath = '/func/PhyloTreeViewer.hierarchicalClusteringApp';
+    hierarchicalClusteringUI(this.df, ['HEIGHT'], 'euclidean', 'ward');
   }
 }
