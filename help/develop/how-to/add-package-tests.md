@@ -74,7 +74,7 @@ the associated Jira issue key or GitHub issue number):
 
 ```js
 test('Skipped', async () => {
-  expect(1, 1);
+  expect(1, 11);
 }, {skipReason: 'GROK-99999'});
 ```
 

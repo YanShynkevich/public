@@ -2,8 +2,7 @@ import * as ui from 'datagrok-api/ui';
 import * as grok from 'datagrok-api/grok';
 import * as DG from 'datagrok-api/dg';
 
-import {VdRegionType, VdRegion} from '@datagrok-libraries/bio/src/vd-regions';
-import {WebLogo} from '@datagrok-libraries/bio/src/viewers/web-logo';
+import {IVdRegionsViewer, PositionHeight, VdRegion, VdRegionType, WebLogoViewer} from '@datagrok-libraries/bio';
 
 const vrt = VdRegionType;
 
@@ -36,7 +35,7 @@ const vrt = VdRegionType;
 /** Viewer with tabs based on description of chain regions.
  *  Used to define regions of an immunoglobulin LC.
  */
-export class VdRegionsViewer extends DG.JsViewer {
+export class VdRegionsViewer extends DG.JsViewer implements IVdRegionsViewer {
   // private regionsDf: DG.DataFrame;
   private regionsFg: DG.FilterGroup | null = null;
   // private regionsTV: DG.TableView;
@@ -52,6 +51,7 @@ export class VdRegionsViewer extends DG.JsViewer {
 
   public skipEmptyPositions: boolean;
   public positionWidth: number;
+  public positionHeight: string;
 
 
   public get df(): DG.DataFrame {
@@ -79,6 +79,8 @@ export class VdRegionsViewer extends DG.JsViewer {
 
     this.skipEmptyPositions = this.bool('skipEmptyPositions', false);
     this.positionWidth = this.float('positionWidth', 16);
+    this.positionHeight = this.string('positionHeight', PositionHeight.Entropy,
+      {choices: Object.keys(PositionHeight)});
   }
 
   public async init() {
@@ -141,6 +143,11 @@ export class VdRegionsViewer extends DG.JsViewer {
         await this.destroyView();
         await this.buildView();
         break;
+
+      case 'positionHeight':
+        await this.destroyView();
+        await this.buildView();
+        break;
       }
     }
   }
@@ -174,7 +181,7 @@ export class VdRegionsViewer extends DG.JsViewer {
   //#region -- View --
   private host: HTMLElement | null = null;
   private mainLayout: HTMLTableElement | null = null;
-  private logos: { [chain: string]: WebLogo }[] = [];
+  private logos: { [chain: string]: WebLogoViewer }[] = [];
 
   private async destroyView(): Promise<void> {
     // TODO: Unsubscribe from and remove all view elements
@@ -201,7 +208,7 @@ export class VdRegionsViewer extends DG.JsViewer {
     this.logos = [];
 
     for (let orderI = 0; orderI < orderList.length; orderI++) {
-      const regionChains: { [chain: string]: WebLogo } = {};
+      const regionChains: { [chain: string]: WebLogoViewer } = {};
       for (const chain of this.chains) {
         const region: VdRegion | undefined = regionsFiltered
           .find((r) => r.order == orderList[orderI] && r.chain == chain);
@@ -212,7 +219,8 @@ export class VdRegionsViewer extends DG.JsViewer {
           fixWidth: true,
           skipEmptyPositions: this.skipEmptyPositions,
           positionWidth: this.positionWidth,
-        })) as unknown as WebLogo;
+          positionHeight: this.positionHeight,
+        })) as unknown as WebLogoViewer;
       }
       // WebLogo creation fires onRootSizeChanged event even before control being added to this.logos
       this.logos[orderI] = regionChains;
@@ -237,7 +245,7 @@ export class VdRegionsViewer extends DG.JsViewer {
           })] : []),
           // List with controls for regions
           ...[...Array(orderList.length).keys()].map((orderI) => {
-            const wl: WebLogo = this.logos[orderI][chain];
+            const wl: WebLogoViewer = this.logos[orderI][chain];
             wl.root.style.height = '100%';
 
             const resDiv = ui.div([wl.root]/*`${chain} ${regionsFiltered[rI]}`*/, {

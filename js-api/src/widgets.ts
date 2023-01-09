@@ -118,6 +118,8 @@ export class ObjectPropertyBag {
 /** Base class for controls that have a visual root and a set of properties. */
 export class Widget<TSettings = any> {
 
+  public get type(): string { return 'Unknown'; }
+
   /** Contains auxiliary information */
   public temp: any;
 
@@ -150,6 +152,16 @@ export class Widget<TSettings = any> {
     this.getProperties = this.getProperties.bind(this);
 
     this.temp = {};
+  }
+
+  /** Returns all currently active widgets. */
+  static getAll(): Widget[] {
+    return api.grok_Widget_GetAll();
+  }
+
+  /** Finds existing widget from its visual root. */
+  static find(root: Element): Widget | null {
+    return api.grok_Widget_FromRoot(root);
   }
 
   toDart() {
@@ -237,7 +249,7 @@ export class Widget<TSettings = any> {
     return p.defaultValue;
   }
 
-  /** @returns {Widget} */
+  /** Creates a new widget from the root element. */
   static fromRoot(root: HTMLElement): Widget {
     return new Widget(root);
   }
@@ -321,7 +333,10 @@ export abstract class Filter extends Widget {
   /** Override to save filter state. */
   saveState(): any {
     console.log('save state');
-    return { columnName: this.columnName };
+    return {
+      column: this.columnName,
+      columnName: this.columnName
+    };
   }
 
   /** Override to load filter state. */
@@ -345,6 +360,11 @@ export abstract class Filter extends Widget {
     );
   }
 
+  /** Gets called when a previously used filter gets moved in the DOM tree.
+   * Normally, you don't need to do anything, but this might be handy for
+   * the iframe-based filters. */
+  refresh() {}
+
   detach(): void {
     super.detach();
     if (this.isFiltering)
@@ -358,6 +378,10 @@ export class DartWidget extends Widget {
     super(api.grok_Widget_Get_Root(dart));
     this.dart = dart;
     this.temp = new MapProxy(api.grok_Widget_Get_Temp(this.dart));
+  }
+
+  get type(): string {
+    return api.grok_Widget_Get_Type(this.dart);
   }
 
   get root(): HTMLElement {
@@ -843,6 +867,7 @@ export class Menu {
 
 /** Balloon-style visual notifications. */
 export class Balloon {
+
   /** Shows information message (green background) */
   info(s: string): void {
     api.grok_Balloon(s, 'info');
@@ -852,88 +877,13 @@ export class Balloon {
   error(s: string): void {
     api.grok_Balloon(s, 'error');
   }
+
+  /** Closes all balloons currently shown */
+  static closeAll(): void {
+    api.grok_Balloon_CloseAll();
+  }
 }
 
-
-// abstract class Input<T = any> {
-//
-//   //_input: HTMLElement;
-//   _format: string = '';
-//   _root: HTMLElement = ui.div();
-//   _captionLabel: HTMLLabelElement = ui.element('label');
-//   _nullable: boolean = true;
-//
-//   onValueChanged: rxjs.Subject<any> = new rxjs.Subject();
-//
-//    /** Visual root (typically a div element that contains {@link caption} and {@link input}) */
-//   abstract get root(): HTMLElement;
-//
-//   get caption(): string { return this._captionLabel.innerText; }
-//
-//   /** Value format. */
-//   get format(): string { return this._format; }
-//   set format(s: string) { this._format = s; }
-//
-//   get captionLabel(): HTMLElement { return this._captionLabel; }
-//
-//   /** Returns the actual input */
-//   abstract get input(): HTMLElement;
-//
-//   /** Whether empty values are allowed */
-//   get nullable(): boolean { return this._nullable; }
-//   set nullable(v: boolean) { this._nullable = v; }
-//
-//   /** Input value */
-//   get value(): T { return toJs(api.grok_InputBase_Get_Value(this.dart)); }
-//   set value(x: T) { toDart(api.grok_InputBase_Set_Value(this.dart, x)); }
-//
-//   /** String representation of the {@link value} */
-//   get stringValue(): string { return api.grok_InputBase_Get_StringValue(this.dart); }
-//   set stringValue(s: string) { api.grok_InputBase_Set_StringValue(this.dart, s); }
-//
-//   /** Whether the input is readonly */
-//   get readOnly(): boolean { return api.grok_InputBase_Get_ReadOnly(this.dart); }
-//   set readOnly(v: boolean) { api.grok_InputBase_Set_ReadOnly(this.dart, v); }
-//
-//   /** Whether the input is enabled */
-//   get enabled(): boolean { return api.grok_InputBase_Get_Enabled(this.dart); }
-//   set enabled(v: boolean) { api.grok_InputBase_Set_Enabled(this.dart, v); }
-//
-//   /// Occurs when [value] is changed, either by user or programmatically.
-//   abstract onChanged(callback: Function): StreamSubscription;
-//
-//   /// Occurs when [value] is changed by user.
-//   abstract onInput(callback: Function): StreamSubscription;
-//
-//   /** Saves the value. Used in dialog history. See also {@link load} */
-//   save(): any {
-//     return api.grok_InputBase_Save(this.dart);
-//   };
-//
-//   /** Loads the value. Used in dialog history. See also {@link load} */
-//   load(s: any): any { return api.grok_InputBase_Load(this.dart, s); };
-//
-//   init(): any {
-//     return api.grok_InputBase_Init(this.dart);
-//   };
-//
-//   /** Fires the 'changed' event */
-//   fireChanged(): any {
-//     return api.grok_InputBase_FireChanged(this.dart);
-//   };
-//
-//   /** Adds the specified caption */
-//   addCaption(caption: string): void { };
-//
-//   /** Adds the specified postfix */
-//   addPostfix(postfix: string): void { };
-//
-//   /** Adds a usage example to the input's hamburger menu */
-//   addPatternMenu(pattern: any): void { }
-//
-//   /** Sets the tooltip */
-//   setTooltip(msg: string): void { ui.tooltip.bind(this.root, msg); };
-// }
 
 
 /** Input control base. Could be used for editing {@link Property} values as well.
@@ -948,10 +898,12 @@ export class InputBase<T = any> {
       this.onChanged((_: any) => onChanged(this.value));
   }
 
+  /** Creates input for the specified property, and optionally binds it to the specified object */
   static forProperty(property: Property, source: any = null): InputBase {
     return toJs(api.grok_InputBase_ForProperty(property.dart, source));
   }
 
+  /** Creates input for the specified column */
   static forColumn<T = any>(column: Column<T>): InputBase<T | null> {
     return toJs(api.grok_InputBase_ForColumn(column.dart));
   }
@@ -1021,9 +973,14 @@ export class InputBase<T = any> {
     return api.grok_InputBase_Init(this.dart);
   };
 
-  /** Fires the 'changed' event */
+  /** Fires the 'changed' event (value has changed). See also {@link fireInput} */
   fireChanged(): any {
     return api.grok_InputBase_FireChanged(this.dart);
+  };
+
+  /** Fires the 'input' event (user input). See also {@link fireChanged} */
+  fireInput(): any {
+    return api.grok_InputBase_FireInput(this.dart);
   };
 
   /** Adds the specified caption */
@@ -1059,6 +1016,33 @@ export class InputBase<T = any> {
 }
 
 
+/** Base class for JS value editors */
+export abstract class JsInputBase<T = any> extends InputBase<T> {
+  //onInput: rxjs.Subject<any> = new rxjs.Subject<any>();
+
+  abstract getInput(): HTMLElement;
+
+  abstract getValue(): T;
+  abstract setValue(value: T): void;
+
+  abstract getStringValue(): string;
+  abstract setStringValue(value: string): void;
+
+  get input() { return this.getInput(); }
+
+  get value(): T { return this.getValue(); }
+  set value(value: T) { this.setValue(value); }
+
+  get stringValue(): string { return this.getStringValue(); }
+  set stringValue(value: string) { this.setStringValue(value); }
+
+  constructor() {
+    super(null, null);
+    //this.dart = api.grok_InputBase_FromJS(this);
+  }
+}
+
+
 export class DateInput extends InputBase<dayjs.Dayjs> {
   dart: any;
 
@@ -1068,11 +1052,11 @@ export class DateInput extends InputBase<dayjs.Dayjs> {
 
   get value(): dayjs.Dayjs { return dayjs(api.grok_DateInput_Get_Value(this.dart)); }
   set value(x: dayjs.Dayjs) { toDart(api.grok_DateInput_Set_Value(this.dart, x.valueOf())); }
-
 }
 
 export class ProgressIndicator {
   dart: any;
+
   constructor(dart: any) {
     this.dart = dart;
   }
@@ -1124,6 +1108,7 @@ export class TaskBarProgressIndicator extends ProgressIndicator {
 
 export class TagEditor {
   dart: any;
+
   constructor(dart: any) {
     this.dart = dart;
   }
@@ -1168,6 +1153,7 @@ export class TagEditor {
 
 export class TagElement {
   dart: any;
+
   constructor(dart: any) {
     this.dart = dart;
   }
@@ -1427,6 +1413,11 @@ export class TreeViewNode {
     return api.grok_TreeViewNode_Root(this.dart);
   }
 
+  /* Node's parent */
+  get parent(): TreeViewNode {
+    return api.grok_TreeViewNode_Parent(this.dart);
+  }
+
   /** Caption label */
   get captionLabel(): HTMLElement {
     return api.grok_TreeViewNode_CaptionLabel(this.dart);
@@ -1455,6 +1446,11 @@ export class TreeViewNode {
 
   /**  */
   get onSelected(): Observable<TreeViewNode> { return __obs('d4-tree-view-node-current', this.dart); }
+
+  /** Removes the node and its children from the parent */
+  remove(): void {
+    api.grok_TreeViewNode_Remove(this.dart);
+  }
 }
 
 export class TreeViewGroup extends TreeViewNode {
@@ -1507,9 +1503,18 @@ export class TreeViewGroup extends TreeViewNode {
     return api.grok_TreeViewNode_Items(this.dart).map((i: any) => toJs(i));
   }
 
+  /** Gets the node's children */
+  get children(): TreeViewNode[] {
+    return api.grok_TreeViewNode_Children(this.dart).map((i: any) => toJs(i));
+  }
+
   get expanded(): boolean { return api.grok_TreeViewNode_Get_Expanded(this.dart); }
 
   set expanded(isExpanded: boolean) { api.grok_TreeViewNode_Set_Expanded(this.dart, isExpanded); }
+
+  /** Indicates whether check or uncheck is applied to a node only or to all node's children */
+  get autoCheckChildren(): boolean { return api.grok_TreeViewNode_GetAutoCheckChildren(this.dart); }
+  set autoCheckChildren(auto: boolean) { api.grok_TreeViewNode_SetAutoCheckChildren(this.dart, auto); }
 
   /** Adds new group */
   group(text: string | Element, value: object | null = null, expanded: boolean = true): TreeViewGroup {

@@ -1,127 +1,221 @@
 import * as grok from 'datagrok-api/grok';
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
-import {siRnaAxolabsToGcrs, gcrsToNucleotides, asoGapmersBioSpringToGcrs, gcrsToMermade12,
-} from '../structures-works/converters';
-import {map, COL_NAMES, MODIFICATIONS} from '../structures-works/map';
-import {isValidSequence} from '../structures-works/sequence-codes-tools';
-import {sequenceToMolV3000} from '../structures-works/from-monomers';
+import {
+  siRnaBioSpringToGcrs, siRnaAxolabsToGcrs, gcrsToNucleotides, asoGapmersBioSpringToGcrs, gcrsToMermade12,
+  siRnaNucleotidesToGcrs
+} from '../hardcode-to-be-eliminated/converters';
+import {weightsObj, SYNTHESIZERS} from '../hardcode-to-be-eliminated/map';
+import {SEQUENCE_TYPES, COL_NAMES, GENERATED_COL_NAMES} from './constants';
+import {saltMass, saltMolWeigth, molecularWeight, batchMolWeight} from './calculations';
+import {isValidSequence} from '../sdf-tab/sequence-codes-tools';
+import {sequenceToMolV3000} from '../utils/structures-works/from-monomers';
+import {linkStrandsV3000} from '../utils/structures-works/mol-transformations';
+import {stringify, download, removeEmptyRows, differenceOfTwoArrays} from '../utils/helpers';
 
-import {SALTS_CSV} from '../salts';
-import {USERS_CSV} from '../users';
-import {ICDS} from '../ICDs';
-import {SOURCES} from '../sources';
-import {IDPS} from '../IDPs';
+import {SALTS_CSV} from '../hardcode-to-be-eliminated/salts';
+import {USERS_CSV} from '../hardcode-to-be-eliminated/users';
+import {ICDS} from '../hardcode-to-be-eliminated/ICDs';
+import {SOURCES} from '../hardcode-to-be-eliminated/sources';
+import {IDPS} from '../hardcode-to-be-eliminated/IDPs';
 
+import {sdfAddColumns} from '../utils/sdf-add-columns';
+import {sdfSaveTable} from '../utils/sdf-save-table';
 
-function sortByStringLengthInDescendingOrder(array: string[]): string[] {
-  return array.sort(function(a, b) {return b.length - a.length;});
+const enum PREFIXES {
+  AS = 'AS',
+  SS = 'SS',
+  AS1 = 'AS1',
+  AS2 = 'AS2'
 }
 
-function stringify(items: string[]): string {
-  return '["' + items.join('", "') + '"]';
+const enum SEQ_TYPE {
+  AS = 'AS',
+  SS = 'SS',
+  DUPLEX = 'Duplex',
+  DIMER = 'Dimer',
 }
 
-function saltMass(saltNames: string[], molWeightCol: DG.Column, equivalentsCol: DG.Column, i: number,
-  saltCol: DG.Column) {
-  const saltRowIndex = saltNames.indexOf(saltCol.get(i));
-  return (
-    saltRowIndex == -1 || molWeightCol.get(saltRowIndex) == DG.FLOAT_NULL || equivalentsCol.get(i) == DG.INT_NULL) ?
-    DG.FLOAT_NULL :
-    molWeightCol.get(saltRowIndex) * equivalentsCol.get(i);
+/** Computable categories of sequence types */
+const enum SEQ_TYPE_CATEGORY {
+  AS_OR_SS,
+  DUPLEX,
+  DIMER,
 }
 
-function saltMolWeigth(saltNamesList: string[], saltCol: DG.Column, molWeightCol: DG.Column, i: number) {
-  const saltRowIndex = saltNamesList.indexOf(saltCol.get(i));
-  return (saltRowIndex == -1) ? DG.FLOAT_NULL : molWeightCol.get(saltRowIndex);
+/** Map between types and their categories inferrable from 'Sequence' column */
+const typeCategoryMap = {
+  [SEQ_TYPE.AS]: SEQ_TYPE_CATEGORY.AS_OR_SS,
+  [SEQ_TYPE.SS]: SEQ_TYPE_CATEGORY.AS_OR_SS,
+  [SEQ_TYPE.DIMER]: SEQ_TYPE_CATEGORY.DIMER,
+  [SEQ_TYPE.DUPLEX]: SEQ_TYPE_CATEGORY.DUPLEX,
+};
+
+/** Style used for cells in 'Type' column  */
+const typeColCellStyle = {
+  'display': 'flex',
+  'justify-content': 'center',
+  'align-items': 'center',
+  'text-color': 'var(--grey-5)', // --grey-6 does not match other cells
+  'width': '100%',
+  'height': '100%',
+};
+
+const pinkBackground = {
+  'background-color': '#ff8080',
+};
+
+/** Style used for a cell with invalid value  */
+const typeColErrorStyle = Object.assign({}, pinkBackground, typeColCellStyle);
+
+export function sdfHandleErrorUI(msgPrefix: string, df: DG.DataFrame, rowI: number, err: any) {
+  const errStr: string = err.toString();
+  const errMsg: string = msgPrefix + `row #${rowI + 1}, name: '${df.get('Chemistry Name', rowI)}', ` +
+    `type: ${df.get('Type', rowI)} error: ${errStr}.`;
+  grok.shell.warning(errMsg);
 }
 
-function batchMolWeight(compoundMolWeightCol: DG.Column, saltMassCol: DG.Column, i: number) {
-  return (compoundMolWeightCol.getString(i) == '' || saltMassCol.getString(i) == '') ?
-    DG.FLOAT_NULL :
-    compoundMolWeightCol.get(i) + saltMassCol.get(i);
+/** Determine the category of the value specified in 'Types' column  */
+function getActualTypeClass(actualType: string): SEQ_TYPE_CATEGORY {
+  if (Object.keys(typeCategoryMap).includes(actualType))
+    return typeCategoryMap[actualType as SEQ_TYPE];
+  else
+    throw new Error('Some types in \'Types\' column are invalid ');
 }
 
-function molecularWeight(sequence: string, weightsObj: {[index: string]: number}): number {
-  const codes = sortByStringLengthInDescendingOrder(Object.keys(weightsObj)).concat(Object.keys(MODIFICATIONS));
-  let weight = 0;
-  let i = 0;
-  while (i < sequence.length) {
-    const matchedCode = codes.find((s) => s == sequence.slice(i, i + s.length))!;
-    weight += weightsObj[sequence.slice(i, i + matchedCode.length)];
-    i += matchedCode.length;
+function isASorSS(splittedLines: string[][]): boolean {
+  return splittedLines.length === 1 && splittedLines[0].length === 1;
+}
+
+/** Check whether the number of lines and prefixes in the 'Sequence' string
+ * are valid  */
+function verifyPrefixes(splittedLines: string[][], allowedPrefixes: Set<PREFIXES>, allowedLength: number): boolean {
+  const lengthCriterion = splittedLines.length === allowedLength;
+  let prefixCriterion = true;
+  for (const line of splittedLines) {
+    const prefix = line[0];
+    prefixCriterion &&= (allowedPrefixes.has(prefix as PREFIXES));
   }
-  return weight - 61.97;
+  return lengthCriterion && prefixCriterion;
 }
 
-async function saveTableAsSdFile(table: DG.DataFrame) {
-  if (!table.columns.contains('Compound Name')) {
-    grok.shell.warning(
-      'File saved without columns \'' +
-      [COL_NAMES.COMPOUND_NAME, COL_NAMES.COMPOUND_COMMENTS, COL_NAMES.CPD_MW,
-        COL_NAMES.SALT_MASS, COL_NAMES.BATCH_MW].join('\', \''),
-    );
-  }
-  const structureColumn = table.getCol(COL_NAMES.SEQUENCE);
-  const typeColumn = table.getCol(COL_NAMES.TYPE);
-  let result = '';
-  for (let i = 0; i < table.rowCount; i++) {
-    const format = 'Janssen GCRS Codes'; //getFormat(structureColumn.get(i))!;
-    result += (typeColumn.get(i) == 'SS') ?
-      sequenceToMolV3000(structureColumn.get(i), false, true, format) + '\n' + `> <Sequence>\nSense Strand\n\n` :
-      sequenceToMolV3000(structureColumn.get(i), true, true, format) + '\n' + `> <Sequence>\nAnti Sense\n\n`;
-    for (const col of table.columns) {
-      if (col.name != COL_NAMES.SEQUENCE)
-        result += `> <${col.name}>\n${col.get(i)}\n\n`;
+function isDuplex(splittedLines: string[][]): boolean {
+  const allowedPrefixes = new Set([PREFIXES.SS, PREFIXES.AS]);
+  return verifyPrefixes(splittedLines, allowedPrefixes, 2);
+}
+
+function isDimer(splittedLines: string[][]): boolean {
+  const allowedPrefixes = new Set([PREFIXES.SS, PREFIXES.AS1, PREFIXES.AS2]);
+  return verifyPrefixes(splittedLines, allowedPrefixes, 3);
+}
+
+function inferTypeClassFromSequence(seq: string): SEQ_TYPE_CATEGORY {
+  const lines = seq.split('\n');
+  const splittedLines = [];
+  for (const line of lines)
+    splittedLines.push(line.split(' '));
+  if (isASorSS(splittedLines))
+    return SEQ_TYPE_CATEGORY.AS_OR_SS;
+  else if (isDuplex(splittedLines))
+    return SEQ_TYPE_CATEGORY.DUPLEX;
+  else if (isDimer(splittedLines))
+    return SEQ_TYPE_CATEGORY.DIMER;
+  else
+    throw new Error('Some cells in \'Sequence\' column have wrong formatting');
+}
+
+/** Compare type specified in 'Type' column to that computed from 'Sequence' column  */
+function validateType(actualType: string, seq: string): boolean {
+  if (actualType === '' && seq === '')
+    return true;
+  else
+    return getActualTypeClass(actualType) === inferTypeClassFromSequence(seq);
+}
+
+function oligoSdFileGrid(view: DG.TableView): void {
+  const typeColName = 'Type';
+  const seqColName = 'Sequence';
+  const grid = view.grid;
+  const df = view.dataFrame;
+  const typeCol = df.getCol(typeColName);
+  grid.columns.byName(typeColName)!.cellType = 'html';
+  const seqCol = df.getCol(seqColName);
+  grid.onCellPrepare((gridCell: DG.GridCell) => {
+    if (gridCell.isTableCell && gridCell.gridColumn.column!.name === typeColName) {
+      let isValidType = false;
+      let formattingError = false;
+      try {
+        isValidType = validateType(gridCell.cell.value, seqCol.get(gridCell.tableRow!.idx));
+      } catch {
+        formattingError = true;
+      }
+      const el = ui.div(
+        gridCell.cell.value, isValidType ? {style: typeColCellStyle} : {style: typeColErrorStyle}
+      );
+      gridCell.style.element = el;
+      const msg = formattingError ? 'Sequence pattern or Type value has wrong formatting' :
+        'Input in Type column doesn\'t match the Sequence pattern';
+      if (!isValidType)
+        ui.tooltip.bind(el, msg);
     }
-    result += '$$$$\n';
-  }
-  const element = document.createElement('a');
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(result));
-  element.setAttribute('download', table.name + '.sdf');
-  element.click();
+  });
 }
 
 export function autostartOligoSdFileSubscription() {
   grok.events.onViewAdded.subscribe((v: any) => {
-    if (v.type == 'TableView') {
-      if (v.dataFrame.columns.contains(COL_NAMES.TYPE))
+    if (v.type === DG.VIEW_TYPE.TABLE_VIEW) {
+      if (v.dataFrame.columns.contains(COL_NAMES.TYPE)) {
+        oligoSdFileGrid(v);
         oligoSdFile(v.dataFrame);
+      }
+
+      // Should be removed after fixing bug https://github.com/datagrok-ai/public/issues/808
       grok.events.onContextMenu.subscribe((args) => {
-        const seqCol = args.args.context.table.currentCol; // /^[fsACGUacgu]{6,}$/
+        if (!(args.args.context instanceof DG.Grid)) return;
+        const grid: DG.Grid = args.args.context as DG.Grid;
+        const menu: DG.Menu = args.args.menu;
+
+        const seqCol = grid.table.currentCol; // /^[fsACGUacgu]{6,}$/
         if (DG.Detector.sampleCategories(seqCol,
+          (s) => /(\(invabasic\)|\(GalNAc-2-JNJ\)|A|U|G|C){6,}$/.test(s))) {
+          menu.item('Convert raw nucleotides to GCRS', () => {
+            grid.table.columns.addNewString(seqCol.name + ' to GCRS').init((i: number) => {
+              return siRnaNucleotidesToGcrs(seqCol.get(i));
+            });
+          });
+        } else if (DG.Detector.sampleCategories(seqCol,
           (s) => /(\(invabasic\)|\(GalNAc-2-JNJ\)|f|s|A|C|G|U|a|c|g|u){6,}$/.test(s))) {
-          args.args.menu.item('Convert Axolabs to GCRS', () => {
-            args.args.context.table.columns.addNewString(seqCol.name + ' to GCRS').init((i: number) => {
+          menu.item('Convert Axolabs to GCRS', () => {
+            grid.table.columns.addNewString(seqCol.name + ' to GCRS').init((i: number) => {
               return siRnaAxolabsToGcrs(seqCol.get(i));
             });
           }); // /^[fmpsACGU]{6,}$/
         } else if (DG.Detector.sampleCategories(seqCol,
           (s) => /(\(invabasic\)|\(GalNAc-2-JNJ\)|f|m|ps|A|C|G|U){6,}$/.test(s)) ||
-        DG.Detector.sampleCategories(seqCol, (s) => /^(?=.*moe)(?=.*5mC)(?=.*ps){6,}/.test(s))) {
-          args.args.menu.item('Convert GCRS to raw', () => {
-            args.args.context.table.columns.addNewString(seqCol.name + ' to raw').init((i: number) => {
+          DG.Detector.sampleCategories(seqCol, (s) => /^(?=.*moe)(?=.*5mC)(?=.*ps){6,}/.test(s))) {
+          menu.item('Convert GCRS to raw', () => {
+            grid.table.columns.addNewString(seqCol.name + ' to raw').init((i: number) => {
               return gcrsToNucleotides(seqCol.get(i));
             });
           });
-          args.args.menu.item('Convert GCRS to MM12', () => {
-            args.args.context.table.columns.addNewString(seqCol.name + ' to MM12').init((i: number) => {
+          menu.item('Convert GCRS to MM12', () => {
+            grid.table.columns.addNewString(seqCol.name + ' to MM12').init((i: number) => {
               return gcrsToMermade12(seqCol.get(i));
             });
           }); // /^[*56789ATGC]{6,}$/
         } else if (DG.Detector.sampleCategories(seqCol,
           (s) => /(\(invabasic\)|\(GalNAc-2-JNJ\)|\*|5|6|7|8|9|A|T|G|C){6,}$/.test(s))) {
-          args.args.menu.item('Convert Biospring to GCRS', () => {
-            const seqCol = args.args.context.table.currentCol;
-            args.args.context.table.columns.addNewString(seqCol.name + ' to GCRS').init((i: number) => {
+          menu.item('Convert Biospring to GCRS', () => {
+            const seqCol = grid.table.currentCol;
+            grid.table.columns.addNewString(seqCol.name + ' to GCRS').init((i: number) => {
               return asoGapmersBioSpringToGcrs(seqCol.get(i));
             });
           }); // /^[*1-8]{6,}$/
         } else if (DG.Detector.sampleCategories(seqCol,
           (s) => /(\(invabasic\)|\(GalNAc-2-JNJ\)|\*|1|2|3|4|5|6|7|8){6,}$/.test(s))) {
-          args.args.menu.item('Convert Biospring to GCRS', () => {
-            args.args.context.table.columns.addNewString(seqCol.name + ' to GCRS').init((i: number) => {
-              return siRnaAxolabsToGcrs(seqCol.get(i));
+          menu.item('Convert Biospring to GCRS', () => {
+            grid.table.columns.addNewString(seqCol.name + ' to GCRS').init((i: number) => {
+              return siRnaBioSpringToGcrs(seqCol.get(i));
             });
           });
         }
@@ -137,61 +231,13 @@ export function oligoSdFile(table: DG.DataFrame) {
   const icdsDf = DG.DataFrame.fromCsv(ICDS);
   const idpsDf = DG.DataFrame.fromCsv(IDPS);
 
-  const sequenceCol = table.getCol(COL_NAMES.SEQUENCE);
   const saltCol = table.getCol(COL_NAMES.SALT);
   const equivalentsCol = table.getCol(COL_NAMES.EQUIVALENTS);
-  const typeColumn = table.getCol(COL_NAMES.TYPE);
 
-  const molWeightCol = saltsDf.getCol('MOLWEIGHT');
-  const saltNamesList = saltsDf.getCol('DISPLAY').toList();
+  const saltsMolWeightList: number[] = saltsDf.getCol('MOLWEIGHT').toList();
+  const saltNamesList: string[] = saltsDf.getCol('DISPLAY').toList();
 
-  function addColumns(t: DG.DataFrame) {
-    if (t.columns.contains(COL_NAMES.COMPOUND_NAME))
-      return grok.shell.error('Columns already exist');
-
-    for (let i = t.rowCount - 1; i > -1; i--) {
-      if (sequenceCol.get(i) == '')
-        t.rows.removeAt(i, 1, false);
-    }
-
-    t.columns.addNewString(COL_NAMES.COMPOUND_NAME).init((i: number) => sequenceCol.get(i));
-
-    t.columns.addNewString(COL_NAMES.COMPOUND_COMMENTS).init((i: number) => (i > 2 && typeColumn.get(i) == 'Duplex') ?
-      sequenceCol.get(i) + '; duplex of SS: ' + sequenceCol.get(i - 2) + ' and AS: ' + sequenceCol.get(i - 1) :
-      sequenceCol.get(i),
-    );
-
-    const weightsObj: {[code: string]: number} = {};
-    for (const synthesizer of Object.keys(map)) {
-      for (const technology of Object.keys(map[synthesizer])) {
-        for (const code of Object.keys(map[synthesizer][technology]))
-          weightsObj[code] = map[synthesizer][technology][code].weight!;
-      }
-    }
-    for (const [key, value] of Object.entries(MODIFICATIONS))
-      weightsObj[key] = value.molecularWeight;
-
-    t.columns.addNewFloat(COL_NAMES.CPD_MW).init((i: number) => {
-      return (isValidSequence(sequenceCol.get(i), null).indexOfFirstNotValidChar == -1) ?
-        molecularWeight(sequenceCol.get(i), weightsObj) :
-        DG.FLOAT_NULL;
-    });
-
-    t.columns.addNewFloat(COL_NAMES.SALT_MASS).init((i: number) =>
-      saltMass(saltNamesList, molWeightCol, equivalentsCol, i, saltCol));
-
-    t.columns.addNewFloat(COL_NAMES.SALT_MOL_WEIGHT).init((i: number) =>
-      saltMolWeigth(saltNamesList, saltCol, molWeightCol, i));
-
-    t.columns.addNewFloat(COL_NAMES.BATCH_MW).init((i: number) =>
-      batchMolWeight(t.getCol(COL_NAMES.CPD_MW), t.getCol(COL_NAMES.SALT_MASS), i));
-
-    addColumnsPressed = true;
-    return newDf = t;
-  }
-
-  let newDf: DG.DataFrame;
-  let addColumnsPressed = false;
+  let newDf: DG.DataFrame | undefined = undefined;
 
   const d = ui.div([
     ui.icons.edit(() => {
@@ -199,18 +245,25 @@ export function oligoSdFile(table: DG.DataFrame) {
       if (table.getCol(COL_NAMES.IDP).type != DG.COLUMN_TYPE.STRING)
         table.changeColumnType(COL_NAMES.IDP, DG.COLUMN_TYPE.STRING);
       d.append(
-        ui.link('Add Columns', () => {
-          addColumns(table);
-          view.grid.columns.setOrder(Object.values(COL_NAMES));
-        }, 'Add columns: \'' + [COL_NAMES.COMPOUND_NAME, COL_NAMES.COMPOUND_COMMENTS, COL_NAMES.CPD_MW,
-          COL_NAMES.SALT_MASS, COL_NAMES.BATCH_MW].join('\', \''), '',
-        ),
-        ui.button('Save SD file', () => saveTableAsSdFile(addColumnsPressed ? newDf : table)),
+        ui.divH([
+          ui.button('Add columns',
+            () => {
+              newDf = sdfAddColumns(table, saltNamesList, saltsMolWeightList,
+                (rowI, err) => { sdfHandleErrorUI('Error on ', table, rowI, err); });
+              grok.shell.getTableView(newDf.name).grid.columns.setOrder(Object.values(COL_NAMES));
+            },
+            `Add columns: '${GENERATED_COL_NAMES.join(`', '`)}'`),
+          ui.bigButton('Save SDF', () => {
+            const df: DG.DataFrame = newDf ?? table;
+            sdfSaveTable(df,
+              (rowI, err) => { sdfHandleErrorUI('Skip ', df, rowI, err); });
+          }, 'Save SD file'),
+        ])
       );
 
       const view = grok.shell.getTableView(table.name);
-
-      view.dataFrame.getCol(COL_NAMES.TYPE).setTag(DG.TAGS.CHOICES, '["AS", "SS", "Duplex"]');
+      view.grid.setOptions({rowHeight: 45});
+      view.dataFrame.getCol(COL_NAMES.TYPE).setTag(DG.TAGS.CHOICES, stringify(Object.values(SEQUENCE_TYPES)));
       view.dataFrame.getCol(COL_NAMES.OWNER).setTag(DG.TAGS.CHOICES, stringify(usersDf.columns.byIndex(0).toList()));
       view.dataFrame.getCol(COL_NAMES.SALT).setTag(DG.TAGS.CHOICES, stringify(saltsDf.columns.byIndex(0).toList()));
       view.dataFrame.getCol(COL_NAMES.SOURCE).setTag(DG.TAGS.CHOICES, stringify(sourcesDf.columns.byIndex(0).toList()));
@@ -218,11 +271,15 @@ export function oligoSdFile(table: DG.DataFrame) {
       view.dataFrame.getCol(COL_NAMES.IDP).setTag(DG.TAGS.CHOICES, stringify(idpsDf.columns.byIndex(0).toList()));
 
       grok.events.onContextMenu.subscribe((args) => {
+        if (!(args.args.context instanceof DG.Grid)) return;
+        const grid: DG.Grid = args.args.context as DG.Grid;
+        const menu: DG.Menu = args.args.menu;
+
         if ([COL_NAMES.TYPE, COL_NAMES.OWNER, COL_NAMES.SALT, COL_NAMES.SOURCE, COL_NAMES.ICD, COL_NAMES.IDP]
-          .includes(args.args.context.table.currentCol.name)) {
-          args.args.menu.item('Fill Column With Value', () => {
-            const v = args.args.context.table.currentCell.value;
-            args.args.context.table.currentCell.column.init(v);
+          .includes(grid.table.currentCol.name)) {
+          menu.item('Fill Column With Value', () => {
+            const v = grid.table.currentCell.value;
+            grid.table.currentCell.column.init(v);
             for (let i = 0; i < view.dataFrame.rowCount; i++)
               updateCalculatedColumns(view.dataFrame, i);
           });
@@ -236,12 +293,12 @@ export function oligoSdFile(table: DG.DataFrame) {
       });
 
       function updateCalculatedColumns(t: DG.DataFrame, i: number): void {
-        const smValue = saltMass(saltNamesList, molWeightCol, equivalentsCol, i, saltCol);
+        const smValue = saltMass(saltNamesList, saltsMolWeightList, equivalentsCol, i, saltCol);
         t.getCol(COL_NAMES.SALT_MASS).set(i, smValue, false);
-        const smwValue = saltMolWeigth(saltNamesList, saltCol, molWeightCol, i);
+        const smwValue = saltMolWeigth(saltNamesList, saltCol, saltsMolWeightList, i);
         t.getCol(COL_NAMES.SALT_MOL_WEIGHT).set(i, smwValue, false);
-        const bmw = batchMolWeight(t.getCol(COL_NAMES.CPD_MW), t.getCol(COL_NAMES.SALT_MASS), i);
-        t.getCol(COL_NAMES.BATCH_MW).set(i, bmw, false);
+        const bmw = batchMolWeight(t.getCol(COL_NAMES.COMPOUND_MOL_WEIGHT), t.getCol(COL_NAMES.SALT_MASS), i);
+        t.getCol(COL_NAMES.BATCH_MOL_WEIGHT).set(i, bmw, false);
       }
     }),
   ]);

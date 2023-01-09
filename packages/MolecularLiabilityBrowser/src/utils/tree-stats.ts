@@ -1,5 +1,5 @@
-//@ts-ignore
-import {Utils, Newick} from '@phylocanvas/phylocanvas.gl';
+import {parseNewick, PhylocanvasTreeNode} from '@datagrok-libraries/bio';
+import {Utils} from '@phylocanvas/phylocanvas.gl';
 
 export const mlbTreeNodeRe = /([^|,:()]+)\|([^|,:()]+)\|([^|,:()]+)\|([^|,:()]+)/g;
 
@@ -99,7 +99,7 @@ export class TreeAnalyzer {
     let stats = _nullStats;
 
     if (TreeAnalyzer.newickRegEx.test(nwk.trim())) {
-      const tree = Newick.parse_newick(nwk);
+      const tree = parseNewick(nwk) as PhylocanvasTreeNode;
 
       this._isect.reset();
       this._traverseTree(tree);
@@ -178,26 +178,6 @@ class NodeIdsIntersection {
   get result(): string[] {
     return this._isect;
   }
-}
-
-// TODO: add test for these properties existing.
-/**
- * Represents a single tree node.
- */
-export interface PhylocanvasTreeNode {
-  branchLength: 0;
-  children: PhylocanvasTreeNode[];
-  id: string;
-  isCollapsed: boolean;
-  isHidden: boolean;
-  isLeaf: boolean;
-  name: string;
-  postIndex: number;
-  preIndex: number;
-  totalLeaves: number;
-  totalNodes: number;
-  totalSubtreeLength: number;
-  visibleLeaves: number;
 }
 
 /**

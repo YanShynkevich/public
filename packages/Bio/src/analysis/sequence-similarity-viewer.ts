@@ -1,14 +1,14 @@
 import * as grok from 'datagrok-api/grok';
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
+
 import {SequenceSearchBaseViewer} from './sequence-search-base-viewer';
 import {getMonomericMols} from '../calculations/monomerLevelMols';
 import * as C from '../utils/constants';
 import {createDifferenceCanvas, createDifferencesWithPositions} from './sequence-activity-cliffs';
 import {updateDivInnerHTML} from '../utils/ui-utils';
-import {WebLogo} from '@datagrok-libraries/bio/src/viewers/web-logo';
-import {TableView} from 'datagrok-api/dg';
-import { Subject } from 'rxjs';
+import {Subject} from 'rxjs';
+import {getSplitter} from '@datagrok-libraries/bio';
 
 export class SequenceSimilarityViewer extends SequenceSearchBaseViewer {
   hotSearch: boolean;
@@ -61,7 +61,7 @@ export class SequenceSimilarityViewer extends SequenceSearchBaseViewer {
         const resDf = DG.DataFrame.fromColumns([this.idxs!, this.molCol!, this.scores!]);
         resDf.onCurrentRowChanged.subscribe((_) => {
           this.dataFrame.currentRowIdx = resDf.col('indexes')!.get(resDf.currentRowIdx);
-          this.createPropertyPanel(resDf);
+          setTimeout(() => { this.createPropertyPanel(resDf); }, 1000);
           this.gridSelect = true;
         });
         const grid = resDf.plot.grid();
@@ -69,7 +69,7 @@ export class SequenceSimilarityViewer extends SequenceSearchBaseViewer {
         const targetMolRow = this.idxs?.getRawData().findIndex((it) => it == this.targetMoleculeIdx);
         const targetScoreCell = grid.cell('score', targetMolRow!);
         targetScoreCell.cell.value = null;
-        (grok.shell.v as TableView).grid.root.addEventListener('click', (event: MouseEvent) => {
+        (grok.shell.v as DG.TableView).grid.root.addEventListener('click', (event: MouseEvent) => {
           this.gridSelect = false;
         });
         updateDivInnerHTML(this.root, grid.root);
@@ -84,7 +84,7 @@ export class SequenceSimilarityViewer extends SequenceSearchBaseViewer {
     const molDifferences: { [key: number]: HTMLCanvasElement } = {};
     const units = resDf.col('sequence')!.getTag(DG.TAGS.UNITS);
     const separator = resDf.col('sequence')!.getTag(C.TAGS.SEPARATOR);
-    const splitter = WebLogo.getSplitter(units, separator);
+    const splitter = getSplitter(units, separator);
     const subParts1 = splitter(this.moleculeColumn!.get(this.targetMoleculeIdx));
     const subParts2 = splitter(resDf.get('sequence', resDf.currentRowIdx));
     const canvas = createDifferenceCanvas(subParts1, subParts2, units, molDifferences);

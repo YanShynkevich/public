@@ -2,57 +2,79 @@ import * as grok from 'datagrok-api/grok';
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
 
-import {WebLogo} from '@datagrok-libraries/bio/src/viewers/web-logo';
-
 import '../styles.css';
 import * as C from '../utils/constants';
+import * as type from '../utils/types';
 import {PeptidesModel} from '../model';
 import $ from 'cash-dom';
-import {getOrFindNext, scaleActivity} from '../utils/misc';
+import {scaleActivity} from '../utils/misc';
+import {ALIGNMENT, NOTATION, TAGS as bioTAGS} from '@datagrok-libraries/bio';
 
 /** Peptide analysis widget.
  *
  * @param {DG.DataFrame} df Working table
  * @param {DG.Column} col Aligned sequence column
  * @return {Promise<DG.Widget>} Widget containing peptide analysis */
-export async function analyzePeptidesWidget(df: DG.DataFrame, col: DG.Column): Promise<DG.Widget> {
-  if (!col.tags['aligned']?.includes('MSA') && col.tags[DG.TAGS.UNITS].toLowerCase() != 'helm')
-    return new DG.Widget(ui.divText('Peptides analysis only works with aligned sequences'));
+export function analyzePeptidesUI(df: DG.DataFrame, col?: DG.Column<string>):
+  { host: HTMLElement, callback: () => Promise<boolean> } {
+  const logoHost = ui.div();
+  // logoHost.style.alignContent = 'center';
+  let seqColInput: DG.InputBase | null = null;
+  if (typeof col === 'undefined') {
+    const sequenceColumns = df.columns.toList().filter((dfCol) => dfCol.semType === DG.SEMTYPE.MACROMOLECULE);
+    const potentialCol = DG.Utils.firstOrNull(sequenceColumns);
+    if (potentialCol === null)
+      throw new Error('Peptides Error: table doesn\'t contain sequence columns');
+
+    seqColInput = ui.columnInput('Sequence', df, potentialCol, () => {
+      const seqCol = seqColInput!.value;
+      if (!(seqCol.getTag(DG.TAGS.SEMTYPE) == DG.SEMTYPE.MACROMOLECULE)) {
+        grok.shell.warning('Peptides analysis only works with macromolecules');
+        seqColInput!.value = potentialCol;
+      }
+      $(logoHost).empty().append(ui.wait(async () => {
+        const viewer = await df.plot.fromType('WebLogo', {sequenceColumnName: seqCol.name});
+        viewer.root.style.setProperty('height', '130px');
+        return viewer.root;
+      }));
+    });
+  } else if (!(col.getTag(bioTAGS.aligned) == ALIGNMENT.SEQ_MSA) &&
+    col.getTag(DG.TAGS.UNITS) !== NOTATION.HELM) {
+    return {
+      host: ui.label('Peptides analysis only works with aligned sequences'),
+      callback: async (): Promise<boolean> => false,
+    };
+  }
 
   let funcs = DG.Func.find({package: 'Bio', name: 'webLogoViewer'});
-  if (funcs.length == 0)
-    return new DG.Widget(ui.label('Bio package is missing or out of date. Please install the latest version.'));
+  if (funcs.length == 0) {
+    return {
+      host: ui.label('Bio package is missing or out of date. Please install the latest version.'),
+      callback: async (): Promise<boolean> => false,
+    };
+  }
 
-  funcs = DG.Func.find({package: 'Helm', name: 'getMonomerLib'});
-  if (funcs.length == 0)
-    return new DG.Widget(ui.label('Helm package is missing or out of date. Please install the latest version.'));
+  funcs = DG.Func.find({package: 'Bio', name: 'getBioLib'});
+  if (funcs.length == 0) {
+    return {
+      host: ui.label('Bio package is missing or out of date. Please install the latest version.'),
+      callback: async (): Promise<boolean> => false,
+    };
+  }
 
-  let tempCol = null;
-  let scaledDf: DG.DataFrame;
-  let newScaledColName: string;
-  let scalingFormula: (x: number) => number;
+  let scaledCol: DG.Column<number>;
 
-  for (const column of df.columns.numerical)
-    tempCol = column.type === DG.TYPE.FLOAT ? column : null;
-
-  const defaultActivityColumn: DG.Column<number> | null = df.col('activity') || df.col('IC50') || tempCol;
+  const defaultActivityColumn: DG.Column<number> | null =
+    df.col('activity') || df.col('IC50') || DG.Utils.firstOrNull(df.columns.numerical);
+  ;
   const histogramHost = ui.div([], {id: 'pep-hist-host'});
 
-  let indexes: number[] = [];
-  const f = df.filter;
-  df.onFilterChanged.subscribe(() => {
-    for (let i = 0; i < f.length; ++i) {
-      if (f.get(i))
-        indexes.push(i);
-    }
-  });
   const activityScalingMethod = ui.choiceInput(
     'Scaling', 'none', ['none', 'lg', '-lg'],
     async (currentMethod: string): Promise<void> => {
-      [scaledDf, scalingFormula, newScaledColName] =
-        scaleActivity(currentMethod, activityColumnChoice.value!, indexes.length !== 0 ? indexes : undefined);
+      scaledCol = scaleActivity(activityColumnChoice.value!, currentMethod);
 
-      const hist = scaledDf.plot.histogram({
+      const hist = DG.DataFrame.fromColumns([scaledCol]).plot.histogram({
         filteringEnabled: false,
         valueColumnName: C.COLUMNS_NAMES.ACTIVITY_SCALED,
         legendVisibility: 'Never',
@@ -66,9 +88,9 @@ export async function analyzePeptidesWidget(df: DG.DataFrame, col: DG.Column): P
     });
   activityScalingMethod.setTooltip('Function to apply for each value in activity column');
 
-  const activityScalingMethodState = (_: any): void => {
+  const activityScalingMethodState = (): void => {
     activityScalingMethod.enabled = (activityColumnChoice.value ?? false) &&
-      DG.Stats.fromColumn(activityColumnChoice.value!, df.filter).min > 0;
+      DG.Stats.fromColumn(activityColumnChoice.value!).min > 0;
     activityScalingMethod.fireChanged();
   };
   const activityColumnChoice = ui.columnInput('Activity', df, defaultActivityColumn, activityScalingMethodState);
@@ -77,69 +99,80 @@ export async function analyzePeptidesWidget(df: DG.DataFrame, col: DG.Column): P
   activityScalingMethod.fireChanged();
 
   const inputsList = [activityColumnChoice, activityScalingMethod, clustersColumnChoice];
+  if (seqColInput !== null)
+    inputsList.splice(0, 0, seqColInput);
 
-  const startBtn = ui.button('Launch SAR', async () => {
-    await startAnalysis(activityColumnChoice.value, col, clustersColumnChoice.value, df, scalingFormula,
-      newScaledColName, activityScalingMethod.value ?? 'none', indexes);
+  const bitsetChanged = df.filter.onChanged.subscribe(() => {
+    activityScalingMethodState();
   });
-  startBtn.style.alignSelf = 'center';
 
-  const viewer = await df.plot.fromType('WebLogo') as WebLogo;
-  viewer.root.style.setProperty('height', '130px');
-  const logoHost = ui.div();
-  $(logoHost).empty().append(viewer.root);
+  const startAnalysisCallback = async (): Promise<boolean> => {
+    const sequencesCol = col ?? seqColInput!.value;
+    if (sequencesCol) {
+      const model = await startAnalysis(activityColumnChoice.value!, sequencesCol, clustersColumnChoice.value, df,
+        scaledCol, activityScalingMethod.stringValue as type.ScalingMethods ?? 'none');
+      if (model != null) {
+        bitsetChanged.unsubscribe();
+        return true;
+      }
+    }
+    return false;
+  };
 
-  return new DG.Widget(
-    ui.divV([
-      logoHost,
-      ui.splitH([
-        ui.splitV([ui.inputs(inputsList), startBtn]),
-        histogramHost,
-      ], {style: {height: '215px'}}),
-    ]),
-  );
+  const inputElements: HTMLElement[] = [ui.inputs(inputsList)];
+  $(inputElements[0]).find('label').css('width', 'unset');
+  if (typeof col !== 'undefined') {
+    const startBtn = ui.button('Launch SAR', startAnalysisCallback);
+    startBtn.style.alignSelf = 'center';
+    inputElements.push(startBtn);
+  }
+
+  $(logoHost).empty().append(ui.wait(async () => {
+    const viewer = await df.plot.fromType('WebLogo', {sequenceColumnName: col?.name ?? seqColInput!.value!.name});
+    viewer.root.style.setProperty('height', '130px');
+    return viewer.root;
+  }));
+
+  const mainHost = ui.divV([
+    logoHost,
+    ui.splitH([
+      ui.splitV(inputElements),
+      histogramHost,
+    ], {style: {height: '215px'}}),
+  ]);
+  mainHost.style.maxWidth = '400px';
+  return {host: mainHost, callback: startAnalysisCallback};
 }
 
-export async function startAnalysis(activityColumn: DG.Column<number> | null, peptidesCol: DG.Column<string>,
-  clustersColumn: DG.Column | null, currentDf: DG.DataFrame, scaleNum: (x: number) => number, newScaledColName: string,
-  scaling: string, indexes: number[]): Promise<PeptidesModel | null> {
+export async function startAnalysis(activityColumn: DG.Column<number>, peptidesCol: DG.Column<string>,
+  clustersColumn: DG.Column | null, currentDf: DG.DataFrame, scaledCol: DG.Column<number>, scaling: type.ScalingMethods,
+): Promise<PeptidesModel | null> {
   const progress = DG.TaskBarProgressIndicator.create('Loading SAR...');
   let model = null;
-  if (activityColumn?.type === DG.TYPE.FLOAT) {
-    const f = currentDf.filter;
+  if (activityColumn.type === DG.TYPE.FLOAT || activityColumn.type === DG.TYPE.INT) {
     //prepare new DF
-    const newDf = DG.DataFrame.create(f.trueCount);
-    const idxCol = newDf.columns.addNewInt('~indexes');
-    const init = indexes.length !== 0 ? (i: number) => indexes[i] : (i: number) => i;
-    idxCol.init(init);
-    let activityCol: DG.Column | null = null;
-    for (const col of currentDf.columns.toList()) {
-      if (col === activityColumn)
-        activityCol = newDf.columns.addNewVirtual(
-          C.COLUMNS_NAMES.ACTIVITY, (i) => activityColumn.get(idxCol.get(i)!), DG.TYPE.FLOAT);
-      else if (col === peptidesCol)
-        newDf.columns.addNewVirtual(
-          C.COLUMNS_NAMES.ALIGNED_SEQUENCE, (i) => peptidesCol.get(idxCol.get(i)!), DG.TYPE.STRING);
-      else
-        newDf.columns.addNewVirtual(`~${col.name}`, (i) => col.get(idxCol.get(i)!), col.type as DG.TYPE);
-    }
-    activityCol!.semType = C.SEM_TYPES.ACTIVITY;
-    const activityScaledCol = newDf.columns.addNewVirtual(C.COLUMNS_NAMES.ACTIVITY_SCALED, (i) => {
-      const val = activityCol!.get(idxCol.get(i)!);
-      return val ? scaleNum(val) : val
-    }, DG.TYPE.FLOAT);
-    activityScaledCol.semType = C.SEM_TYPES.ACTIVITY_SCALED;
+    const newDf = DG.DataFrame.create(currentDf.rowCount);
+    const newDfCols = newDf.columns;
+    newDfCols.add(scaledCol);
+    for (const col of currentDf.columns)
+      newDfCols.add(col);
+
     newDf.name = 'Peptides analysis';
-    newDf.tags[C.COLUMNS_NAMES.ACTIVITY_SCALED] = newScaledColName;
+    const settings: type.PeptidesSettings = {
+      sequenceColumnName: peptidesCol.name,
+      activityColumnName: activityColumn.name,
+      scaling: scaling,
+    };
     if (clustersColumn) {
-      newDf.getCol(`~${clustersColumn.name}`).name = C.COLUMNS_NAMES.CLUSTERS;
-      newDf.tags[C.TAGS.CLUSTERS] = C.COLUMNS_NAMES.CLUSTERS;
+      const clusterCol = newDf.getCol(clustersColumn.name);
+      if (clusterCol.type != DG.COLUMN_TYPE.STRING)
+        newDfCols.replace(clusterCol, clusterCol.convertTo(DG.COLUMN_TYPE.STRING));
+      settings.clustersColumnName = clustersColumn.name;
     }
-    // newDf.tags[C.PEPTIDES_ANALYSIS] = 'true';
-    newDf.tags['scaling'] = scaling;
+    newDf.setTag(C.TAGS.SETTINGS, JSON.stringify(settings));
 
     let monomerType = 'HELM_AA';
-    if (peptidesCol.getTag(DG.TAGS.UNITS).toLowerCase() == 'helm') {
+    if (peptidesCol.getTag(DG.TAGS.UNITS) == NOTATION.HELM) {
       const sampleSeq = peptidesCol.get(0)!;
       monomerType = sampleSeq.startsWith('PEPTIDE') ? 'HELM_AA' : 'HELM_BASE';
     } else {
@@ -148,10 +181,11 @@ export async function startAnalysis(activityColumn: DG.Column<number> | null, pe
     }
 
     newDf.setTag('monomerType', monomerType);
-
-    model = await PeptidesModel.getInstance(newDf);
+    newDf.setTag('newAnalysis', '1');
+    model = PeptidesModel.getInstance(newDf);
+    await model.addViewers();
   } else
-    grok.shell.error('The activity column must be of floating point number type!');
+    grok.shell.error('The activity column must be of numeric type!');
   progress.close();
   return model;
 }

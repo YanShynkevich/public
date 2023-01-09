@@ -659,9 +659,19 @@ export function tree(): TreeViewGroup {
 //
 export namespace input {
 
-  export function form(source: any, props: Property[]): HTMLElement {
-    return inputs(props.map((p) => InputBase.forProperty(p, source)));
+  /** Creates input for the specified property, and optionally binds it to the specified object */
+  export function forProperty(property: Property, source: any = null): InputBase {
+    return InputBase.forProperty(property, source);
   }
+
+  /** Returns a form for the specified properties, bound to the specified object */
+  export function form(source: any, props: Property[]): HTMLElement {
+    return inputs(props.map((p) => forProperty(p, source)));
+  }
+
+  // export function bySemType(semType: string) {
+  //
+  // }
 
   // function _options(inputBase: InputBase, options?: InputOptions) {
   //   if (options == null)
@@ -1347,5 +1357,57 @@ export namespace labels {
   /** Minor details to show using the smaller font */
   export function details(s: string): HTMLDivElement {
     return divText(s, 'ui-label-details');
+  }
+}
+
+/** Visual hints attached to an element. They can be used to introduce a new app to users. */
+export namespace hints {
+
+  /** Adds a hint indication to the provided element and returns it. */
+  export function addHint(el: HTMLElement): HTMLElement {
+    el.classList.add('ui-hint-target');
+    const hintIndicator = div([], 'ui-hint-blob');
+    el.append(hintIndicator);
+
+    const width = el ? el.clientWidth : 0;
+    const height = el ? el.clientHeight : 0;
+
+    const hintNode = el.getBoundingClientRect();
+    const indicatorNode = hintIndicator.getBoundingClientRect();
+
+    const hintPosition = $(el).css('position') ?? 'static';
+
+    function setDefaultStyles() {
+      $(hintIndicator).css('position', 'absolute');
+      $(hintIndicator).css('left', '0');
+      $(hintIndicator).css('top', '0');
+    };
+
+    const positions = {
+      static: () => {
+        $(hintIndicator).css('position', 'absolute');
+        $(hintIndicator).css('margin-left', hintNode.left + 1 == indicatorNode.left ? 0 : -width);
+        $(hintIndicator).css('margin-top', hintNode.top + 1 == indicatorNode.top ? 0 : -height);
+      },
+      relative: setDefaultStyles,
+      fixed: setDefaultStyles,
+      absolute: setDefaultStyles,
+      sticky: setDefaultStyles,
+    };
+
+    positions[hintPosition]();
+
+    if ($(el).hasClass('d4-ribbon-item')){
+      $(hintIndicator).css('margin-left', '0px')
+    }
+
+    return el;
+  }
+
+  /** Removes the hint indication from the provided element and returns it. */
+  export function remove(el: HTMLElement): HTMLElement {
+    $(el).find('div.ui-hint-blob')[0]?.remove();
+    el.classList.remove('ui-hint-target');
+    return el;
   }
 }

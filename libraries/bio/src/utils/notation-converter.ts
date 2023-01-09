@@ -2,17 +2,19 @@
 import * as grok from 'datagrok-api/grok';
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
-import {SplitterFunc, WebLogo} from '../viewers/web-logo';
-import {UnitsHandler, NOTATION} from './units-handler';
+
+import {UnitsHandler} from './units-handler';
+import {getSplitterForColumn, getStats, NOTATION, SeqColStats, SplitterFunc, TAGS} from './macromolecule';
 
 /** Class for handling conversion of notation systems in Macromolecule columns */
 export class NotationConverter extends UnitsHandler {
   private _splitter: SplitterFunc | null = null;
+
   protected get splitter(): SplitterFunc {
     if (this._splitter === null)
-      this._splitter = WebLogo.getSplitterForColumn(this.column);
+      this._splitter = getSplitterForColumn(this.column);
     return this._splitter;
-  };
+  }
 
   public toFasta(targetNotation: NOTATION): boolean { return targetNotation === NOTATION.FASTA; }
 
@@ -42,7 +44,8 @@ export class NotationConverter extends UnitsHandler {
       }
       return fastaMonomersArray.join(separator);
     });
-    newColumn.setTag(UnitsHandler.TAGS.separator, separator);
+    newColumn.setTag(DG.TAGS.UNITS, NOTATION.SEPARATOR);
+    newColumn.setTag(TAGS.separator, separator);
     return newColumn;
   }
 
@@ -123,6 +126,7 @@ export class NotationConverter extends UnitsHandler {
       const sourcePolymer = this.column.get(idx);
       return this.convertToHelmHelper(sourcePolymer, sourceGapSymbol!, prefix, leftWrapper, rightWrapper, postfix);
     });
+    newColumn.setTag(DG.TAGS.UNITS, NOTATION.HELM);
     return newColumn;
   }
 
@@ -157,6 +161,7 @@ export class NotationConverter extends UnitsHandler {
       }
       return fastaMonomersArray.join('');
     });
+    newColumn.setTag(DG.TAGS.UNITS, NOTATION.FASTA);
     return newColumn;
   }
 
@@ -169,21 +174,18 @@ export class NotationConverter extends UnitsHandler {
    * SEPARATOR)
    * @return {DG.Column} Converted column
    */
-  private convertHelm(
-    tgtNotation: string,
-    tgtSeparator: string = '',
-    tgtGapSymbol: string | null = null
-  ): DG.Column {
+  private convertHelm(tgtNotation: string, tgtSeparator?: string, tgtGapSymbol?: string): DG.Column {
     // This function must not contain calls of isDna() and isRna(), for
     // source helm columns may contain RNA, DNA and PT across different rows
-    if (tgtGapSymbol === null) {
+    if (!tgtGapSymbol) {
       tgtGapSymbol = (this.toFasta(tgtNotation as NOTATION)) ?
         UnitsHandler._defaultGapSymbolsDict.FASTA :
         UnitsHandler._defaultGapSymbolsDict.SEPARATOR;
     }
 
-    if (this.toSeparator(tgtNotation as NOTATION) && tgtSeparator === '')
-      tgtSeparator = this.separator;
+    if (!tgtSeparator) {
+      tgtSeparator = (this.toFasta(tgtNotation as NOTATION)) ? '' : this.separator;
+    }
 
     const helmWrappersRe = /(R\(|D\(|\)|P)/g;
     const newColumn = this.getNewColumn(tgtNotation as NOTATION);
@@ -215,6 +217,13 @@ export class NotationConverter extends UnitsHandler {
       }
       return tgtMonomersArray.join(tgtSeparator);
     });
+
+    // TAGS.aligned is mandatory for columns of NOTATION.FASTA and NOTATION.SEPARATOR
+    const splitter: SplitterFunc = getSplitterForColumn(newColumn);
+    const stats: SeqColStats = getStats(newColumn, 5, splitter);
+    const aligned = stats.sameLength ? 'SEQ.MSA' : 'SEQ';
+    newColumn.setTag(TAGS.aligned, aligned);
+
     return newColumn;
   }
 
@@ -244,8 +253,11 @@ export class NotationConverter extends UnitsHandler {
       return this.convertSeparatorToFasta();
     else if (this.isHelm() && this.toFasta(tgtNotation)) // the case of HELM
       return this.convertHelm(tgtNotation);
-    else // this.isHelm() && this.toSeparator(tgtNotation)
+    else if (this.isHelm() && this.toSeparator(tgtNotation))
       return this.convertHelm(tgtNotation, tgtSeparator!);
+    else
+      throw new Error('Not supported conversion ' +
+        `from source notation '${this.notation}' to target notation '${tgtNotation}'.`);
   }
 
   public constructor(col: DG.Column) {

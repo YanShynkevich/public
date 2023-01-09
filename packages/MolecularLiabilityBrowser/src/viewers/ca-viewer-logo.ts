@@ -2,7 +2,7 @@ import * as DG from 'datagrok-api/dg';
 
 import $ from 'cash-dom';
 import * as logojs from 'logojs-react';
-import {Aminoacids} from '@datagrok-libraries/bio/src/aminoacids';
+import {Aminoacids} from '@datagrok-libraries/bio';
 
 export class Logo extends DG.JsViewer {
   initialized: boolean;

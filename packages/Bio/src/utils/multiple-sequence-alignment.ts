@@ -4,7 +4,7 @@ import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
 
 import {FastaFileHandler} from '@datagrok-libraries/bio/src/utils/fasta-handler';
-
+import {TAGS as bioTAGS} from '@datagrok-libraries/bio';
 //@ts-ignore
 import Aioli from '@biowasm/aioli';
 
@@ -36,11 +36,10 @@ export async function runKalign(srcCol: DG.Column, isAligned = false, unUsedName
     sequences = sequences.map((v: string, _) => AlignedSequenceEncoder.clean(v).replace(/\-/g, ''));
 
   const fasta = _stringsToFasta(sequences);
-  const CLI = await new Aioli({
-    tool: 'kalign',
-    version: '3.3.1',
-    reinit: true,
-  });
+  const CLI = await new Aioli([
+    'base/1.0.0',
+    {tool: 'kalign', version: '3.3.1', reinit: true}
+  ]);
 
   console.log(['fasta.length =', fasta.length]);
 
@@ -59,14 +58,14 @@ export async function runKalign(srcCol: DG.Column, isAligned = false, unUsedName
   // units
   const srcUnits = srcCol.getTag(DG.TAGS.UNITS);
   //aligned
-  const srcAligned = srcCol.getTag(UnitsHandler.TAGS.aligned);
+  const srcAligned = srcCol.getTag(bioTAGS.aligned);
   const tgtAligned = srcAligned + '.MSA';
   //alphabet
-  const srcAlphabet = srcCol.getTag(UnitsHandler.TAGS.alphabet);
+  const srcAlphabet = srcCol.getTag(bioTAGS.alphabet);
 
   tgtCol.setTag(DG.TAGS.UNITS, srcUnits);
-  tgtCol.setTag(UnitsHandler.TAGS.aligned, tgtAligned);
-  tgtCol.setTag(UnitsHandler.TAGS.alphabet, srcAlphabet);
+  tgtCol.setTag(bioTAGS.aligned, tgtAligned);
+  tgtCol.setTag(bioTAGS.alphabet, srcAlphabet);
   tgtCol.semType = DG.SEMTYPE.MACROMOLECULE;
   return tgtCol;
 }

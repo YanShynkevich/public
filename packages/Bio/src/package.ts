@@ -6,38 +6,159 @@ import * as DG from 'datagrok-api/dg';
 export const _package = new DG.Package();
 
 import {MacromoleculeDifferenceCellRenderer, MonomerCellRenderer} from './utils/cell-renderer';
-import {WebLogo, SeqColStats} from '@datagrok-libraries/bio/src/viewers/web-logo';
 import {VdRegionsViewer} from './viewers/vd-regions-viewer';
 import {runKalign, testMSAEnoughMemory} from './utils/multiple-sequence-alignment';
 import {SequenceAlignment, Aligned} from './seq_align';
-import {Nucleotides} from '@datagrok-libraries/bio/src/nucleotides';
-import {Aminoacids} from '@datagrok-libraries/bio/src/aminoacids';
-import {getEmbeddingColsNames, sequenceSpace} from './analysis/sequence-space';
-import {AvailableMetrics} from '@datagrok-libraries/ml/src/typed-metrics';
+import {getEmbeddingColsNames, sequenceSpace, sequenceSpaceByFingerprints} from './analysis/sequence-space';
 import {getActivityCliffs} from '@datagrok-libraries/ml/src/viewers/activity-cliffs';
-import {createPropPanelElement, createTooltipElement, getSimilaritiesMarix} from './analysis/sequence-activity-cliffs';
-import {createJsonMonomerLibFromSdf, encodeMonomers, getMolfilesFromSeq, HELM_CORE_LIB_FILENAME} from './utils/utils';
+import {
+  createLinesGrid,
+  createPropPanelElement,
+  createTooltipElement,
+  getChemSimilaritiesMarix,
+  getSimilaritiesMarix
+} from './analysis/sequence-activity-cliffs';
+import {
+  createJsonMonomerLibFromSdf,
+  encodeMonomers,
+  getMolfilesFromSeq
+} from '@datagrok-libraries/bio/src/monomer-works/monomer-utils';
+import {HELM_CORE_LIB_FILENAME} from '@datagrok-libraries/bio/src/utils/const';
 import {getMacroMol} from './utils/atomic-works';
 import {MacromoleculeSequenceCellRenderer} from './utils/cell-renderer';
 import {convert} from './utils/convert';
 import {getMacroMolColumnPropertyPanel, representationsWidget} from './widgets/representations';
-import {UnitsHandler} from '@datagrok-libraries/bio/src/utils/units-handler';
+import {_toAtomicLevel} from '@datagrok-libraries/bio/src/monomer-works/to-atomic-level';
 import {FastaFileHandler} from '@datagrok-libraries/bio/src/utils/fasta-handler';
 import {removeEmptyStringRows} from '@datagrok-libraries/utils/src/dataframe-utils';
-import {
-  generateManySequences,
-  generateLongSequence,
-  performanceTest
-} from './tests/test-sequnces-generators';
 
 import {splitAlignedSequences} from '@datagrok-libraries/bio/src/utils/splitter';
 import * as C from './utils/constants';
-import {PhyloTreeViewApp} from './phylo-tree-view-app';
 import {SequenceSimilarityViewer} from './analysis/sequence-similarity-viewer';
 import {SequenceDiversityViewer} from './analysis/sequence-diversity-viewer';
+import {invalidateMols, MONOMERIC_COL_TAGS, substructureSearchDialog} from './substructure-search/substructure-search';
+import {saveAsFastaUI} from './utils/save-as-fasta';
+import {BioSubstructureFilter} from './widgets/bio-substructure-filter';
+import {getMonomericMols} from './calculations/monomerLevelMols';
+import {delay} from '@datagrok-libraries/utils/src/test';
+import {from, Observable, Subject} from 'rxjs';
+import {
+  TAGS as bioTAGS,
+  Monomer, IMonomerLib, MonomerWorks, MonomerLib, readLibrary,
+  SeqPalette, UnitsHandler, WebLogoViewer, getStats, splitterAsHelm
+} from '@datagrok-libraries/bio';
+
+const STORAGE_NAME = 'Libraries';
+const LIB_PATH = 'System:AppData/Bio/libraries';
+const LIBS_PATH = 'libraries/';
+
+let monomerLib: IMonomerLib | null = null;
+export let hydrophobPalette: SeqPaletteCustom | null = null;
+
+export class SeqPaletteCustom implements SeqPalette {
+  private readonly _palette: { [m: string]: string };
+
+  constructor(palette: { [m: string]: string }) {
+    this._palette = palette;
+  }
+
+  public get(m: string): string {
+    return this._palette[m];
+  }
+}
 
 //tags: init
 export async function initBio() {
+  await loadLibraries();
+  const monomers: string[] = [];
+  const logPs: number[] = [];
+  const module = await grok.functions.call('Chem:getRdKitModule');
+
+
+  const series = monomerLib!.getMonomerMolsByType('PEPTIDE')!;
+  Object.keys(series).forEach((symbol) => {
+    monomers.push(symbol);
+    const block = series[symbol].replaceAll('#R', 'O ');
+    const mol = module.get_mol(block);
+    const logP = JSON.parse(mol.get_descriptors()).CrippenClogP;
+    logPs.push(logP);
+    mol?.delete();
+  });
+
+  const sum = logPs.reduce((a, b) => a + b, 0);
+  const avg = (sum / logPs.length) || 0;
+
+  const palette: { [monomer: string]: string } = {};
+  for (let i = 0; i < monomers.length; i++)
+    palette[monomers[i]] = logPs[i] < avg ? '#4682B4' : '#DC143C';
+
+  hydrophobPalette = new SeqPaletteCustom(palette);
+}
+
+async function loadLibraries() {
+  //TODO handle if files are in place
+
+  const uploadedLibraries: string[] = Object.values(await grok.dapi.userDataStorage.get(STORAGE_NAME, true));
+  if (uploadedLibraries.length == 0 && monomerLib == null)
+    monomerLib = new MonomerLib({});
+  for (let i = 0; i < uploadedLibraries.length; ++i)
+    await monomerManager(uploadedLibraries[i]);
+}
+
+//name: monomerManager
+//input: string value
+export async function monomerManager(value: string) {
+  if (monomerLib == null)
+    monomerLib = await readLibrary(LIB_PATH, value);
+  else
+    monomerLib!.update(await readLibrary(LIB_PATH, value));
+}
+
+//name: getBioLib
+//output: object monomerLib
+export function getBioLib(): IMonomerLib | null {
+  return monomerLib;
+}
+
+//name: manageFiles
+export async function manageFiles() {
+  const a = ui.dialog({title: 'Manage files'})
+    //@ts-ignore
+    .add(ui.fileBrowser({path: 'System:AppData/Bio/libraries'}).root)
+    .addButton('OK', () => a.close())
+    .show();
+}
+
+//name: Manage Libraries
+//tags: panel, widgets
+//input: column seqColumn {semType: Macromolecule}
+//output: widget result
+export async function libraryPanel(seqColumn: DG.Column): Promise<DG.Widget> {
+  //@ts-ignore
+  const filesButton: HTMLButtonElement = ui.button('Manage', manageFiles);
+  const divInputs: HTMLDivElement = ui.div();
+  const librariesList: string[] = (await _package.files.list(`${LIBS_PATH}`, false, ''))
+    .map((it) => it.fileName);
+  const uploadedLibraries: string[] = Object.values(await grok.dapi.userDataStorage.get(STORAGE_NAME, true));
+  for (let i = 0; i < uploadedLibraries.length; ++i) {
+    const libraryName: string = uploadedLibraries[i];
+    divInputs.append(ui.boolInput(libraryName, true, async () => {
+      grok.dapi.userDataStorage.remove(STORAGE_NAME, libraryName, true);
+      await loadLibraries();
+    }).root);
+  }
+  const unusedLibraries: string[] = librariesList.filter((x) => !uploadedLibraries.includes(x));
+  for (let i = 0; i < unusedLibraries.length; ++i) {
+    const libraryName: string = unusedLibraries[i];
+    divInputs.append(ui.boolInput(libraryName, false, () => {
+      monomerManager(libraryName);
+      grok.dapi.userDataStorage.postValue(STORAGE_NAME, libraryName, libraryName, true);
+    }).root);
+  }
+  return new DG.Widget(ui.splitV([
+    divInputs,
+    ui.divV([filesButton])
+  ]));
 }
 
 //name: fastaSequenceCellRenderer
@@ -141,7 +262,7 @@ export function sequenceAlignment(alignType: string, alignTable: string, gap: nu
 //tags: viewer, panel
 //output: viewer result
 export function webLogoViewer() {
-  return new WebLogo();
+  return new WebLogoViewer();
 }
 
 //name: VdRegions
@@ -164,35 +285,33 @@ export async function activityCliffs(df: DG.DataFrame, macroMolecule: DG.Column,
   similarity: number, methodName: string): Promise<DG.Viewer | undefined> {
   if (!checkInputColumnUi(macroMolecule, 'Activity Cliffs'))
     return;
-  const encodedCol = encodeMonomers(macroMolecule);
-  if (!encodedCol)
-    return;
   const axesNames = getEmbeddingColsNames(df);
   const options = {
     'SPE': {cycles: 2000, lambda: 1.0, dlambda: 0.0005},
   };
   const tags = {
-    'units': macroMolecule.tags['units'],
-    'aligned': macroMolecule.tags['aligned'],
-    'separator': macroMolecule.tags['separator'],
-    'alphabet': macroMolecule.tags['alphabet'],
+    'units': macroMolecule.getTag(DG.TAGS.UNITS),
+    'aligned': macroMolecule.getTag(bioTAGS.aligned),
+    'separator': macroMolecule.getTag(bioTAGS.separator),
+    'alphabet': macroMolecule.getTag(bioTAGS.alphabet),
   };
   const sp = await getActivityCliffs(
     df,
     macroMolecule,
-    encodedCol,
+    null,
     axesNames,
     'Activity cliffs',
     activities,
     similarity,
-    'Levenshtein',
+    'Tanimoto',
     methodName,
     DG.SEMTYPE.MACROMOLECULE,
     tags,
-    sequenceSpace,
-    getSimilaritiesMarix,
+    sequenceSpaceByFingerprints,
+    getChemSimilaritiesMarix,
     createTooltipElement,
     createPropPanelElement,
+    createLinesGrid,
     (options as any)[methodName]);
   return sp;
 }
@@ -202,13 +321,40 @@ export async function activityCliffs(df: DG.DataFrame, macroMolecule: DG.Column,
 //input: dataframe table
 //input: column macroMolecule { semType: Macromolecule }
 //input: string methodName { choices:["UMAP", "t-SNE", "SPE"] }
-//input: string similarityMetric { choices:["Levenshtein", "Tanimoto"] }
+//input: string similarityMetric { choices:["Tanimoto", "Asymmetric", "Cosine", "Sokal"] }
 //input: bool plotEmbeddings = true
 export async function sequenceSpaceTopMenu(table: DG.DataFrame, macroMolecule: DG.Column, methodName: string,
-  similarityMetric: string = 'Levenshtein', plotEmbeddings: boolean): Promise<DG.Viewer | undefined> {
-  if (!checkInputColumnUi(macroMolecule, 'Activity Cliffs'))
+  similarityMetric: string = 'Tanimoto', plotEmbeddings: boolean): Promise<DG.Viewer | undefined> {
+  // Delay is required for initial function dialog to close before starting invalidating of molfiles.
+  // Otherwise, dialog is freezing
+  await delay(10);
+  if (!checkInputColumnUi(macroMolecule, 'Sequence space'))
     return;
-  const encodedCol = encodeMonomers(macroMolecule);
+
+  const embedColsNames = getEmbeddingColsNames(table);
+  const withoutEmptyValues = DG.DataFrame.fromColumns([macroMolecule]).clone();
+  const emptyValsIdxs = removeEmptyStringRows(withoutEmptyValues, macroMolecule);
+
+  const chemSpaceParams = {
+    seqCol: withoutEmptyValues.col(macroMolecule.name)!,
+    methodName: methodName,
+    similarityMetric: similarityMetric,
+    embedAxesNames: embedColsNames
+  };
+  const sequenceSpaceRes = await sequenceSpaceByFingerprints(chemSpaceParams);
+  const embeddings = sequenceSpaceRes.coordinates;
+  for (const col of embeddings) {
+    const listValues = col.toList();
+    emptyValsIdxs.forEach((ind: number) => listValues.splice(ind, 0, null));
+    table.columns.add(DG.Column.float(col.name, table.rowCount).init((i) => listValues[i]));
+  }
+  if (plotEmbeddings) {
+    return grok.shell
+      .tableView(table.name)
+      .scatterPlot({x: embedColsNames[0], y: embedColsNames[1], title: 'Sequence space'});
+  }
+
+  /*   const encodedCol = encodeMonomers(macroMolecule);
   if (!encodedCol)
     return;
   const embedColsNames = getEmbeddingColsNames(table);
@@ -234,8 +380,7 @@ export async function sequenceSpaceTopMenu(table: DG.DataFrame, macroMolecule: D
       if (v.name === table.name)
         sp = (v as DG.TableView).scatterPlot({x: embedColsNames[0], y: embedColsNames[1], title: 'Sequence space'});
     }
-  }
-  return sp;
+  } */
 };
 
 //top-menu: Bio | To Atomic Level...
@@ -250,33 +395,26 @@ export async function toAtomicLevel(df: DG.DataFrame, macroMolecule: DG.Column):
   }
   if (!checkInputColumnUi(macroMolecule, 'To Atomic Level'))
     return;
-
   const monomersLibFile = await _package.files.readAsText(HELM_CORE_LIB_FILENAME);
   const monomersLibObject: any[] = JSON.parse(monomersLibFile);
-  const atomicCodes = getMolfilesFromSeq(macroMolecule, monomersLibObject);
-  const result = await getMacroMol(atomicCodes!);
-
-  const col = DG.Column.fromStrings('regenerated', result);
-  col.semType = DG.SEMTYPE.MOLECULE;
-  col.tags[DG.TAGS.UNITS] = 'molblock';
-  df.columns.add(col, true);
-  await grok.data.detectSemanticTypes(df);
+  await _toAtomicLevel(df, macroMolecule, monomersLibObject);
 }
-
 
 //top-menu: Bio | MSA...
 //name: MSA
 //input: dataframe table
 //input: column sequence { semType: Macromolecule, units: ['fasta'], alphabet: ['DNA', 'RNA', 'PT'] }
 //output: column result
-export async function multipleSequenceAlignmentAny(table: DG.DataFrame, col: DG.Column): Promise<DG.Column | null> {
+export async function multipleSequenceAlignmentAny(
+  table: DG.DataFrame, sequence: DG.Column
+): Promise<DG.Column | null> {
   const func: DG.Func = DG.Func.find({package: 'Bio', name: 'multipleSequenceAlignmentAny'})[0];
 
-  if (!checkInputColumnUi(col, 'MSA', ['fasta'], ['DNA', 'RNA', 'PT']))
+  if (!checkInputColumnUi(sequence, 'MSA', ['fasta'], ['DNA', 'RNA', 'PT']))
     return null;
 
-  const unUsedName = table.columns.getUnusedName(`msa(${col.name})`);
-  const msaCol = await runKalign(col, false, unUsedName);
+  const unUsedName = table.columns.getUnusedName(`msa(${sequence.name})`);
+  const msaCol = await runKalign(sequence, false, unUsedName);
   table.columns.add(msaCol);
 
   // This call is required to enable cell renderer activation
@@ -291,8 +429,8 @@ export async function multipleSequenceAlignmentAny(table: DG.DataFrame, col: DG.
 //tags: bio, panel
 //input: column sequence { semType: Macromolecule }
 //output: column result
-export async function panelMSA(col: DG.Column): Promise<DG.Column | null> {
-  return multipleSequenceAlignmentAny(col.dataFrame, col);
+export async function panelMSA(sequence: DG.Column): Promise<DG.Column | null> {
+  return multipleSequenceAlignmentAny(sequence.dataFrame, sequence);
 }
 
 //name: Composition Analysis
@@ -453,9 +591,6 @@ export async function testDetectMacromolecule(path: string): Promise<DG.DataFram
 //tags: panel, bio
 //input: column col {semType: Macromolecule}
 export function splitToMonomers(col: DG.Column<string>): void {
-  if (!col.getTag(UnitsHandler.TAGS.aligned).includes(C.MSA))
-    return grok.shell.error('Splitting is applicable only for aligned sequences');
-
   const tempDf = splitAlignedSequences(col);
   const originalDf = col.dataFrame;
   for (const tempCol of tempDf.columns) {
@@ -468,9 +603,9 @@ export function splitToMonomers(col: DG.Column<string>): void {
 }
 
 //name: Bio: getHelmMonomers
-//input: column col {semType: Macromolecule}
-export function getHelmMonomers(seqCol: DG.Column<string>): string[] {
-  const stats = WebLogo.getStats(seqCol, 1, WebLogo.splitterAsHelm);
+//input: column sequence {semType: Macromolecule}
+export function getHelmMonomers(sequence: DG.Column<string>): string[] {
+  const stats = getStats(sequence, 1, splitterAsHelm);
   return Object.keys(stats.freq);
 }
 
@@ -509,20 +644,25 @@ export function diversitySearchTopMenu() {
   view.dockManager.dock(viewer, 'down');
 }
 
+//name: Bio | Substructure search ...
+//tags: panel, bio
+//input: column col {semType: Macromolecule}
+export function bioSubstructureSearch(col: DG.Column): void {
+  substructureSearchDialog(col);
+}
 
-//name: PhyloTreeView
-//tags: app
-export async function bioPhyloTreeViewApp() {
-  const pi = DG.TaskBarProgressIndicator.create('open PhyloTreeView app');
-  try {
-    const app = new PhyloTreeViewApp();
-    await app.init();
-  } catch (err: unknown) {
-    const msg: string = 'PhyloTreeView app error: ' +
-      `${err instanceof Error ? err.message : (err as Object).toString()}`;
-    grok.shell.error(msg);
-    console.error(msg);
-  } finally {
-    pi.close();
-  }
+//name: saveAsFasta
+//description: As FASTA...
+//tags: fileExporter
+export function saveAsFasta() {
+  saveAsFastaUI();
+}
+
+//name: BioSubstructureFilter
+//description: Substructure filter for macromolecules
+//tags: filter
+//output: filter result
+//meta.semType: Macromolecule
+export function bioSubstructureFilter(): BioSubstructureFilter {
+  return new BioSubstructureFilter();
 }

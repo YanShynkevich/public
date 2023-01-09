@@ -1,10 +1,11 @@
 import * as DG from 'datagrok-api/dg';
-import {SplitterFunc, WebLogo} from '../viewers/web-logo';
+
+import {monomerToShort} from './macromolecule';
 
 const undefinedColor = 'rgb(100,100,100)';
 const grayColor = '#808080';
 const blackColor = 'rgb(0,0,0)';
-const monomerToShortFunction: (amino: string, maxLengthOfMonomer: number) => string = WebLogo.monomerToShort;
+const monomerToShortFunction: (amino: string, maxLengthOfMonomer: number) => string = monomerToShort;
 
 export enum DrawStyle {
   MSA = 'MSA',
@@ -34,11 +35,11 @@ export enum DrawStyle {
  * @param maxLengthOfMonomer Is max length of monomer.
  * @return {number} x coordinate to start printing at.
  */
-export function printLeftOrCentered(
+export const printLeftOrCentered = (
   x: number, y: number, w: number, h: number,
-  g: CanvasRenderingContext2D, s: string, color = undefinedColor,
+  g: CanvasRenderingContext2D, s: string, color: string = undefinedColor,
   pivot: number = 0, left = false, transparencyRate: number = 1.0,
-  separator: string = '', last: boolean = false, drawStyle: DrawStyle = DrawStyle.classic, maxWord: { [index: string]: number } = {}, wordIdx: number = 0, gridCell: DG.GridCell | null = null, referenceSequence: string[] = [], maxLengthOfMonomer: number | null = null): number {
+  separator: string = '', last: boolean = false, drawStyle: DrawStyle = DrawStyle.classic, maxWord: { [index: string]: number } = {}, wordIdx: number = 0, gridCell: DG.GridCell | null = null, referenceSequence: string[] = [], maxLengthOfMonomer: number | null = null): number => {
   g.textAlign = 'start';
   let colorPart = s.substring(0);
   let grayPart = last ? '' : separator;
@@ -47,13 +48,19 @@ export function printLeftOrCentered(
   }
   let colorCode = true;
   let compareWithCurrent = true;
-  if (gridCell != null) {
-    colorCode = (gridCell.cell.column?.temp['color-code'] != null) ? gridCell.cell.column.temp['color-code'] : true;
-    compareWithCurrent = (gridCell.cell.column?.temp['compare-with-current'] != null) ? gridCell.cell.column.temp['compare-with-current'] : true;
+  let highlightDifference = 'difference';
+  if ((gridCell != null) && (gridCell.cell.column != null)) {
+    colorCode = gridCell.cell.column.temp['color-code'] ?? true;
+    compareWithCurrent = gridCell.cell.column.temp['compare-with-current'] ?? true;
+    highlightDifference = gridCell.cell.column.temp['highlight-difference'] ?? 'difference';
+
   }
   const currentMonomer: string = referenceSequence[wordIdx];
-  if (compareWithCurrent && (referenceSequence.length > 0)) {
-    transparencyRate = (colorPart == currentMonomer) ? 0.4 : transparencyRate;
+  if (compareWithCurrent && (referenceSequence.length > 0) && (highlightDifference === 'difference')) {
+    transparencyRate = (colorPart == currentMonomer) ? 0.3 : transparencyRate;
+  }
+  if (compareWithCurrent && (referenceSequence.length > 0) && (highlightDifference === 'equal')) {
+    transparencyRate = (colorPart != currentMonomer) ? 0.3 : transparencyRate;
   }
   if (maxLengthOfMonomer != null) {
     colorPart = monomerToShortFunction(colorPart, maxLengthOfMonomer);
@@ -65,7 +72,7 @@ export function printLeftOrCentered(
 
   let maxColorTextSize = g.measureText(colorPart).width;
   let colorTextSize = g.measureText(colorPart).width;
-  const dy = (textSize.fontBoundingBoxAscent + textSize.fontBoundingBoxDescent) / 2;
+  const dy = h / 2 - (textSize.fontBoundingBoxAscent + textSize.fontBoundingBoxDescent) / 2 + 1;
   textSize = textSize.width;
   if (drawStyle === DrawStyle.MSA) {
     maxColorTextSize = maxWord[wordIdx];
@@ -96,5 +103,5 @@ export function printLeftOrCentered(
     draw(dx, dx + maxColorTextSize);
     return x + dx + maxColorTextSize;
   }
-}
+};
 

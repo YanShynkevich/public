@@ -1,7 +1,7 @@
 {
   "name": "@datagrok/pubchem-api",
   "friendlyName": "PubChem",
-  "version": "1.1.1",
+  "version": "1.1.5",
   "author": {
     "name": "Volodymyr Dyma",
     "email": "vdyma@datagrok.ai"
@@ -13,8 +13,8 @@
     "directory": "packages/PubChemApi"
   },
   "dependencies": {
-    "datagrok-api": "^1.0.0",
-    "@datagrok-libraries/utils": "^0.0.22"
+    "datagrok-api": "^1.9.1",
+    "@datagrok-libraries/utils": "^1.15.5"
   },
   "devDependencies": {
     "ts-loader": "latest",

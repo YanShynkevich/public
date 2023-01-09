@@ -4,6 +4,7 @@ import './dataframe/dataframe';
 import './dataframe/detector';
 import './dataframe/calculated-columns';
 import './dataframe/events';
+import './dataframe/datetime-columns-join';
 import './functions/functions';
 import './shell/shell';
 import './shell/windows';
@@ -21,11 +22,14 @@ import './dapi/dapi';
 import './dapi/connection';
 import './dapi/entities';
 import './dapi/layouts';
+import './dapi/packages';
 import './dapi/projects';
 import './dapi/tables';
 import './dapi/user-data-storage';
 import './dapi/users';
+import './dapi/benchmarks';
 import './shell/ml';
+import './shell/settings';
 import './ui/divs';
 import './ui/buttons';
 import './widgets/files-widget';
@@ -38,14 +42,23 @@ import './ui/accordion';
 import './ui/tab-control';
 import './ui/list';
 import './ui/image';
-//import './viewers/viewers-adding';
+import './ui/users';
+import './ui/groups';
+import './ui/tags';
+import './ui/sharing';
+import './package/upload';
 import './viewers/viewers';
-//import './gui/chem-sketcher';
 import './grid/grid';
+import './grid/color-coding';
 import './connections/queries-test';
+import './connections/get-all-top100';
 import './scripts/scripts-params';
+import './gui/dialogs';
+import './gui/files';
+import './gui/grid';
+import './gui/project-upload';
 
-import {runTests, tests} from '@datagrok-libraries/utils/src/test';
+import {runTests, tests, TestContext} from '@datagrok-libraries/utils/src/test';
 export const _package = new DG.Package();
 export {tests};
 
@@ -53,10 +66,11 @@ export {tests};
 //name: test
 //input: string category {optional: true}
 //input: string test {optional: true}
+//input: object testContext {optional: true}
 //output: dataframe result
 //top-menu: Tools | Dev | JS API Tests
-export async function test(category: string, test: string): Promise<DG.DataFrame> {
-  const data = await runTests({category, test});
+export async function test(category: string, test: string, testContext: TestContext): Promise<DG.DataFrame> {
+  const data = await runTests({category, test, testContext});
   return DG.DataFrame.fromObjects(data)!;
 }
 

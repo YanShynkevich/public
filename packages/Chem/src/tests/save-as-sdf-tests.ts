@@ -25,6 +25,8 @@ category('saveAsSdf', async () => {
     await grok.data.detectSemanticTypes(inputDf);
     fileWithSavedSmiles = await loadFileAsText('tests/sdf-test-smiles.sdf');
     fileWithSavedMolblock = await loadFileAsText('tests/sdf-test-scaffold.sdf');
+    fileWithSavedSmiles = fileWithSavedSmiles.replace(/\r/g, '');
+    fileWithSavedMolblock = fileWithSavedMolblock.replace(/\r/g, '');
   });
 
   test('saveSmilesColumn', async () => {
@@ -34,6 +36,6 @@ category('saveAsSdf', async () => {
 
   test('saveMolblockColumn', async () => {
     const savedColumn = inputDf.col('Scaffold')!;
-    expect(getSdfString(inputDf, savedColumn), fileWithSavedMolblock);
+    expect(getSdfString(inputDf, savedColumn).replace(/\r/g, ''), fileWithSavedMolblock);
   });
 });

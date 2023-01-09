@@ -1,18 +1,20 @@
 import * as DG from 'datagrok-api/dg';
 import * as grok from 'datagrok-api/grok';
-import { category, expect, expectFloat, test, delay, before } from '@datagrok-libraries/utils/src/test';
+
+import {category, expect, expectFloat, test, delay, before} from '@datagrok-libraries/utils/src/test';
 import {_package} from '../package-test';
 import {Fingerprint} from '../utils/chem-common';
-import { createTableView, readDataframe } from './utils';
+import {createTableView, readDataframe} from './utils';
 import * as chemCommonRdKit from '../utils/chem-common-rdkit';
 
-import { _testSearchSubstructure,
+import {
+  _testSearchSubstructure,
   _testSearchSubstructureAllParameters,
   _testSearchSubstructureSARSmall,
-  loadFileAsText } from './utils';
-import { findSimilar, getSimilarities } from '../package';
-import { chemDiversitySearch } from '../analysis/chem-diversity-viewer';
-import { tanimotoSimilarity } from '@datagrok-libraries/utils/src/similarity-metrics';
+  loadFileAsText
+} from './utils';
+import {findSimilar, getSimilarities} from '../package';
+import {chemDiversitySearch} from '../analysis/chem-diversity-viewer';
 
 const t = DG.DataFrame.fromCsv(`smiles
 O=C1CN=C(c2ccccc2N1)C3CCCCC3
@@ -44,15 +46,15 @@ category('top menu r-groups', () => {
       'core': 'c1ccccc1',
       'prefix': 'R'
     });
-    expect(rgroups.getCol('R1').get(0), '[R1]C(=NCC(=O)N[R1])C1CCCCC1');
-    expect(rgroups.getCol('R1').get(1), '[R1]C(=NCC(=O)N([R1])C)C1CCCCC1');
-    expect(rgroups.getCol('R1').get(2), '[R1]C(=NCC(=O)N([R1])CCCC)C1CCCCC1');
-    expect(rgroups.getCol('R1').get(3), '[R1]C(=NCC(=O)N([R1])CCC(C)C)C1CCCCC1');
-    expect(rgroups.getCol('R1').get(4), '[R1]C(=NCC(=O)N([R1])CC1CCCCC1)C1CCCCC1');
-    expect(rgroups.getCol('R1').get(5), '[R1]C(=NCC(=O)N[R1])C1CCCCC1');
-    expect(rgroups.getCol('R1').get(6), '[R1]C(=NCC(=O)N([R1])C)C1CCCCC1');
-    expect(rgroups.getCol('R2').get(5), '[R2]Cl');
-    expect(rgroups.getCol('R2').get(6), '[R2]Cl');
+    expect(rgroups.getCol('R1').get(0), '*C(=NCC(=O)N[1*])C1CCCCC1');
+    expect(rgroups.getCol('R1').get(1), '*C(=NCC(=O)N([1*])C)C1CCCCC1');
+    expect(rgroups.getCol('R1').get(2), '*C(=NCC(=O)N([1*])CCCC)C1CCCCC1');
+    expect(rgroups.getCol('R1').get(3), '*C(=NCC(=O)N([1*])CCC(C)C)C1CCCCC1');
+    expect(rgroups.getCol('R1').get(4), '*C(=NCC(=O)N([1*])CC1CCCCC1)C1CCCCC1');
+    expect(rgroups.getCol('R1').get(5), '*C(=NCC(=O)N[1*])C1CCCCC1');
+    expect(rgroups.getCol('R1').get(6), '*C(=NCC(=O)N([1*])C)C1CCCCC1');
+    expect(rgroups.getCol('R2').get(5), '[2*]Cl');
+    expect(rgroups.getCol('R2').get(6), '[2*]Cl');
   });
 
 });

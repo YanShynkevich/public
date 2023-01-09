@@ -27,8 +27,12 @@ export function paramsToJs(params: any): any {
  * @returns JavaScript wrapper for the Dart object
  * */
 export function toJs(dart: any, check: boolean = false): any {
+  if (dart === null)
+    return null;
+  if (dart == undefined)
+    return undefined;
   let type = (<any>window).grok_GetType(dart);
-  if (dart == FLOAT_NULL)
+  if (dart === FLOAT_NULL)
     return null;
   else if (type === TYPE.MAP) {
     let wrapper = (<any>window).grok_GetWrapper(dart);
@@ -60,6 +64,10 @@ export function toJs(dart: any, check: boolean = false): any {
   return dart;
 }
 
+function isPlainObject(value: any) {
+  return value?.constructor === Object;
+}
+
 /** Extracts a Dart handle from the JavaScript wrapper. See also {@link toJs} */
 export function toDart(x: any): any {
   if (x === undefined || x === null)
@@ -70,6 +78,8 @@ export function toDart(x: any): any {
     return x.toDart();
   if (typeof x.dart !== 'undefined')
     return x.dart;
+  if (isPlainObject(x))
+    return (<any>window).grok_JS_To_Map(x);
   return x;
 }
 

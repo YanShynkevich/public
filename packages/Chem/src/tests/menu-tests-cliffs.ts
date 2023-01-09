@@ -1,4 +1,4 @@
-import {before, after, expect, category, test} from '@datagrok-libraries/utils/src/test';
+import {before, after, expect, category, test, delay, awaitCheck} from '@datagrok-libraries/utils/src/test';
 import * as DG from 'datagrok-api/dg';
 import * as grok from 'datagrok-api/grok';
 
@@ -18,11 +18,11 @@ category('top menu activity cliffs', async () => {
   });
 
   test('activityCliffsOpen', async () => {
-    await _testActivityCliffsOpen('activity_cliffs.csv', 92);
+    await _testActivityCliffsOpen('tests/activity_cliffs_test.csv', 2);
   });
 
   test('activityCliffsWithEmptyRows', async () => {
-    await _testActivityCliffsOpen('tests/activity_cliffs_empty_rows.csv', 91);
+    await _testActivityCliffsOpen('tests/activity_cliffs_empty_rows.csv', 1);
   });
 
   after(async () => {
@@ -31,16 +31,22 @@ category('top menu activity cliffs', async () => {
 
 async function _testActivityCliffsOpen(dfName: string, numberCliffs: number) {
   const actCliffsTableView = await createTableView(dfName);
-  const scatterPlot = await activityCliffs(
+  await activityCliffs(
     actCliffsTableView.dataFrame,
     actCliffsTableView.dataFrame.col('smiles')!,
     actCliffsTableView.dataFrame.col('Activity')!,
     80,
     't-SNE');
+  
+  let scatterPlot: DG.Viewer | null = null;  
+  for (const i of actCliffsTableView.viewers) {
+    if (i.type == DG.VIEWER.SCATTER_PLOT) 
+      scatterPlot = i;
+  }
 
   expect(scatterPlot != null, true);
 
-  const cliffsLink = Array.from(scatterPlot.root.children).filter((it) => it.className === 'ui-btn ui-btn-ok');
-  expect((cliffsLink[0] as HTMLElement).innerText, `${numberCliffs} cliffs`);
+  const cliffsLink = Array.from(scatterPlot!.root.children).filter((it) => it.className === 'ui-btn ui-btn-ok');
+  expect((cliffsLink[0] as HTMLElement).innerText.toLowerCase(), `${numberCliffs} cliffs`);
   actCliffsTableView.close();
 }

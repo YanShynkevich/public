@@ -1,25 +1,20 @@
 import {before, category, delay, test} from '@datagrok-libraries/utils/src/test';
 import * as grok from 'datagrok-api/grok';
-import {FileInfo} from 'datagrok-api/src/entities';
+import * as DG from 'datagrok-api/dg';
 import {checkHTMLElementByInnerText} from './test-utils';
+import {_package} from '../package-test';
 
 
 category('File Panels: NLP', () => {
-  const testFiles: FileInfo[] = [];
+  const testFiles: DG.FileInfo[] = [];
 
   before(async () => {
-    const txtFiles = await grok.dapi.files.list('Demo:Files/texts', true, 'txt');
-    const pdfFiles = await grok.dapi.files.list('Demo:Files/texts', true, 'pdf');
-    const docFiles = await grok.dapi.files.list('Demo:Files/texts', true, 'doc');
-    const txtTestFile = txtFiles.find((f) => f.name === 'dart.txt');
-    const pdfTestFile = pdfFiles.find((f) => f.name === 'da-sdg.pdf');
-    const docTestFile = docFiles.find((f) => f.name === 'en-sdg.doc');
-    [txtTestFile, pdfTestFile, docTestFile].forEach((f) => {if (f) testFiles.push(f);});
+    testFiles.push(...(await _package.files.list('', true)));
   });
 
-  test('nlp.textStatistics', () => checkPane('Text Statistics'));
+  test('nlp.textStatistics', () => checkPane('Text Statistics'), {skipReason: 'GROK-11391'});
 
-  test('nlp.Summary', () => checkPane('Summary'));
+  test('nlp.Summary', () => checkPane('Summary'), {skipReason: 'GROK-11391'});
 
 	async function checkPane(name: string) {
     if (!testFiles.length)

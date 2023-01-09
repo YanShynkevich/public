@@ -20,10 +20,12 @@ let api = <any>window;
 
 export class TypedEventArgs<TData> {
   dart: any;
+
   constructor(dart: any) {
     this.dart = dart;
   }
 
+  /** Event type id */
   get type(): string {
     return api.grok_TypedEventArgs_Get_Type(this.dart);
   }
@@ -31,6 +33,16 @@ export class TypedEventArgs<TData> {
   get data(): TData {
     let data = api.grok_TypedEventArgs_Get_Data(this.dart);
     return toJs(data);
+  }
+
+  /** Event arguments. Only applies when data is EventData */
+  get args(): {[key: string]: any} | null {
+    // @ts-ignore
+    if (!this.data?.dart)
+      return null;
+
+    // @ts-ignore
+    return api.grok_EventData_Get_Args(this.data.dart);
   }
 }
 
@@ -274,6 +286,28 @@ export class Viewer<TSettings = any> extends Widget<TSettings> {
         new StreamSubscription(dart).cancel();
       }
     );
+  }
+
+  toCompactLook() {
+    api.grok_Viewer_To_Trellis_Look(this.dart);
+  }
+
+  get onDartPropertyChanged(): rxjs.Observable<null> {
+    let dartStream = api.grok_Viewer_Get_PropertyChanged_Events(this.dart);
+    return rxjs.fromEventPattern(
+      function (handler) {
+        return api.grok_Stream_Listen(dartStream, function (x: any) {
+          handler(new TypedEventArgs(x));
+        });
+      },
+      function (handler, dart) {
+        new StreamSubscription(dart).cancel();
+      }
+    );
+  }
+
+  copyViewersLook(other: Viewer) {
+    api.grok_Viewer_Copy_Viewers_Look(this.dart, other.dart);
   }
 
   removeFromView() {

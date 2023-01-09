@@ -1,16 +1,14 @@
-import {after, before, category, test, expect, expectArray} from '@datagrok-libraries/utils/src/test';
-
 import * as grok from 'datagrok-api/grok';
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
 
-import {checkInputColumn, multipleSequenceAlignmentAny} from '../package';
-import {UNITS} from 'datagrok-api/dg';
-import {ALPHABET, UnitsHandler} from '@datagrok-libraries/bio/src/utils/units-handler';
 
+import {after, before, category, test, expect, expectArray} from '@datagrok-libraries/utils/src/test';
+
+import {checkInputColumn, multipleSequenceAlignmentAny} from '../package';
+import {ALPHABET, NOTATION, TAGS as bioTAGS} from '@datagrok-libraries/bio';
 
 category('checkInputColumn', () => {
-
   const csv = `seq
 seq1,
 seq2,
@@ -21,16 +19,18 @@ seq4`;
     const func: DG.Func = DG.Func.find({package: 'Bio', name: 'multipleSequenceAlignmentAny'})[0];
     const funcInputColumnProperty: DG.Property = func.inputs.find((i) => i.name == 'sequence')!;
 
-    let k = 11;
+    const k = 11;
 
     const df: DG.DataFrame = DG.DataFrame.fromCsv(csv);
     const col: DG.Column = df.getCol('seq');
     col.semType = DG.SEMTYPE.MACROMOLECULE;
-    col.setTag(DG.TAGS.UNITS, 'fasta');
-    col.setTag(UnitsHandler.TAGS.alphabet, ALPHABET.DNA);
+    col.setTag(DG.TAGS.UNITS, NOTATION.FASTA);
+    col.setTag(bioTAGS.alphabet, ALPHABET.DNA);
+    col.setTag(bioTAGS.aligned, 'SEQ');
 
     const [res, msg]: [boolean, string] = checkInputColumn(
-      col, 'Test', ['fasta',], ['DNA', 'RNA', 'PT']);
+      col, 'Test', [NOTATION.FASTA],
+      [ALPHABET.DNA, ALPHABET.RNA, ALPHABET.PT]);
 
     expect(res, true);
   });
@@ -39,12 +39,13 @@ seq4`;
     const df: DG.DataFrame = DG.DataFrame.fromCsv(csv);
     const col: DG.Column = df.getCol('seq');
     col.semType = DG.SEMTYPE.MACROMOLECULE;
-    col.setTag(DG.TAGS.UNITS, 'helm');
-    col.setTag(UnitsHandler.TAGS.alphabetSize, '11');
-    col.setTag(UnitsHandler.TAGS.alphabetIsMultichar, 'true');
+    col.setTag(DG.TAGS.UNITS, NOTATION.HELM);
+    // col.setTag(bio.TAGS.alphabetSize, '11');
+    col.setTag(bioTAGS.alphabetIsMultichar, 'true');
 
     const [res, msg]: [boolean, string] = checkInputColumn(
-      col, 'Test', ['fasta',], ['DNA', 'RNA', 'PT']);
+      col, 'Test', [NOTATION.FASTA],
+      [ALPHABET.DNA, ALPHABET.RNA, ALPHABET.PT]);
 
     expect(res, false);
   });
@@ -53,13 +54,15 @@ seq4`;
     const df: DG.DataFrame = DG.DataFrame.fromCsv(csv);
     const col: DG.Column = df.getCol('seq');
     col.semType = DG.SEMTYPE.MACROMOLECULE;
-    col.setTag(DG.TAGS.UNITS, 'fasta');
-    col.setTag(UnitsHandler.TAGS.alphabet, 'UN');
-    col.setTag(UnitsHandler.TAGS.alphabetSize, '11');
-    col.setTag(UnitsHandler.TAGS.alphabetIsMultichar, 'true');
+    col.setTag(DG.TAGS.UNITS, NOTATION.FASTA);
+    col.setTag(bioTAGS.alphabet, 'UN');
+    col.setTag(bioTAGS.alphabetSize, '11');
+    col.setTag(bioTAGS.alphabetIsMultichar, 'true');
+    col.setTag(bioTAGS.aligned, 'SEQ');
 
     const [res, msg]: [boolean, string] = checkInputColumn(
-      col, 'Test', ['fasta',], ['DNA', 'RNA', 'PT']);
+      col, 'Test', [NOTATION.FASTA],
+      [ALPHABET.DNA, ALPHABET.RNA, ALPHABET.PT]);
 
     expect(res, false);
   });
@@ -67,6 +70,6 @@ seq4`;
   test('testGetActionFunctionMeta', async () => {
     const func: DG.Func = DG.Func.find({package: 'Bio', name: 'multipleSequenceAlignmentAny'})[0];
     const sequenceInput: DG.Property = func.inputs.find((i) => i.name == 'sequence')!;
-    let k = 11;
+    const k = 11;
   });
 });

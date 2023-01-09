@@ -4,6 +4,7 @@ import {
   DataConnection,
   DataJob,
   DataQuery,
+  Dockerfile,
   Entity,
   Group,
   Model,
@@ -21,13 +22,11 @@ import {
   FileInfo, HistoryEntry, ProjectOpenOptions, Func
 } from "./entities";
 import {ViewLayout} from "./views/view";
-import {toDart, toJs} from "./wrappers";
+import {toJs} from "./wrappers";
 import {_propsToDart} from "./utils";
 import {FuncCall} from "./functions";
 
 let api = <any>window;
-
-type LoggerPutCallback = (logRecord: {message: string, params: object, type: string}) => void;
 
 /**
  * Exposes Datagrok's server-side functionality.
@@ -151,6 +150,12 @@ export class Dapi {
     return new HttpDataSource(api.grok_Dapi_Environments());
   }
 
+  /**Dockerfiles API endpoint
+   * @type {HttpDataSource<Dockerfile>} */
+  get dockerfiles(): DockerfilesDataSource {
+    return new DockerfilesDataSource(api.grok_Dapi_Dockerfiles(), 'Dockerfile');
+  }
+
   /** Users Data Storage API endpoint
    *  @type {UserDataStorage} */
   get userDataStorage(): UserDataStorage {
@@ -252,6 +257,13 @@ export class HttpDataSource<T> {
     return new Promise((resolve, reject) => api.grok_DataSource_List(this.dart, (q: any) => resolve(q.map(toJs)), (e: any) => reject(e)));
   }
 
+  /** Counts entities that satisfy the filtering criteria (see {@link filter}).
+   *  See examples: {@link https://public.datagrok.ai/js/samples/dapi/projects-list}
+   *  Smart filter: {@link https://datagrok.ai/help/datagrok/smart-search} */
+  count(): Promise<number> {
+    return new Promise((resolve, reject) => api.grok_DataSource_Count(this.dart, (q: number) => resolve(q), (e: any) => reject(e)));
+  }
+
   /** Returns fist entity that satisfies the filtering criteria (see {@link filter}).
    *  @returns Promise<object>  */
   first(): Promise<T> {
@@ -275,6 +287,12 @@ export class HttpDataSource<T> {
   /** Deletes an entity. */
   delete(e: Entity): Promise<void> {
     return new Promise((resolve, reject) => api.grok_DataSource_Delete(this.dart, e.dart, () => resolve(), (e: any) => reject(e)));
+  }
+
+  /** Turns off package versions isolation. This DataSource will return all entities in all versions, not only the current one **/
+  allPackageVersions(): HttpDataSource<T> {
+    this.dart = api.grok_DataSource_AllPackageVersions(this.dart);
+    return this;
   }
 
   by(i: number): HttpDataSource<T> {
@@ -601,7 +619,11 @@ export class PermissionsDataSource {
     return data;
   }
 
-  check(e: Entity, permission: 'Edit' | 'View' | 'Share' | 'Delete' ): Promise<boolean> {
+  /** Checks if current user has permission {permission} for entity {e}
+   * @param {Entity} e Entity to check permission for
+   * @param {'Edit' | 'View' | 'Share' | 'Delete'} permission Permission type
+   * @returns {boolean} Result */
+  check(e: Entity, permission: 'Edit' | 'View' | 'Share' | 'Delete'): Promise<boolean> {
     return api.grok_Dapi_Check_Permissions(e.dart, permission);
   }
 
@@ -738,7 +760,7 @@ export class TablesDataSource extends HttpDataSource<TableInfo> {
    * @param {DataFrame} dataFrame
    * @returns {Promise<string>} */
   uploadDataFrame(dataFrame: DataFrame): Promise<string> {
-    return api.grok_Dapi_TablesDataSource_UploadDataFrame(dataFrame.dart);
+    return api.grok_Dapi_TablesDataSource_UploadDataFrame(this.dart, dataFrame.dart);
   }
 
   /** Loads a dataframe by id.
@@ -746,9 +768,32 @@ export class TablesDataSource extends HttpDataSource<TableInfo> {
    * @param {string} id - dataframe id
    * @returns {Promise<DataFrame>} */
   getTable(id: string): Promise<DataFrame> {
-    return api.grok_Dapi_TablesDataSource_GetTable(id);
+    return api.grok_Dapi_TablesDataSource_GetTable(this.dart, id);
+  }
+}
+
+/** Functionality to work with Dockerfiles
+ * @extends HttpDataSource */
+export class DockerfilesDataSource extends HttpDataSource<Dockerfile> {
+  /** @constructs DockerfilesDataSource */
+  constructor(s: any, clsName: string) {
+    super(s, clsName);
   }
 
+  /* Runs container */
+  run(dockerfileId: string): Promise<boolean> {
+    return api.grok_Dapi_DockerfilesDataSource_Run(this.dart, dockerfileId);
+  }
+
+  /* Stops container */
+  stop(dockerfileId: string): Promise<boolean> {
+    return api.grok_Dapi_DockerfilesDataSource_Stop(this.dart, dockerfileId);
+  }
+
+  /* Makes a request to container with dockerfileId */
+  request(dockerfileId: string, path: string, params: ResponseInit): Promise<string | null> {
+    return api.grok_Dapi_DockerfilesDataSource_ProxyRequest(this.dart, dockerfileId, path, params);
+  }
 }
 
 export class FileSource {
@@ -827,7 +872,6 @@ export class FileSource {
    * @returns {Promise<String>} */
   readAsText(file: FileInfo | string): Promise<string> {
     file = this.setRoot(file);
-
     return api.grok_Dapi_UserFiles_ReadAsText(file);
   }
 
@@ -841,7 +885,6 @@ export class FileSource {
    * @returns {Promise<Uint8Array>} */
   readAsBytes(file: FileInfo | string): Promise<Uint8Array> {
     file = this.setRoot(file);
-
     return api.grok_Dapi_UserFiles_ReadAsBytes(file);
   }
 
@@ -850,8 +893,7 @@ export class FileSource {
    * @returns {Promise<DataFrame[]>} */
   async readBinaryDataFrames(file: FileInfo | string): Promise<DataFrame[]> {
     file = this.setRoot(file);
-    const dfList = await api.grok_Dapi_UserFiles_ReadBinaryDataFrames(file);
-    return dfList.map((t: any) => new DataFrame(t));
+    return api.grok_Dapi_UserFiles_ReadBinaryDataFrames(file);
   }
 
   /** Writes a file.
@@ -872,28 +914,5 @@ export class FileSource {
     file = this.setRoot(file);
 
     return api.grok_Dapi_UserFiles_WriteAsText(file, data);
-  }
-}
-
-export class Logger {
-  putCallback?: LoggerPutCallback;
-
-  constructor(putCallback?: LoggerPutCallback) {
-    this.putCallback = putCallback;
-  }
-
-  /** Saves audit record to Datagrok back-end
-   * @param {string} message
-   * @param {object} params
-   * @param {string} type = 'log'
-   * */
-  log(message: string, params: object, type?: string): void {
-    if (type == null)
-      type = 'log';
-    let msg = {message: message, params: params, type: type};
-    if (this.putCallback != null)
-      this.putCallback(msg);
-
-    api.grok_Audit(msg.type, msg.message, toDart(msg.params));
   }
 }

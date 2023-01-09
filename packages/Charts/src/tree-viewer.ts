@@ -30,8 +30,7 @@ export class TreeViewer extends EChartViewer {
     this.layout = <layoutType>this.string('layout', 'orthogonal', { choices: ['orthogonal', 'radial'] });
     this.orient = <orientation>this.string('orient', 'LR', { choices: ['LR', 'RL', 'TB', 'BT'] });
     this.expandAndCollapse = this.bool('expandAndCollapse', true);
-    this.initialTreeDepth = this.int('initialTreeDepth', 2, { min: -1, max: 5 });
-    this.animationDuration = this.int('animationDuration', 750);
+    this.initialTreeDepth = this.int('initialTreeDepth', 3, { min: -1, max: 5 });
     this.edgeShape = <edgeShape>this.string('edgeShape', 'curve', { choices: ['curve', 'polyline'] });
     this.symbol = <symbolType>this.string('symbol', 'emptyCircle', { choices: [
       'circle', 'emptyCircle', 'rect', 'roundRect', 'triangle', 'diamond', 'pin', 'arrow', 'none',
@@ -69,6 +68,7 @@ export class TreeViewer extends EChartViewer {
         },
       ],
     };
+    this.animationDuration = 750;
 
     this.onPropertyChanged(null);
   }
@@ -112,7 +112,7 @@ export class TreeViewer extends EChartViewer {
 
     super.onTableAttached();
     this.initChartEventListeners();
-    this.helpUrl = 'https://raw.githubusercontent.com/datagrok-ai/public/master/packages/Charts/README.md#treeviewer';
+    this.helpUrl = 'https://raw.githubusercontent.com/datagrok-ai/public/master/help/visualize/viewers/tree-viewer.md';
   }
 
   colorCodeTree(data: treeDataType): void {

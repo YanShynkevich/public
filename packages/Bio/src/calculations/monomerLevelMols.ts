@@ -1,22 +1,27 @@
 import * as grok from 'datagrok-api/grok';
+import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
+
 import * as C from '../utils/constants';
 import {getHelmMonomers} from '../package';
-import {WebLogo} from '@datagrok-libraries/bio/src/viewers/web-logo';
+import {getSplitter, getStats} from '@datagrok-libraries/bio';
 
 const V2000_ATOM_NAME_POS = 31;
 
-export async function getMonomericMols(mcol: DG.Column, pattern: boolean = false): Promise<DG.Column> {
+export async function getMonomericMols(mcol: DG.Column,
+  pattern: boolean = false, monomersDict?: Map<string, string>): Promise<DG.Column> {
   const separator: string = mcol.tags[C.TAGS.SEPARATOR];
   const units: string = mcol.tags[DG.TAGS.UNITS];
-  const splitter = WebLogo.getSplitter(units, separator);
+  const splitter = getSplitter(units, separator);
   let molV3000Array;
-  const monomersDict = new Map();
+  monomersDict ??= new Map();
   const monomers = units === 'helm' ?
-    getHelmMonomers(mcol) : Object.keys(WebLogo.getStats(mcol, 0, splitter).freq).filter((it) => it !== '');
+    getHelmMonomers(mcol) : Object.keys(getStats(mcol, 0, splitter).freq).filter((it) => it !== '');
 
-  for (let i = 0; i < monomers.length; i++)
-    monomersDict.set(monomers[i], `${i + 1}`);
+  for (let i = 0; i < monomers.length; i++) {
+    if (!monomersDict.has(monomers[i]))
+      monomersDict.set(monomers[i], `${monomersDict.size + 1}`);
+  }
 
   if (units === 'helm') {
     molV3000Array = await grok.functions.call('HELM:getMolFiles', {col: mcol});
@@ -41,7 +46,7 @@ function molV3000FromNonHelmSequence(
 M  V30 BEGIN CTAB
 `;
 
-  molV3000 += `M  V30 COUNTS ${monomers.length} ${monomers.length - 1} 0 0 0\n`;
+  molV3000 += `M  V30 COUNTS ${monomers.length} ${monomers.length ? monomers.length - 1 : 0} 0 0 0\n`;
   molV3000 += 'M  V30 BEGIN ATOM\n';
 
   for (let atomRowI = 0; atomRowI < monomers.length; atomRowI++) {

@@ -5,18 +5,29 @@ declare module 'logojs-react' {
 declare module '@phylocanvas/phylocanvas.gl' {
   import {Deck} from '@deck.gl/core/typed';
 
-  class PhylocanvasGL {
+  export class PhylocanvasGL {
     get deck(): Deck;
+
+    get view(): HTMLDivElement;
+
+    get props(): { [propName: string]: any };
 
     constructor(element: HTMLElement, props: { [propName: string]: any });
 
-    setProps(props: { [propName: string]: any });
+    render(): void;
+
+    resume(): void;
+
+    setProps(props: { [propName: string]: any }): void;
 
     selectNode: (nodeOrId: any, append: boolean = false) => void;
 
     destroy(): void;
+
+    getBranchScale(...arguments): number;
   }
 
-  const TreeTypes;
-  const Shapes;
+  module Utils {
+    function treeTraversal(root: PhylocanvasTreeNode);
+  }
 }

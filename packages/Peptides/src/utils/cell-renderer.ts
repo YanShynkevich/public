@@ -1,9 +1,9 @@
-import {SeqPaletteBase} from '@datagrok-libraries/bio/src/seq-palettes';
 import * as DG from 'datagrok-api/dg';
 
 import * as C from './constants';
-import {getPalleteByType} from './misc';
 import * as types from './types';
+import {PositionStats, SummaryStats, MonomerPositionStats} from '../model';
+import {monomerToShort, SeqPalette} from '@datagrok-libraries/bio';
 
 function renderCellSelection(canvasContext: CanvasRenderingContext2D, bound: DG.Rect): void {
   canvasContext.strokeStyle = '#000';
@@ -12,42 +12,39 @@ function renderCellSelection(canvasContext: CanvasRenderingContext2D, bound: DG.
 }
 
 /** A function that sets amino acid residue cell renderer to the specified column */
-export function setAARRenderer(col: DG.Column, alphabet: string, grid: DG.Grid, timeout: number = 500): void {
+export function setAARRenderer(col: DG.Column, alphabet: string): void {
   col.semType = C.SEM_TYPES.MONOMER;
   col.setTag('cell.renderer', C.SEM_TYPES.MONOMER);
   col.tags[C.TAGS.ALPHABET] = alphabet;
-  setTimeout(() => grid.columns.byName(col.name)!.width = 60, timeout);
 }
 
 export function renderMutationCliffCell(canvasContext: CanvasRenderingContext2D, currentAAR: string,
-  currentPosition: string, statsDf: DG.DataFrame, twoColorMode: boolean, mdCol: DG.Column<number>, bound: DG.Rect,
-  cellValue: number, mutationCliffsSelection: types.PositionToAARList, substitutionsInfo: types.SubstitutionsInfo,
-): void {
-  const queryAAR = `${C.COLUMNS_NAMES.MONOMER} = ${currentAAR}`;
-  const query = `${queryAAR} and ${C.COLUMNS_NAMES.POSITION} = ${currentPosition}`;
-  const pVal: number = statsDf
-    .groupBy([C.COLUMNS_NAMES.P_VALUE])
-    .where(query)
-    .aggregate()
-    .get(C.COLUMNS_NAMES.P_VALUE, 0);
+  currentPosition: string, monomerPositionStats: MonomerPositionStats, bound: DG.Rect,
+  mutationCliffsSelection: types.PositionToAARList, substitutionsInfo: types.SubstitutionsInfo,
+  twoColorMode: boolean = false): void {
+  const positionStats = monomerPositionStats[currentPosition];
+  const pVal: number = positionStats[currentAAR].pValue;
+  const currentMeanDiff = positionStats[currentAAR].meanDifference;
 
   let coef: string;
-  const variant = cellValue < 0;
+  const isMeanDeltaNegative = currentMeanDiff < 0;
   if (pVal < 0.01)
-    coef = variant && twoColorMode ? '#FF7900' : '#299617';
+    coef = isMeanDeltaNegative && twoColorMode ? '#FF7900' : '#299617';
   else if (pVal < 0.05)
-    coef = variant && twoColorMode ? '#FFA500' : '#32CD32';
+    coef = isMeanDeltaNegative && twoColorMode ? '#FFA500' : '#32CD32';
   else if (pVal < 0.1)
-    coef = variant && twoColorMode ? '#FBCEB1' : '#98FF98';
+    coef = isMeanDeltaNegative && twoColorMode ? '#FBCEB1' : '#98FF98';
   else
     coef = DG.Color.toHtml(DG.Color.lightLightGray);
 
 
-  const chooseMin = (): number => twoColorMode ? 0 : mdCol.min;
-  const chooseMax = (): number => twoColorMode ? Math.max(Math.abs(mdCol.min), mdCol.max) : mdCol.max;
-  const chooseCurrent = (): any => twoColorMode ? Math.abs(cellValue) : cellValue;
+  const minMeanDifference = twoColorMode ? 0 : monomerPositionStats.general.minMeanDifference;
+  const maxMeanDifference = twoColorMode ?
+    Math.max(Math.abs(monomerPositionStats.general.minMeanDifference), monomerPositionStats.general.maxMeanDifference) :
+    monomerPositionStats.general.maxMeanDifference;
+  const currentMeanDifference = twoColorMode ? Math.abs(currentMeanDiff) : currentMeanDiff;
 
-  const rCoef = (chooseCurrent() - chooseMin()) / (chooseMax() - chooseMin());
+  const rCoef = (currentMeanDifference - minMeanDifference) / (maxMeanDifference - minMeanDifference);
 
   const maxRadius = 0.9 * (bound.width > bound.height ? bound.height : bound.width) / 2;
   const radius = Math.floor(maxRadius * rCoef);
@@ -63,8 +60,10 @@ export function renderMutationCliffCell(canvasContext: CanvasRenderingContext2D,
   if (substitutionsInfo.size > 0) {
     canvasContext.textBaseline = 'middle';
     canvasContext.textAlign = 'center';
-    canvasContext.fillStyle = DG.Color.toHtml(DG.Color.getContrastColor(DG.Color.fromHtml(coef)));
+    canvasContext.fillStyle = DG.Color.toHtml(DG.Color.black);
     canvasContext.font = '13px Roboto, Roboto Local, sans-serif';
+    canvasContext.shadowBlur = 5;
+    canvasContext.shadowColor = DG.Color.toHtml(DG.Color.white);
     let substValue = 0;
     substitutionsInfo.get(currentAAR)?.get(currentPosition)?.forEach((idxs) => substValue += idxs.length);
     if (substValue && substValue != 0)
@@ -77,7 +76,10 @@ export function renderMutationCliffCell(canvasContext: CanvasRenderingContext2D,
 }
 
 export function renderInvaraintMapCell(canvasContext: CanvasRenderingContext2D, currentAAR: string,
-  currentPosition: string, invariantMapSelection: types.PositionToAARList, cellValue: number, bound: DG.Rect): void {
+  currentPosition: string, invariantMapSelection: types.PositionToAARList, cellValue: number, bound: DG.Rect,
+  color: number): void {
+  canvasContext.fillStyle = DG.Color.toHtml(color);
+  canvasContext.fillRect(bound.x, bound.y, bound.width, bound.height);
   canvasContext.font = '13px Roboto, Roboto Local, sans-serif';
   canvasContext.textAlign = 'center';
   canvasContext.textBaseline = 'middle';
@@ -89,86 +91,66 @@ export function renderInvaraintMapCell(canvasContext: CanvasRenderingContext2D, 
     renderCellSelection(canvasContext, bound);
 }
 
-export function renderBarchart(ctx: CanvasRenderingContext2D, col: DG.Column, monomerColStats: types.MonomerColStats,
-  bounds: DG.Rect, max: number): types.BarCoordinates {
-  let sum = col.length - (monomerColStats['-']?.count ?? 0);
-  const colorPalette = getPalleteByType(col.tags[C.TAGS.ALPHABET]);
-  const name = col.name;
-  const colNameSize = ctx.measureText(name);
-  const margin = 0.2;
-  const innerMargin = 0.02;
-  const selectLineRatio = 0.1;
-  const fontSize = 11;
+export function renderLogoSummaryCell(canvasContext: CanvasRenderingContext2D, cellValue: string, cellRawData: number,
+  clusterSelection: number[], bound: DG.Rect): void {
+  canvasContext.font = '13px Roboto, Roboto Local, sans-serif';
+  canvasContext.textAlign = 'center';
+  canvasContext.textBaseline = 'middle';
+  canvasContext.fillStyle = '#000';
+  canvasContext.fillText(cellValue.toString(), bound.x + (bound.width / 2), bound.y + (bound.height / 2), bound.width);
 
-  const xMargin = bounds.x + bounds.width * margin;
-  const yMargin = bounds.y + bounds.height * margin / 4;
-  const wMargin = bounds.width - bounds.width * margin * 2;
-  const hMargin = bounds.height - bounds.height * margin;
-  const barWidth = 10;
-  ctx.fillStyle = 'black';
-  ctx.textBaseline = 'top';
-  ctx.font = `${hMargin * margin / 2}px`;
-  ctx.fillText(name, xMargin + (wMargin - colNameSize.width) / 2, yMargin + hMargin + hMargin * margin / 4);
+  if (clusterSelection.includes(cellRawData))
+    renderCellSelection(canvasContext, bound);
+}
 
 
-  const barCoordinates: types.BarCoordinates = {};
+export function drawLogoInBounds(ctx: CanvasRenderingContext2D, bounds: DG.Rect, stats: PositionStats,
+  sortedOrder: string[], rowCount: number, cp: SeqPalette, monomerSelectionStats: { [monomer: string]: number } = {},
+  drawOptions: types.DrawOptions = {}): { [monomer: string]: DG.Rect } {
+  drawOptions.fontStyle ??= '16px Roboto, Roboto Local, sans-serif';
+  drawOptions.upperLetterHeight ??= 12.2;
+  drawOptions.upperLetterAscent ??= 0.25;
+  drawOptions.marginVertical ??= 5;
+  drawOptions.marginHorizontal ??= 5;
 
-  const xStart = xMargin + (wMargin - barWidth) / 2;
-  for (const [monomer, monomerStats] of Object.entries(monomerColStats)) {
-    if (monomer == '-')
-      continue;
+  const pr = window.devicePixelRatio;
+  const totalSpaceBetweenLetters = (sortedOrder.length - 1) * drawOptions.upperLetterAscent;
+  const barHeight = (bounds.height - 2 * drawOptions.marginVertical - totalSpaceBetweenLetters) * pr;
+  const leftShift = drawOptions.marginHorizontal * 2;
+  const barWidth = (bounds.width - leftShift * 2) * pr;
+  const xStart = (bounds.x + leftShift) * pr;
+  const selectionWidth = 4 * pr;
+  const xSelection = (bounds.x + 3) * pr;
+  let currentY = (bounds.y + drawOptions.marginVertical) * pr;
 
-    const count = monomerStats.count;
-    const sBarHeight = hMargin * count / max;
-    const gapSize = sBarHeight * innerMargin;
-    const verticalShift = (max - sum) / max;
-    const textSize = ctx.measureText(monomer);
-    const subBarHeight = sBarHeight - gapSize;
-    const yStart = yMargin + hMargin * verticalShift + gapSize / 2;
-    barCoordinates[monomer] = new DG.Rect(xStart, yStart, barWidth, subBarHeight);
+  const monomerBounds: { [monomer: string]: DG.Rect } = {};
+  for (const monomer of sortedOrder) {
+    const monomerHeight = barHeight * (stats[monomer].count / rowCount);
+    const selectionHeight = barHeight * ((monomerSelectionStats[monomer] ?? 0) / rowCount);
+    const currentBound = new DG.Rect(xStart / pr, currentY / pr, barWidth / pr, monomerHeight / pr);
+    monomerBounds[monomer] = currentBound;
 
-    const color = colorPalette.get(monomer);
-    ctx.strokeStyle = color;
-    ctx.fillStyle = color;
+    ctx.resetTransform();
+    if (monomer !== '-' && monomer !== '') {
+      const monomerTxt = monomerToShort(monomer, 5);
+      const mTm: TextMetrics = ctx.measureText(monomerTxt);
 
-    if (textSize.width <= subBarHeight) {
-      if (color != SeqPaletteBase.undefinedColor)
-        ctx.fillRect(xStart, yStart, barWidth, subBarHeight);
-      else {
-        ctx.strokeRect(xStart + 0.5, yStart, barWidth - 1, subBarHeight);
-        barCoordinates[monomer].x -= 0.5;
-        barCoordinates[monomer].width -= 1;
-      }
+      // Filling selection
+      ctx.lineWidth = selectionWidth;
+      ctx.line(xSelection, currentY, xSelection, currentY + selectionHeight, DG.Color.rowSelection);
 
-      const leftMargin = (wMargin - (monomer.length > 1 ? fontSize : textSize.width - 8)) / 2;
-      const absX = xMargin + leftMargin;
-      const absY = yStart + subBarHeight / 2 + (monomer.length == 1 ? 4 : 0);
-      const origTransform = ctx.getTransform();
-
-      if (monomer.length > 1) {
-        ctx.translate(absX, absY);
-        ctx.rotate(Math.PI / 2);
-        ctx.translate(-absX, -absY);
-      }
-
-      ctx.fillStyle = 'black';
-      ctx.font = `${fontSize}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(monomer, absX, absY);
-      ctx.setTransform(origTransform);
-    } else
-      ctx.fillRect(xStart, yStart, barWidth, subBarHeight);
-
-    const selectedCount = monomerStats.selected;
-    if (selectedCount) {
-      ctx.fillStyle = 'rgb(255,165,0)';
-      ctx.fillRect(xStart - wMargin * selectLineRatio * 2, yStart,
-        barWidth * selectLineRatio, hMargin * selectedCount / max - gapSize);
+      ctx.fillStyle = cp.get(monomer) ?? cp.get('other');
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.font = drawOptions.fontStyle;
+      // Hacks to scale uppercase characters to target rectangle
+      const widthTransform = barWidth / mTm.width;
+      const heightTransfrom = monomerHeight / drawOptions.upperLetterHeight;
+      ctx.setTransform(widthTransform, 0, 0, heightTransfrom, xStart, currentY);
+      ctx.fillText(monomerTxt, 0, 0);
     }
-
-    sum -= count;
+    currentY += monomerHeight + drawOptions.upperLetterAscent * pr;
   }
 
-  return barCoordinates;
+  return monomerBounds;
 }

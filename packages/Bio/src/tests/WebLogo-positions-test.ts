@@ -1,16 +1,21 @@
-import {after, before, category, test, expect, expectObject, delay} from '@datagrok-libraries/utils/src/test';
-
 import * as grok from 'datagrok-api/grok';
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
-import {PositionInfo, PositionMonomerInfo, WebLogo} from '@datagrok-libraries/bio/src/viewers/web-logo';
-import {Column} from 'datagrok-api/dg';
-import {ALPHABET, NOTATION, UnitsHandler} from '@datagrok-libraries/bio/src/utils/units-handler';
+
+import {after, before, category, test, expect, expectObject, delay} from '@datagrok-libraries/utils/src/test';
+import {
+  ALPHABET,
+  NOTATION,
+  PositionInfo,
+  PositionMonomerInfo,
+  TAGS as bioTAGS,
+  WebLogoViewer
+} from '@datagrok-libraries/bio';
 
 category('WebLogo-positions', () => {
   let tvList: DG.TableView[];
   let dfList: DG.DataFrame[];
-  let currentView: DG.View;
+  let currentView: DG.ViewBase;
 
   const csvDf1 = `seq
 ATC-G-TTGC--
@@ -23,13 +28,13 @@ ATC-G-TTGC--
   before(async () => {
     tvList = [];
     dfList = [];
-    currentView = grok.shell.tv;
+    currentView = grok.shell.v;
   });
 
   after(async () => {
-    dfList.forEach((df: DG.DataFrame) => { grok.shell.closeTable(df);});
+    dfList.forEach((df: DG.DataFrame) => { grok.shell.closeTable(df); });
     tvList.forEach((tv: DG.TableView) => tv.close());
-    currentView = grok.shell.tv;
+    grok.shell.v = currentView;
   });
 
   test('allPositions', async () => {
@@ -39,9 +44,10 @@ ATC-G-TTGC--
     const seqCol: DG.Column = df.getCol('seq');
     seqCol.semType = DG.SEMTYPE.MACROMOLECULE;
     seqCol.setTag(DG.TAGS.UNITS, NOTATION.FASTA);
-    seqCol.setTag(UnitsHandler.TAGS.alphabet, ALPHABET.DNA);
+    seqCol.setTag(bioTAGS.alphabet, ALPHABET.DNA);
+    seqCol.setTag(bioTAGS.aligned, 'SEQ.MSA');
 
-    const wlViewer: WebLogo = await df.plot.fromType('WebLogo') as unknown as WebLogo;
+    const wlViewer: WebLogoViewer = (await df.plot.fromType('WebLogo')) as WebLogoViewer;
     tv.dockManager.dock(wlViewer.root, DG.DOCK_TYPE.DOWN);
 
     tvList.push(tv);
@@ -61,7 +67,7 @@ ATC-G-TTGC--
       new PositionInfo('9', {'G': new PositionMonomerInfo(5)}),
       new PositionInfo('10', {'C': new PositionMonomerInfo(5)}),
       new PositionInfo('11', {'-': new PositionMonomerInfo(5)}),
-      new PositionInfo('12', {'-': new PositionMonomerInfo(5)})
+      new PositionInfo('12', {'-': new PositionMonomerInfo(5)}),
     ];
 
     expect(positions.length, resAllDf1.length);
@@ -74,28 +80,29 @@ ATC-G-TTGC--
     }
   });
 
-  test('positions with shrinkEmptyTail option true (filterd)', async () => {
-    let csvDf2 = `seq 
-    -TC-G-TTGC--
-    -TC-GCTTGC--
-    -T--C-GT-
-    -T--C-GT-
-    -T--C-GT-
-    -T--CCGT-`;
+  test('positions with shrinkEmptyTail option true (filtered)', async () => {
+    const csvDf2 = `seq 
+-TC-G-TTGC--
+-TC-GCTTGC--
+-T--C-GT-
+-T--C-GT-
+-T--C-GT-
+-T--CCGT-`;
     const df: DG.DataFrame = DG.DataFrame.fromCsv(csvDf2);
     const tv: DG.TableView = grok.shell.addTableView(df);
 
     const seqCol: DG.Column = df.getCol('seq');
     seqCol.semType = DG.SEMTYPE.MACROMOLECULE;
     seqCol.setTag(DG.TAGS.UNITS, NOTATION.FASTA);
-    seqCol.setTag(UnitsHandler.TAGS.alphabet, ALPHABET.DNA);
+    seqCol.setTag(bioTAGS.alphabet, ALPHABET.DNA);
+    seqCol.setTag(bioTAGS.aligned, 'SEQ');
 
     df.filter.init((i) => {
       return i > 2;
     });
     df.filter.fireChanged();
-    const wlViewer: WebLogo = await df.plot.fromType('WebLogo', {'shrinkEmptyTail': true}) as unknown as WebLogo;
-
+    const wlViewer: WebLogoViewer = (await df.plot.fromType('WebLogo',
+      {'shrinkEmptyTail': true})) as WebLogoViewer;
     tv.dockManager.dock(wlViewer.root, DG.DOCK_TYPE.DOWN);
 
     tvList.push(tv);
@@ -132,9 +139,11 @@ ATC-G-TTGC--
     const seqCol: DG.Column = df.getCol('seq');
     seqCol.semType = DG.SEMTYPE.MACROMOLECULE;
     seqCol.setTag(DG.TAGS.UNITS, NOTATION.FASTA);
-    seqCol.setTag(UnitsHandler.TAGS.alphabet, ALPHABET.DNA);
+    seqCol.setTag(bioTAGS.alphabet, ALPHABET.DNA);
+    seqCol.setTag(bioTAGS.aligned, 'SEQ.MSA');
 
-    const wlViewer: WebLogo = await df.plot.fromType('WebLogo', {'skipEmptyPositions': true}) as unknown as WebLogo;
+    const wlViewer: WebLogoViewer = (await df.plot.fromType('WebLogo',
+      {'skipEmptyPositions': true})) as WebLogoViewer;
     tv.dockManager.dock(wlViewer.root, DG.DOCK_TYPE.DOWN);
 
     tvList.push(tv);

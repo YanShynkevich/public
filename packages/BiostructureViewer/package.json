@@ -1,11 +1,11 @@
 {
-  "name": "biostructureviewer",
+  "name": "@datagrok/biostructure-viewer",
   "friendlyName": "BiostructureViewer",
   "author": {
     "name": "Leonid Stolbov",
     "email": "lstolbov@datagrok.ai"
   },
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "BiostructureViewer is a [package](https://datagrok.ai/help/develop/develop#packages) for the [Datagrok](https://datagrok.ai) platform.",
   "repository": {
     "type": "git",
@@ -16,12 +16,13 @@
     "css/ngl.css",
     "css/pviz-core.css",
     "css/additionalStyles.css",
-    "src/viewers/pviz-bundle.min.js",
+    "css/pviz-bundle.min.js",
     "common/ngl_viewer/ngl.js",
     "css/molstar.css"
   ],
   "dependencies": {
-    "@datagrok-libraries/utils": ">=0.0.22",
+    "@datagrok-libraries/bio": "^5.15.1",
+    "@datagrok-libraries/utils": "^1.15.5",
     "cash-dom": "latest",
     "datagrok-api": "^1.0.0",
     "dayjs": "latest",
@@ -54,7 +55,7 @@
   "scripts": {
     "link-api": "npm link datagrok-api",
     "link-utils": "npm link @datagrok-libraries/utils",
-    "link-all": "npm link datagrok-api @datagrok-libraries/utils",
+    "link-all": "npm link datagrok-api @datagrok-libraries/utils @datagrok-libraries/bio",
     "debug-biostructureviewer": "grok publish",
     "release-biostructureviewer": "grok publish --release",
     "build-biostructureviewer": "webpack",

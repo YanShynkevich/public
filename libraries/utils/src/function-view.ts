@@ -7,6 +7,8 @@ import ExcelJS from 'exceljs';
 import html2canvas from 'html2canvas';
 import wu from 'wu';
 import $ from 'cash-dom';
+import {historyUtils} from './history-utils';
+import {UiUtils} from './shared-components/ui-utils';
 
 /**
    * Decorator to pass all thrown errors to grok.shell.error
@@ -29,6 +31,22 @@ export const passErrorToShell = () => {
 };
 
 export const INTERACTIVE_CSS_CLASS = 'cv-interactive';
+
+export const defaultUsersIds = {
+  'Test': 'ca1e672e-e3be-40e0-b79b-d2c68e68d380',
+  'Admin': '878c42b0-9a50-11e6-c537-6bf8e9ab02ee',
+  'System': '3e32c5fa-ac9c-4d39-8b4b-4db3e576b3c3',
+};
+
+export const defaultGroupsIds = {
+  'All users': 'a4b45840-9a50-11e6-9cc9-8546b8bf62e6',
+  'Developers': 'ba9cd191-9a50-11e6-9cc9-910bf827f0ab',
+  'Need to create': '00000000-0000-0000-0000-000000000000',
+  'Test': 'ca1e672e-e3be-40e0-b79b-8546b8bf62e6',
+  'Admin': 'a4b45840-9a50-11e6-c537-6bf8e9ab02ee',
+  'System': 'a4b45840-ac9c-4d39-8b4b-4db3e576b3c3',
+  'Administrators': '1ab8b38d-9c4e-4b1e-81c3-ae2bde3e12c5',
+};
 
 export class FunctionView extends DG.ViewBase {
   protected readonly context: DG.Context;
@@ -191,7 +209,6 @@ export class FunctionView extends DG.ViewBase {
    * Override to create a fully custom UI including ribbon menus and panels
    * @stability Stable
  */
-  @passErrorToShell()
   public build(): void {
     this.root.appendChild(this.buildIO());
     this.root.appendChild(this.overlayDiv);
@@ -251,196 +268,44 @@ export class FunctionView extends DG.ViewBase {
    * @stability Stable
  */
   public buildHistoryBlock(): HTMLElement {
-    const mainAcc = ui.accordion();
-    mainAcc.root.style.width = '100%';
-    mainAcc.addTitle(ui.span(['History']));
+    const newHistoryBlock = UiUtils.historyPanel(this.func!);
 
-    // const buildFilterPane = () => {
-    //   const dateInput = ui.stringInput('Date', 'Any time');
-    //   dateInput.addPatternMenu('datetime');
-    //   const form =ui.divV([
-    //     ui.stringInput('Search', '', () => {}),
-    //     ui.choiceInput('User', 'Current user', ['Current user']),
-    //     dateInput,
-    //   ], 'ui-form-condensed ui-form');
-    //   form.style.marginLeft = '0px';
+    newHistoryBlock.onRunChosen.subscribe(async (id) => this.linkFunccall(await this.loadRun(id)));
+    newHistoryBlock.onRunAddToFavorites.subscribe(async (funcCall) => {
+      await this.addRunToFavorites(funcCall);
 
-    //   return form;
-    // };
-    // let filterPane = mainAcc.addPane('Filter', buildFilterPane);
-    // const updateFilterPane = () => {
-    //   const isExpanded = filterPane.expanded;
-    //   mainAcc.removePane(filterPane);
-    //   filterPane = mainAcc.addPane('Filter', buildFilterPane, isExpanded, favoritesListPane);
-    // };
-
-    const showAddToFavoritesDialog = (funcCall: DG.FuncCall) => {
-      let title = funcCall.options['title'] ?? '';
-      let annotation = funcCall.options['annotation'] ?? '';
-      const titleInput = ui.stringInput('Title', title, (s: string) => {
-        title = s;
-        if (s.length === 0) {
-          titleInput.setTooltip('Title cannot be empty');
-          setTimeout(() => titleInput.input.classList.add('d4-invalid'), 100);
-        } else {
-          titleInput.setTooltip('');
-          setTimeout(() => titleInput.input.classList.remove('d4-invalid'), 100);
-        }
-      });
-
-      ui.dialog({title: 'Add to favorites'})
-        .add(ui.form([
-          titleInput,
-          ui.stringInput('Annotation', annotation, (s: string) => { annotation = s; }),
-        ]))
-        .onOK(async () => {
-          if (title.length > 0) {
-            funcCall.options['title'] = title;
-            funcCall.options['annotation'] = annotation;
-            await this.addRunToFavorites(funcCall);
-            updateHistoryPane();
-            updateFavoritesPane();
-          } else {
-            grok.shell.warning('Title cannot be empty');
-          }
-        })
-        .show({center: true});
-    };
-
-    const showDeleteFavoritesDialog = (funcCall: DG.FuncCall) => {
-      ui.dialog({title: 'Delete run'})
-        .add(ui.divText('The deleted run is impossible to restore. Are you sure?'))
-        .onOK(async () => {
-          await this.deleteRun(funcCall);
-          updateHistoryPane();
-        })
-        .show({center: true});
-    };
-
-    let historyCards = [] as HTMLElement[];
-    let favoriteCards = [] as HTMLElement[];
-    const renderFavoriteCards = async (funcCalls: DG.FuncCall[]) => {
-      favoriteCards = funcCalls.map((funcCall) => {
-        const solidStar = ui.iconFA('star', async (ev) => {
-          ev.stopPropagation();
-          await this.removeRunFromFavorites(funcCall);
-          updateHistoryPane();
-          updateFavoritesPane();
-        }, 'Unfavorite the run');
-        solidStar.classList.add('fas');
-
-        const card = ui.divH([
-          ui.divV([
-            ui.divText(funcCall.options['title'] ?? 'Default title', 'title'),
-            ...(funcCall.options['annotation']) ? [ui.divText(funcCall.options['annotation'], 'description')]: [],
-            ui.divH([ui.render(funcCall.author), ui.span([new Date(funcCall.started.toString()).toLocaleString('en-us', {month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric'})], 'date')]),
-          ]),
-          ui.divH([
-            ui.iconFA('pen', async (ev) => {
-              ev.stopPropagation();
-              showAddToFavoritesDialog(funcCall);
-            }, 'Edit run metadata'),
-            solidStar
-          ], 'cv-funccall-card-icons')
-        ], 'cv-funccall-card');
-
-        card.addEventListener('click', async () => {
-          this.linkFunccall(await this.loadRun(funcCall.id));
-          card.classList.add('clicked');
-        });
-        return card;
-      });
-
-      const allCards = [...historyCards, ...favoriteCards];
-      allCards.forEach((card) => card.addEventListener('click', () => allCards.forEach((c) => c.classList.remove('clicked'))));
-
-      return ui.divV(favoriteCards);
-    };
-
-    const renderHistoryCards = async (funcCalls: DG.FuncCall[]) => {
-      historyCards = funcCalls.map((funcCall) => {
-        const icon = funcCall.author.picture as HTMLElement;
-        icon.style.width = '25px';
-        icon.style.height = '25px';
-        icon.style.fontSize = '20px';
-        icon.style.marginRight = '3px';
-        icon.style.alignSelf = 'center';
-        const userLabel = ui.label(funcCall.author.friendlyName, 'd4-link-label');
-        ui.bind(funcCall.author, icon);
-
-        const card = ui.divH([
-          ui.divH([
-            icon,
-            ui.divV([
-              userLabel,
-              ui.span([new Date(funcCall.started.toString()).toLocaleString('en-us', {month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric'})])
-            ]),
-          ]),
-          ui.divH([
-            ui.iconFA('star', async (ev) => {
-              ev.stopPropagation();
-              showAddToFavoritesDialog(funcCall);
-            }, 'Add to favorites'),
-            ui.iconFA('link', async (ev) => {
-              ev.stopPropagation();
-              await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?id=${funcCall.id}`);
-            }, 'Copy link to the run'),
-            ui.iconFA('trash-alt', async (ev) => {
-              ev.stopPropagation();
-              showDeleteFavoritesDialog(funcCall);
-            }, 'Delete the run'),
-          ], 'cv-funccall-card-icons')
-        ], 'cv-funccall-card');
-
-        card.addEventListener('click', async () => {
-          this.linkFunccall(await this.loadRun(funcCall.id));
-          card.classList.add('clicked');
-        });
-
-        return card;
-      });
-
-      const allCards =[...historyCards, ...favoriteCards];
-      allCards.forEach((card) => card.addEventListener('click', () => allCards.forEach((c) => c.classList.remove('clicked'))));
-
-      return ui.divV(historyCards);
-    };
-
-    const buildFavoritesList = () => ui.wait(async () => {
-      const historicalRuns = await this.pullRuns(this.func!.id);
-      const favoriteRuns = historicalRuns.filter((run) => run.options['isFavorite'] && !run.options['isImported']);
-      if (favoriteRuns.length > 0)
-        return ui.wait(() => renderFavoriteCards(favoriteRuns));
-      else
-        return ui.divText('No runs are marked as favorites', 'description');
+      newHistoryBlock.myRunsFetch.next();
+      newHistoryBlock.favRunsFetch.next();
     });
-    let favoritesListPane = mainAcc.addPane('Favorites', buildFavoritesList, true);
-    const updateFavoritesPane = () => {
-      const isExpanded = favoritesListPane.expanded;
-      mainAcc.removePane(favoritesListPane);
-      favoritesListPane = mainAcc.addPane('Favorites', buildFavoritesList, isExpanded, historyPane);
-    };
+    newHistoryBlock.onRunAddToShared.subscribe(async (funcCall) => {
+      await this.addRunToShared(funcCall);
 
-    const buildHistoryPane = () => ui.wait(async () => {
-      const historicalRuns = (await this.pullRuns(this.func!.id)).filter((run) => !run.options['isFavorite'] && !run.options['isImported']);
-      if (historicalRuns.length > 0)
-        return ui.wait(() => renderHistoryCards(historicalRuns));
-      else
-        return ui.divText('No runs are found in history', 'description');
+      newHistoryBlock.myRunsFetch.next();
+      newHistoryBlock.sharedRunsFetch.next();
     });
-    let historyPane = mainAcc.addPane('History', buildHistoryPane, true);
-    const updateHistoryPane = () => {
-      const isExpanded = historyPane.expanded;
-      mainAcc.removePane(historyPane);
-      historyPane = mainAcc.addPane('History', buildHistoryPane, isExpanded);
-    };
 
-    const newHistoryBlock = mainAcc.root;
+    newHistoryBlock.onRunDeleted.subscribe(async (id) => {
+      await this.deleteRun(await historyUtils.loadRun(id));
+      newHistoryBlock.allRunsFetch.next();
+    });
+
+    newHistoryBlock.onRunRemoveFromFavorites.subscribe(async (id) => {
+      await this.removeRunFromFavorites(await historyUtils.loadRun(id));
+      newHistoryBlock.myRunsFetch.next();
+      newHistoryBlock.favRunsFetch.next();
+    });
+
+    newHistoryBlock.onRunRemoveFromShared.subscribe(async (id) => {
+      await this.removeRunFromShared(await historyUtils.loadRun(id));
+      newHistoryBlock.myRunsFetch.next();
+      newHistoryBlock.sharedRunsFetch.next();
+    });
+
     ui.empty(this.historyRoot);
     this.historyRoot.style.removeProperty('justify-content');
     this.historyRoot.style.width = '100%';
-    this.historyRoot.append(newHistoryBlock);
-    return newHistoryBlock;
+    this.historyRoot.append(newHistoryBlock.root);
+    return newHistoryBlock.root;
   }
 
   /**
@@ -500,13 +365,12 @@ export class FunctionView extends DG.ViewBase {
    * @returns Saved FuncCall
    * @stability Experimental
  */
-  @passErrorToShell()
   public async removeRunFromFavorites(callToUnfavorite: DG.FuncCall): Promise<DG.FuncCall> {
     callToUnfavorite.options['title'] = null;
     callToUnfavorite.options['annotation'] = null;
     callToUnfavorite.options['isFavorite'] = false;
     await this.onBeforeRemoveRunFromFavorites(callToUnfavorite);
-    const favoriteSave = await grok.dapi.functions.calls.save(callToUnfavorite);
+    const favoriteSave = await historyUtils.saveRun(callToUnfavorite);
     await this.onAfterRemoveRunFromFavorites(favoriteSave);
     return favoriteSave;
   }
@@ -521,13 +385,71 @@ export class FunctionView extends DG.ViewBase {
    * @returns Saved FuncCall
    * @stability Experimental
  */
-  @passErrorToShell()
+
   public async addRunToFavorites(callToFavorite: DG.FuncCall): Promise<DG.FuncCall> {
     callToFavorite.options['isFavorite'] = true;
     await this.onBeforeAddingToFavorites(callToFavorite);
-    const savedFavorite = await grok.dapi.functions.calls.save(callToFavorite);
+    const savedFavorite = await grok.dapi.functions.calls.allPackageVersions().save(callToFavorite);
     await this.onAfterAddingToFavorites(savedFavorite);
     return savedFavorite;
+  }
+
+  public async onBeforeRemoveRunFromShared(callToShare: DG.FuncCall) { }
+
+  public async onAfterRemoveRunFromSahred(sharedCall: DG.FuncCall) { }
+
+  /**
+   * Removes run from shared
+   * @param callToUnshare FuncCall object to remove from shared
+   * @returns Saved FuncCall
+   * @stability Experimental
+ */
+
+  public async removeRunFromShared(callToUnshare: DG.FuncCall): Promise<DG.FuncCall> {
+    callToUnshare.options['title'] = null;
+    callToUnshare.options['annotation'] = null;
+    callToUnshare.options['isShared'] = false;
+    await this.onBeforeRemoveRunFromFavorites(callToUnshare);
+    const savedShared = await grok.dapi.functions.calls.allPackageVersions().save(callToUnshare);
+    await this.onAfterRemoveRunFromFavorites(savedShared);
+    return savedShared;
+  }
+
+  public async onBeforeAddingToShared(callToAddToShared: DG.FuncCall) { }
+
+  public async onAfterAddingToShared(sharedCall: DG.FuncCall) { }
+
+  /**
+   * Saves the run as shared
+   * @param callToShare FuncCall object to add to shared
+   * @returns Saved FuncCall
+   * @stability Experimental
+ */
+
+  public async addRunToShared(callToShare: DG.FuncCall): Promise<DG.FuncCall> {
+    callToShare.options['isShared'] = true;
+    await this.onBeforeAddingToShared(callToShare);
+
+    const allGroup = await grok.dapi.groups.find(defaultGroupsIds['All users']);
+
+    const dfOutputs = wu(callToShare.outputParams.values() as DG.FuncCallParam[])
+      .filter((output) => output.property.propertyType === DG.TYPE.DATA_FRAME);
+
+    for (const output of dfOutputs) {
+      const df = callToShare.outputs[output.name] as DG.DataFrame;
+      await grok.dapi.permissions.grant(df.getTableInfo(), allGroup, false);
+    }
+
+    const dfInputs = wu(callToShare.inputParams.values() as DG.FuncCallParam[])
+      .filter((input) => input.property.propertyType === DG.TYPE.DATA_FRAME);
+    for (const input of dfInputs) {
+      const df = callToShare.inputs[input.name] as DG.DataFrame;
+      await grok.dapi.permissions.grant(df.getTableInfo(), allGroup, false);
+    }
+
+    const savedShared = await grok.dapi.functions.calls.allPackageVersions().save(callToShare);
+    await this.onAfterAddingToShared(savedShared);
+    return savedShared;
   }
 
   /**
@@ -554,18 +476,7 @@ export class FunctionView extends DG.ViewBase {
  */
   public async saveRun(callToSave: DG.FuncCall): Promise<DG.FuncCall> {
     await this.onBeforeSaveRun(callToSave);
-
-    const dfOutputs = wu(callToSave.outputParams.values() as DG.FuncCallParam[])
-      .filter((output) => output.property.propertyType === DG.TYPE.DATA_FRAME);
-    for (const output of dfOutputs)
-      await grok.dapi.tables.uploadDataFrame(callToSave.outputs[output.name]);
-
-    const dfInputs = wu(callToSave.inputParams.values() as DG.FuncCallParam[])
-      .filter((input) => input.property.propertyType === DG.TYPE.DATA_FRAME);
-    for (const input of dfInputs)
-      await grok.dapi.tables.uploadDataFrame(callToSave.inputs[input.name]);
-
-    const savedCall = await grok.dapi.functions.calls.save(callToSave);
+    const savedCall = await historyUtils.saveRun(callToSave);
     this.buildHistoryBlock();
     this.path = `?id=${savedCall.id}`;
     await this.onAfterSaveRun(savedCall);
@@ -592,10 +503,10 @@ export class FunctionView extends DG.ViewBase {
    * @returns ID of deleted historical run
    * @stability Stable
  */
-  @passErrorToShell()
+
   public async deleteRun(callToDelete: DG.FuncCall): Promise<string> {
     await this.onBeforeDeleteRun(callToDelete);
-    await grok.dapi.functions.calls.delete(callToDelete);
+    await historyUtils.deleteRun(callToDelete);
     await this.onAfterDeleteRun(callToDelete);
     return callToDelete.id;
   }
@@ -619,26 +530,10 @@ export class FunctionView extends DG.ViewBase {
    * @returns FuncCall augemented with inputs' and outputs' values
    * @stability Stable
  */
-  @passErrorToShell()
+
   public async loadRun(funcCallId: string): Promise<DG.FuncCall> {
     await this.onBeforeLoadRun();
-    const pulledRun = await grok.dapi.functions.calls.include('inputs, outputs').find(funcCallId);
-    // FIX ME: manually get script since pulledRun contains empty Func
-    const script = await grok.dapi.functions.find(pulledRun.func.id);
-    //@ts-ignore
-    window.grok_FuncCall_Set_Func(pulledRun.dart, script.dart);
-    pulledRun.options['isHistorical'] = true;
-    const dfOutputs = wu(pulledRun.outputParams.values() as DG.FuncCallParam[])
-      .filter((output) => output.property.propertyType === DG.TYPE.DATA_FRAME);
-    for (const output of dfOutputs)
-      pulledRun.outputs[output.name] = await grok.dapi.tables.getTable(pulledRun.outputs[output.name]);
-
-    const dfInputs = wu(pulledRun.inputParams.values() as DG.FuncCallParam[])
-      .filter((input) => input.property.propertyType === DG.TYPE.DATA_FRAME);
-    for (const input of dfInputs)
-      pulledRun.inputs[input.name] = await grok.dapi.tables.getTable(pulledRun.inputs[input.name]);
-
-
+    const pulledRun = await historyUtils.loadRun(funcCallId);
     await this.onAfterLoadRun(pulledRun);
     this.setRunViewReadonly();
     return pulledRun;
@@ -648,7 +543,7 @@ export class FunctionView extends DG.ViewBase {
 
   public async onAfterCloneRunAsCurrent() { }
 
-  @passErrorToShell()
+
   public async cloneRunAsCurrent() {
     if (!this.funcCall) throw new Error('Current Funccall is not set');
 
@@ -692,7 +587,7 @@ export class FunctionView extends DG.ViewBase {
     () =>setTimeout(() => this.root.addEventListener('click', this.rootReadonlyEventListeners[2]), 100)
   ];
 
-  private setRunViewReadonly(): void {
+  protected setRunViewReadonly(): void {
     this.overlayDiv.style.removeProperty('display');
     this.root.addEventListener('click', this.rootReadonlyEventListeners[2]);
     this.root.addEventListener('mousedown', this.rootReadonlyEventListeners[0]);
@@ -717,20 +612,6 @@ export class FunctionView extends DG.ViewBase {
   }
 
   /**
-   * Loads all the function call of this function.
-   * Designed to pull hstorical runs in fast manner and the call {@link loadRun} with specified run ID.
-   * WARNING: FuncCall inputs/outputs fields are not included
-   * @param funcId ID of Func which calls we are looking for. Get it using {@link func.id} field
-   * @returns Promise on array of FuncCalls corresponding to the passed Func ID
-   * @stability Stable
- */
-  public async pullRuns(funcId: string): Promise<DG.FuncCall[]> {
-    const filter = grok.dapi.functions.calls.filter(`func.id="${funcId}"`).include('session.user, options');
-    const list = filter.list({pageSize: 20});
-    return list;
-  }
-
-  /**
    * Called before actual computations are made {@link run}.
    * @param funcToCall FuncCall object to be called {@see DG.FuncCall.call()}
    * @stability Experimental
@@ -746,7 +627,7 @@ export class FunctionView extends DG.ViewBase {
     this.outputParametersToView(this.lastCall!);
   }
 
-  @passErrorToShell()
+
   public async run(): Promise<void> {
     if (!this.funcCall) throw new Error('The correspoding function is not specified');
 

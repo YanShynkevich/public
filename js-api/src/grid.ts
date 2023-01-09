@@ -748,6 +748,12 @@ export class Grid<TSettings = any> extends Viewer<TSettings> {
     return this;
   }
 
+  /** Pinned rows.
+   *  @returns {Iterable<number>} */
+  get pinnedRows(): Iterable<number> {
+    return _toIterable(api.grok_Grid_Get_PinnedRows(this.dart));
+  }
+
   /** Returns a grid cell at the specified position.
    * Sample: {@link https://public.datagrok.ai/js/samples/grid/scroll-to-cell}
    */
@@ -807,6 +813,7 @@ export class Grid<TSettings = any> extends Viewer<TSettings> {
 
   /** Sample: {@link https://public.datagrok.ai/js/samples/grid/order-rows} */
   get onRowsSorted(): Observable<any> { return __obs('d4-grid-rows-sorted', this.dart); }
+  get onPinnedRowsChanged(): Observable<any> { return __obs('d4-grid-pinned_rows-changed', this.dart); }
 
   get onCellValueEdited(): Observable<GridCell> { return __obs('d4-grid-cell-value-edited', this.dart); }
   get onCurrentCellChanged(): Observable<GridCell> { return __obs('d4-grid-current-cell-changed', this.dart); }
@@ -956,7 +963,7 @@ export class GridCellRendererProxy extends GridCellRenderer {
 }
 
 
-export class SemanticValue {
+export class SemanticValue<T = any> {
   private readonly dart: any;
 
   constructor(dart: any) {
@@ -970,8 +977,8 @@ export class SemanticValue {
     return v;
   }
 
-  get value(): any { return api.grok_SemanticValue_Get_Value(this.dart); }
-  set value(x: any) { api.grok_SemanticValue_Set_Value(this.dart, x); }
+  get value(): T { return api.grok_SemanticValue_Get_Value(this.dart); }
+  set value(x: T) { api.grok_SemanticValue_Set_Value(this.dart, x); }
 
   get units(): any { return api.grok_SemanticValue_Get_Units(this.dart); }
   set units(x: any) { api.grok_SemanticValue_Set_Units(this.dart, x); }
@@ -981,8 +988,8 @@ export class SemanticValue {
   get semType(): string { return api.grok_SemanticValue_Get_SemType(this.dart); }
   set semType(x: string) { api.grok_SemanticValue_Set_SemType(this.dart, x); }
 
-  getMeta(name: string): any { return api.grok_SemanticValue_Get_Meta(name); }
-  setMeta(name: string, value: any): void { api.grok_SemanticValue_Set_Meta(name, toDart(value)); }
+  getMeta(name: string): any { return api.grok_SemanticValue_Get_Meta(this.dart, name); }
+  setMeta(name: string, value: any): void { api.grok_SemanticValue_Set_Meta(this.dart, name, toDart(value)); }
 
   get cell(): Cell { return api.grok_SemanticValue_Get_Cell(this.dart); }
   get gridCell(): GridCell { return this.getMeta('gridCell'); }

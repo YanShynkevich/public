@@ -5,7 +5,7 @@
     "name": "Leonid Stolbov",
     "email": "lstolbov@datagrok.ai"
   },
-  "version": "2.0.14",
+  "version": "2.1.12",
   "description": "Bio is a [package](https://datagrok.ai/help/develop/develop#packages) for the [Datagrok](https://datagrok.ai) platform",
   "repository": {
     "type": "git",
@@ -13,36 +13,43 @@
     "directory": "packages/Bio"
   },
   "dependencies": {
-    "@biowasm/aioli": ">=2.4.0",
-    "@datagrok-libraries/bio": "^4.4.1",
-    "@datagrok-libraries/chem-meta": "1.0.0",
-    "@datagrok-libraries/ml": "^6.2.0",
-    "@datagrok-libraries/utils": "^1.6.2",
-    "cash-dom": "latest",
-    "datagrok-api": "^1.6.11",
+    "@biowasm/aioli": "^3.1.0",
+    "@datagrok-libraries/bio": "^5.16.0",
+    "@datagrok-libraries/chem-meta": "^1.0.1",
+    "@datagrok-libraries/ml": "^6.3.3",
+    "@datagrok-libraries/utils": "^1.19.4",
+    "cash-dom": "^8.0.0",
+    "datagrok-api": "^1.11.1",
     "dayjs": "^1.11.4",
     "openchemlib": "6.0.1",
     "rxjs": "^6.5.5",
-    "typescript": "^4.4.2",
     "wu": "latest"
   },
   "devDependencies": {
-    "@types/jest": "^27.0.0",
-    "@typescript-eslint/eslint-plugin": "latest",
-    "@typescript-eslint/parser": "latest",
-    "eslint": "^8.20.0",
+    "@types/jest": "^27.5.1",
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "^17.0.24",
+    "@types/node-fetch": "^2.6.2",
+    "@types/wu": "latest",
+    "@typescript-eslint/eslint-plugin": "^4.20.0",
+    "@typescript-eslint/parser": "^4.20.0",
+    "eslint": "^7.23.0",
     "eslint-config-google": "latest",
-    "jest": "^27.0.0",
+    "jest": "^27.5.1",
     "jest-html-reporter": "^3.6.0",
+    "js-yaml": "^4.1.0",
+    "node-fetch": "^2.6.7",
     "puppeteer": "^13.7.0",
     "ts-jest": "^27.0.0",
     "ts-loader": "^9.2.5",
-    "webpack": "latest",
-    "webpack-cli": "^4.10.0",
-    "@types/js-yaml": "^4.0.5",
-    "js-yaml": "^4.1.0",
-    "@types/node-fetch": "^2.6.2",
-    "node-fetch": "^2.6.7"
+    "typescript": "^4.2.3",
+    "webpack": "^5.64.1",
+    "webpack-bundle-analyzer": "latest",
+    "webpack-cli": "^4.6.0"
+  },
+  "grokDependencies": {
+    "@datagrok/chem": "latest",
+    "@datagrok/helm": "latest"
   },
   "scripts": {
     "link-api": "npm link datagrok-api",
@@ -64,7 +71,8 @@
     "lint-fix": "eslint \"./src/**/*.ts\" --fix",
     "test": "jest",
     "test-local": "set HOST=localhost && jest",
-    "build-bio-local": "npm --prefix ./../../js-api run build && npm --prefix ./../../libraries/utils run build && npm --prefix ./../../libraries/ml run build && npm run build && npm --prefix ./../../libraries/bio run build && npm run build"
+    "build-bio-local": "npm --prefix ./../../js-api run build && npm --prefix ./../../libraries/utils run build && npm --prefix ./../../libraries/ml run build && npm run build && npm --prefix ./../../libraries/bio run build && npm run build",
+    "analyze": "webpack --profile --json > ./stats.json && npx webpack-bundle-analyzer ./stats.json"
   },
   "canEdit": [
     "Developers"

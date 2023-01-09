@@ -10,12 +10,17 @@ export declare class PinnedColumn {
     private m_root;
     private m_nWidthBug;
     private m_observerResizeGrid;
+    private m_handlerKeyDown;
+    private m_handlerColsRemoved;
+    private m_handlerColNameChanged;
     private m_handlerVScroll;
     private m_handlerRowsFiltering;
     private m_handlerCurrRow;
     private m_handlerSel;
     private m_handlerRowsResized;
     private m_handlerRowsSorted;
+    private m_handlerPinnedRowsChanged;
+    private m_handlerColorCoding;
     private m_nHResizeRowsBeforeDrag;
     private m_nResizeRowGridDragging;
     private m_nYResizeDraggingAnchor;

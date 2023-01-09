@@ -3,8 +3,9 @@
 import * as ui from 'datagrok-api/ui';
 import * as DG from 'datagrok-api/dg';
 
-import {PhylocanvasGL, TreeTypes, Shapes} from '@phylocanvas/phylocanvas.gl';
-import {TreeAnalyzer, PhylocanvasTreeNode, mlbTreeNodeRe} from './utils/tree-stats';
+import {TreeAnalyzer, mlbTreeNodeRe} from './utils/tree-stats';
+import {PhylocanvasGL} from '@phylocanvas/phylocanvas.gl';
+import {PhylocanvasTreeNode, Shapes, TreeTypes} from '@datagrok-libraries/bio';
 
 /** Code of tree browser before using Phylocanvas from lstolbov 2022-06-22 */
 export class TreeBrowserOld2 {// extends DG.JsViewer {

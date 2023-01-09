@@ -19,7 +19,7 @@ import {Observable}  from "rxjs";
 import {filter} from "rxjs/operators";
 import {Widget} from "./widgets";
 import {Grid} from "./grid";
-import {ScatterPlotViewer, Viewer} from "./viewer";
+import {FilterState, ScatterPlotViewer, Viewer} from "./viewer";
 import {Property, TableInfo} from "./entities";
 import {FormulaLinesHelper} from "./helpers";
 import dayjs from "dayjs";
@@ -1027,7 +1027,22 @@ export class DateTimeColumn extends Column<dayjs.Dayjs> {
    * Sets [i]-th value to [x], and optionally notifies the dataframe about this change.
    */
   set(i: number, value: dayjs.Dayjs | null, notify: boolean = true): void {
+    // @ts-ignore
+    if (value == '')
+      value = null;
+    if (!(dayjs.isDayjs(value) || value == null))
+      value = dayjs(value);
     api.grok_DateTimeColumn_SetValue(this.dart, i, value?.valueOf(), notify);
+  }
+}
+
+
+export class ObjectColumn extends Column<any> {
+  /**
+   * Gets [i]-th value.
+   */
+  get(row: number): any | null {
+    return DG.toJs(api.grok_Column_GetValue(this.dart, row));
   }
 }
 
@@ -1289,8 +1304,8 @@ export class ValueMatcher {
  * To maximize performance, get values via [DataFrame.columns], instead.
  */
 export class RowList {
-  private readonly dart: any;
-  private readonly table: any;
+  readonly dart: any;
+  readonly table: DataFrame;
 
   constructor(table: DataFrame, dart: any) {
     /** @member {DataFrame} */
@@ -1376,10 +1391,22 @@ export class RowList {
     this._applyPredicate(this.table.filter, rowPredicate);
     this.table.filter.fireChanged();
   }
+
+  /** Highlights the corresponding rows. */
+  highlight(indexPredicate: IndexPredicate): void {
+    api.grok_RowList_Highlight(this.dart, indexPredicate);
+  }
+
   /** Viewers that filter rows should subscribe to DataFrame.onRowsFiltering event.
    * When filtering conditions are changed, viewers should call requestFilter(). */
   requestFilter(): void {
     api.grok_RowList_RequestFilter(this.dart);
+  }
+
+  /** Adds a filter state. This should be done in the onRowsFiltering handler.
+   * This is needed for filter synchronization. */
+  addFilterState(state: FilterState): void {
+    api.grok_RowList_AddFilterState(this.dart, state);
   }
 
   /** @returns {string} */
@@ -1524,8 +1551,8 @@ export class BitSet {
 
   /** Inverts a bitset.
    * @returns {BitSet} */
-  invert(): BitSet {
-    api.grok_BitSet_Invert(this.dart);
+  invert(notify: boolean = true): BitSet {
+    api.grok_BitSet_Invert(this.dart, notify);
     return this;
   }
 
@@ -1631,17 +1658,14 @@ export class BitSet {
     return this;
   }
 
-  /** Indexes of all set bits. The result is cached.
-   *  @returns {Int32Array} */
+  /** Indexes of all set bits. The result is cached.  */
   getSelectedIndexes(): Int32Array {
     return api.grok_BitSet_GetSelectedIndexes(this.dart);
   }
 
-  /** Copies the content from the other {BitSet}.
-   * @param {BitSet} b - BitSet to copy from.
-   * @returns {BitSet} */
-  copyFrom(b: BitSet): BitSet {
-    api.grok_BitSet_CopyFrom(this.dart, b.dart);
+  /** Copies the content from the other {BitSet}. */
+  copyFrom(b: BitSet, notify: boolean = true): BitSet {
+    api.grok_BitSet_CopyFrom(this.dart, b.dart, notify);
     return this;
   }
 
@@ -2206,6 +2230,7 @@ export class ColumnDialogHelper {
 
 export class ColumnColorHelper {
   private readonly column: Column;
+
   constructor(column: Column) {
     this.column = column;
   }
@@ -2218,10 +2243,19 @@ export class ColumnColorHelper {
     return DG.COLOR_CODING_TYPE.OFF;
   }
 
-  setLinear(range: ColorType[] | null = null): void {
+  /** Enables linear color-coding on a column.
+   * @param range - list of palette colors.
+   * @param options - list of additional parameters, such as the minimum/maximum value to be used for scaling.
+   * Use the same numeric representation as [Column.min] and [Column.max].
+   */
+  setLinear(range: ColorType[] | null = null, options: {min?: number, max?: number} | null = null): void {
     this.column.tags[DG.TAGS.COLOR_CODING_TYPE] = DG.COLOR_CODING_TYPE.LINEAR;
     if (range != null)
       this.column.tags[DG.TAGS.COLOR_CODING_LINEAR] = JSON.stringify(range);
+    if (options?.min != null)
+      this.column.tags[DG.TAGS.COLOR_CODING_SCHEME_MIN] = `${options.min}`;
+    if (options?.max != null)
+      this.column.tags[DG.TAGS.COLOR_CODING_SCHEME_MAX] = `${options.max}`;
   }
 
   setCategorical(colorMap: {} | null = null): void {
@@ -2239,6 +2273,14 @@ export class ColumnColorHelper {
       }
       this.column.tags[DG.TAGS.COLOR_CODING_CONDITIONAL] = JSON.stringify(rules);
     }
+  }
+
+  getColor(i: number): number {
+    return api.grok_Column_GetColor(this.column.dart, i);
+  }
+
+  getColors(): Uint32Array {
+    return api.grok_Column_GetColors(this.column.dart);
   }
 }
 
@@ -2291,5 +2333,10 @@ export class ColumnMetaHelper {
     if (this._markers == undefined)
       this._markers = new ColumnMarkerHelper(this.column);
     return this._markers;
+  }
+
+  /** Returns the format of the dataframe column. See also [GridColumn.format] */
+  get format(): string | null {
+    return this.column.getTag(TAGS.FORMAT) ?? api.grok_Column_GetAutoFormat(this.column.dart);
   }
 }

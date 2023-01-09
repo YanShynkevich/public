@@ -68,7 +68,7 @@ Datagrok can ingest data in multiple file formats (such as fasta or csv) and mul
 molecules, aligned and non-aligned forms, nucleotide and amino acid sequences. We support all widely used notation
 systems for molecular representations, and process them in a unified way. The sequences are automatically detected and
 classified, while preserving their initial notation. There are many notations used to store biological sequences, such
-as traditional FASTA (one symbol per monomer) or more complex notations with separators. are used. Another approach is
+as traditional FASTA (one symbol per monomer), as well as more complex notations with separators. Another approach is
 to write long monomer name to FASTA with square brackets. Datagrok allows you to convert sequences between different
 notations as well.
 
@@ -92,14 +92,6 @@ which groups of people have access to which libraries.
 The system could be integrated with a custom monomer library service if needed.
 
 ![Monomer Library](../../uploads/macromolecules/MonomerLibrary.gif "Monomer Library")
-
-### Visualizing Assay Data and Dose-Response Curves
-
-The built-in spreadsheet is designed for interactive analysis of vast amounts of scientific data. The system could be
-extended with plugins that provide support for cheminformatics/bioinformatics, or for custom cell renderers for
-molecules, sequences, or dose-response curves.
-
-![Visualizing assay data and dose-response curves](../../uploads/macromolecules/macromolecules-5.png "Visualizing Assay Data and Dose-Response Curves")
 
 ### Atomic-Level structures from sequences
 
@@ -182,7 +174,7 @@ Ctrl+click on the line to select the corresponding sequences.
 Marker color corresponds to activity, marker size and line opacity correspond to the SALI parameter (similarity/activity
 difference relation).
 
-![Properties](../../uploads/macromolecules/activity_cliffs_size_opacity.PNG)
+![Properties](../../uploads/macromolecules/activity_cliffs_size_opacity.png)
 
 ### Quantitative sequence-based activity relationship analyses to enable design and optimization of polymer modalities
 

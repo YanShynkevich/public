@@ -2,25 +2,6 @@ import * as DG from 'datagrok-api/dg';
 import * as C from './constants';
 import * as type from './types';
 
-import {AminoacidsPalettes} from '@datagrok-libraries/bio/src/aminoacids';
-import {NucleotidesPalettes} from '@datagrok-libraries/bio/src/nucleotides';
-import {UnknownSeqPalettes} from '@datagrok-libraries/bio/src/unknown';
-import {SeqPalette} from '@datagrok-libraries/bio/src/seq-palettes';
-
-export function getPalleteByType(paletteType: string): SeqPalette {
-  switch (paletteType) {
-  case 'PT':
-    return AminoacidsPalettes.GrokGroups;
-  case 'NT':
-  case 'DNA':
-  case 'RNA':
-    return NucleotidesPalettes.Chromatogram;
-    // other
-  default:
-    return UnknownSeqPalettes.Color;
-  }
-}
-
 export function getTypedArrayConstructor(
   maxNum: number): Uint8ArrayConstructor | Uint16ArrayConstructor | Uint32ArrayConstructor {
   return maxNum < 256 ? Uint8Array :
@@ -32,66 +13,57 @@ export function getSeparator(col: DG.Column<string>): string {
   return col.getTag(C.TAGS.SEPARATOR) ?? '';
 }
 
-export function getOrFindNext(i: number, val: boolean, filter: DG.BitSet) {
-  return filter.get(i) === val ? i : filter.findNext(i, val);
-}
-
-export function scaleActivity(activityScaling: string, activityCol: DG.Column<number>, indexes?: number[],
-  ): [DG.DataFrame, (x: number) => number, string] {
-  const tempDf = DG.DataFrame.create(activityCol.length);
-
+export function scaleActivity(activityCol: DG.Column<number>, scaling: string = 'none'): DG.Column<number> {
   let formula = (x: number): number => x;
-  let newColName = 'activity';
-  switch (activityScaling) {
+  switch (scaling) {
   case 'none':
     break;
   case 'lg':
     formula = (x: number): number => Math.log10(x);
-    newColName = `Log10(${newColName})`;
     break;
   case '-lg':
     formula = (x: number): number => -Math.log10(x);
-    newColName = `-Log10(${newColName})`;
     break;
   default:
-    throw new Error(`ScalingError: method \`${activityScaling}\` is not available.`);
+    throw new Error(`ScalingError: method \`${scaling}\` is not available.`);
   }
-  tempDf.columns.addNewVirtual(
-    C.COLUMNS_NAMES.ACTIVITY_SCALED, (i) => {
-      const val = activityCol.get(indexes ? indexes[i] : i);
+  const scaledCol: DG.Column<number> = DG.Column.float(C.COLUMNS_NAMES.ACTIVITY_SCALED, activityCol.length)
+    .init((i) => {
+      const val = activityCol.get(i);
       return val ? formula(val) : val;
-    }, DG.TYPE.FLOAT);
+    });
 
-  return [tempDf, formula, newColName];
+  return scaledCol;
 }
 
-export function calculateBarsData(columns: DG.Column<string>[], selection: DG.BitSet): type.MonomerDfStats {
-  const dfStats: type.MonomerDfStats = {};
-  const columnsLen = columns.length;
+//TODO: optimize
+export function calculateSelected(df: DG.DataFrame): type.MonomerSelectionStats {
+  const monomerColumns: DG.Column<string>[] = df.columns.bySemTypeAll(C.SEM_TYPES.MONOMER);
+  const selectedObj: type.MonomerSelectionStats = {};
+  for (const idx of df.selection.getSelectedIndexes()) {
+    for (const col of monomerColumns) {
+      const monomer = col.get(idx);
+      if (!monomer)
+        continue;
 
-  for (let colIndex = 0; colIndex < columnsLen; colIndex++) {
-    const col = columns[colIndex];
-    dfStats[col.name] = calculateSingleBarData(col, selection);
+      selectedObj[col.name] ??= {};
+      selectedObj[col.name][monomer] ??= 0;
+      selectedObj[col.name][monomer] += 1;
+    }
   }
 
-  return dfStats;
+  return selectedObj;
 }
 
-export function calculateSingleBarData(col: DG.Column<string>, selection: DG.BitSet): type.MonomerColStats {
-  const colLen = col.length;
-  const colStats: type.MonomerColStats = {};
-  col.categories.forEach((monomer) => colStats[monomer] = {count: 0, selected: 0});
+// export function isGridCellInvalid(gc: DG.GridCell | null): boolean {
+//   return !gc || !gc.cell.value || !gc.tableColumn || gc.tableRowIndex == null || gc.tableRowIndex == -1 ||
+//     gc.cell.value == DG.INT_NULL || gc.cell.value == DG.FLOAT_NULL;
+// }
 
-  for (let rowIndex = 0; rowIndex < colLen; rowIndex++) {
-    const monomerStats = colStats[col.get(rowIndex)!];
-    monomerStats.count += 1;
-    monomerStats.selected += +selection.get(rowIndex);
-  }
-
-  return colStats;
-}
-
-export function isGridCellInvalid(gc: DG.GridCell | null): boolean {
-  return !gc || !gc.cell.value || !gc.tableColumn || gc.tableRowIndex == null || gc.tableRowIndex == -1 ||
-    gc.cell.value == DG.INT_NULL || gc.cell.value == DG.FLOAT_NULL;
+export function extractMonomerInfo(col: DG.Column<string>): type.RawColumn {
+  return {
+    name: col.name,
+    cat: col.categories,
+    rawData: col.getRawData(),
+  };
 }

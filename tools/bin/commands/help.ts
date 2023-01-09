@@ -9,7 +9,10 @@ Commands:
     check     Check package content (function signatures, etc.)
     config    Create and manage config files
     create    Create a package
+    link      Link \`datagrok-api\` and libraries for local development
+    unlink    Revert \`grok link\`
     publish   Upload a package
+    test      Run package tests
 
 To get help on a particular command, use:
     grok <command> --help
@@ -97,7 +100,39 @@ Running \`grok publish\` is the same as running \`grok publish defaultHost --bui
 const HELP_CHECK = `
 Usage: grok check
 
+Options:
+[--dir]
+
+--dir       Check all packages in a specified directory
+
 Check package content (function signatures, import statements of external modules, etc.)
+`;
+
+const HELP_TEST = `
+Usage: grok test
+
+Options:
+[--host] [--csv]
+
+--host       Host alias as in the config file
+--csv        Save the test report in a CSV file
+
+Run package tests
+
+See instructions:
+https://datagrok.ai/help/develop/how-to/test-packages#local-testing
+`;
+
+const HELP_LINK = `
+Usage: grok link
+
+Link \`datagrok-api\` and libraries for local development
+`;
+
+const HELP_UNLINK = `
+Usage: grok unlink
+
+Revert \`grok link\`
 `;
 
 const HELP_MIGRATE = `
@@ -113,6 +148,9 @@ export const help = {
   check: HELP_CHECK,
   config: HELP_CONFIG,
   create: HELP_CREATE,
+  link: HELP_LINK,
+  unlink: HELP_UNLINK,
   publish: HELP_PUBLISH,
+  test: HELP_TEST,
   help: HELP
 };

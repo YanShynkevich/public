@@ -1,8 +1,6 @@
 import * as DG from 'datagrok-api/dg';
 import {GridCellRendererEx} from "../renderer/GridCellRendererEx";
 import * as TextUtils from "./TextUtils";
-import * as GridUtils from '../utils/GridUtils';
-
 /*
 const canvas = ui.canvas(200*r, 300*r);
 
@@ -36,7 +34,7 @@ export function getToolIconDiv(grid : DG.Grid) : HTMLElement | null {
     if(eDivHamb == null)
       return null;
 
-    if(eDivHamb?.getAttribute('column_name') !== null){//'data') === 'ColHamb') {
+    if(eDivHamb?.getAttribute('column_name') !== null) {//'data') === 'ColHamb') {
       eParent = eDivHamb.parentElement;
       while(eParent !== null) {
         if(eParent === grid.root)
@@ -44,7 +42,7 @@ export function getToolIconDiv(grid : DG.Grid) : HTMLElement | null {
 
         eParent = eParent.parentElement;
       }
-     }
+    }
   }
   return null;
 }
@@ -135,7 +133,8 @@ export function getGridRowHeight(grid : DG.Grid) : number {
 export function getGridVisibleRowCount(grid : DG.Grid) : number {
   const dframe = grid.dataFrame;
   const bitsetFilter = dframe.filter;
-  const nRowCount = bitsetFilter.trueCount;
+  const nRowCount = bitsetFilter.trueCount + Array.from(grid.pinnedRows).length;
+  //my changes pinned rows const nRowCount = bitsetFilter.trueCount + Array.from(grid.pinnedRows).length;
   return nRowCount;
 }
 
@@ -254,10 +253,14 @@ export function paintColHeaderCell(g : CanvasRenderingContext2D | null, nX : num
   const nHH = nH*window.devicePixelRatio;
 
   g.textAlign = 'start';
-  g.fillStyle = "Black";
+  g.fillStyle = "black";
   const nXX = nX*window.devicePixelRatio + Math.ceil(3*window.devicePixelRatio);//((nW*window.devicePixelRatio - nWLabel) >> 1);
   const nYY = (nY*window.devicePixelRatio + nHH - Math.ceil(3*window.devicePixelRatio));//-2*window.devicePixelRatio);
   g.fillText(str, nXX, nYY);
 }
 
 
+export const LeftArrow = '←';
+export const RightArrow = '→';
+export const UpArrow = '↑';
+export const DownArrow = '↓';

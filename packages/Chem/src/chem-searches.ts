@@ -9,11 +9,12 @@ import {
   rdKitFingerprintToBitArray,
 } from './utils/chem-common';
 import BitArray from '@datagrok-libraries/utils/src/bit-array';
-import {tanimotoSimilarity, getDiverseSubset} from '@datagrok-libraries/utils/src/similarity-metrics';
+import {getDiverseSubset} from '@datagrok-libraries/utils/src/similarity-metrics';
 import {assure} from '@datagrok-libraries/utils/src/test';
 import {ArrayUtils} from '@datagrok-libraries/utils/src/array-utils';
+import {tanimotoSimilarity} from '@datagrok-libraries/ml/src/distance-metrics-methods';
 
-const enum FING_COL_TAGS{
+const enum FING_COL_TAGS {
   invalidatedForVersion = '.invalideted.for.version',
 }
 
@@ -64,7 +65,7 @@ function _chemGetDiversities(limit: number, molStringsColumn: DG.Column, fingerp
   limit = Math.min(limit, fingerprints.length);
   const indexes = ArrayUtils.indexesOf(fingerprints, (f) => f != null);
 
-  const diverseIndexes = getDiverseSubset(indexes.length, limit,
+  const diverseIndexes = getDiverseSubset(fingerprints, indexes.length, limit,
     (i1, i2) => 1 - tanimotoSimilarity(fingerprints[indexes[i1]], fingerprints[indexes[i2]]));
 
   const molIds: number[] = [];
@@ -83,25 +84,7 @@ function colInvalidated(col: DG.Column): Boolean {
 
 async function _invalidate(molCol: DG.Column) {
   if (!colInvalidated(molCol)) {
-    const {molIdxToHash, hashToMolblock} =
-        await (await getRdKitService()).initMoleculesStructures(molCol.toList(), false);
-    let i = 0;
-    if (molIdxToHash.length > 0) {
-      let needsUpdate = false;
-      for (const item of molIdxToHash) {
-        const notify = (i === molIdxToHash.length - 1);
-        const molStr = hashToMolblock[item];
-        if (molStr) {
-          molCol.setString(i, molStr, notify);
-          needsUpdate = true;
-        }
-        ++i;
-      }
-      if (needsUpdate) {
-        // This seems to be the only way to trigger re-calculation of categories
-        molCol.compact();
-      }
-    }
+    await (await getRdKitService()).initMoleculesStructures(molCol.toList());
     LastColumnInvalidated = molCol.name;
     molCol.setTag(FING_COL_TAGS.invalidatedForVersion, String(molCol.version + 1));
   }
@@ -254,11 +237,12 @@ export function chemGetFingerprint(molString: string, fingerprint: Fingerprint):
   try {
     mol = getRdKitModule().get_mol(molString);
     let fp;
-    if (fingerprint == Fingerprint.Morgan)
-      fp = mol.get_morgan_fp_as_uint8array(defaultMorganFpRadius, defaultMorganFpLength);
-    /*else if (fingerprint == Fingerprint.RDKit)
-      fp = mol.get_rdkit_fp(defaultMorganFpRadius, defaultMorganFpLength);*/
-    else if (fingerprint == Fingerprint.Pattern)
+    if (fingerprint == Fingerprint.Morgan) {
+      fp = mol.get_morgan_fp_as_uint8array(JSON.stringify({
+        radius: defaultMorganFpRadius,
+        nBits: defaultMorganFpLength,
+      }));
+    } else if (fingerprint == Fingerprint.Pattern)
       fp = mol.get_pattern_fp_as_uint8array();
     else
       throw new Error(`${fingerprint} does not match any fingerprint`);
