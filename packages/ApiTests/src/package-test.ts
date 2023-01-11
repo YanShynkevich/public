@@ -48,6 +48,7 @@ import './ui/tags';
 import './ui/sharing';
 import './package/upload';
 import './viewers/viewers';
+import './viewers/filters';
 import './grid/grid';
 import './grid/color-coding';
 import './connections/queries-test';
@@ -59,6 +60,7 @@ import './gui/grid';
 import './gui/project-upload';
 
 import {runTests, tests, TestContext} from '@datagrok-libraries/utils/src/test';
+
 export const _package = new DG.Package();
 export {tests};
 
@@ -79,7 +81,7 @@ export async function test(category: string, test: string, testContext: TestCont
 //top-menu: Tools | Dev | Test Packages
 export async function testPackages(): Promise<DG.DataFrame> {
   const funcs = DG.Func.find({name: 'test'});
-  const dfs:DG.DataFrame[] = [];
+  const dfs: DG.DataFrame[] = [];
   for (const f of funcs) {
     if (f.package?.name != null) {
       grok.shell.closeAll();
