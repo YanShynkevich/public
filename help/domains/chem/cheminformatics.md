@@ -3,28 +3,7 @@
 
 # Cheminformatics
 
-Cheminformatics (see also the [Wikipedia](https://en.wikipedia.org/wiki/Cheminformatics) article) is the application of
-computer and information science methods to a wide range of problems in chemistry. The associated _in silico_
-techniques (see below) are used, for example, during the process of drug discovery in pharmaceutical companies and
-academic environments, and can be employed in chemical and allied industries.
-
-As contrasted to _in vitro_ biochemical experiments (conducted in labware without the living cells) and
-_in vivo_ ones (conducted in cell cultures or organisms), _in silico_ biochemical experiments are defined as the ones
-performed by means of computer simulations, because silicon is the main component of modern CPUs. Cheminformatics is a
-complex _in silico_ discipline, serving multiple purposes, such as:
-
-* development of methods for storage and operating chemical data
-* determining the structure-property and structure-activity relationships by means of simulation
-* virtual screening aimed at discovery of most potent drug candidates
-* generation of possible chemical structures
-* synthesis planning and prediction of synthetic routes
-* facilitation of a researcher's work by means of visualization and reaction prediction
-* molecular design
-* etc.
-
-Cheminformatics tends to consider _molecular structure_ as a principal chemical object, which can be studied in various
-data representations. More complex objects, such as mixtures, materials and reactions, can also be investigated in this
-setting, but have to be related to the associated molecular structures in each case.
+Cheminformatics (see the [Wikipedia](https://en.wikipedia.org/wiki/Cheminformatics) article) is one of the core domains that Datagrok specializes in. Our platform covers the majority of cheminformatics-related tasks, primarily connected with small molecules and some types of peptides.
 
 <!--corr: now goes the description of Datagrok functionality -- is it apt here? The style requires refactoring,
 for it resembles a dull prayer -->
@@ -32,6 +11,7 @@ for it resembles a dull prayer -->
 has the following instruments...-->
 Datagrok supplies a researcher with a powerful cheminformatics arsenal, in particular:
 <!--corr: LINKS!!!-->
+<!-- Should this list contain all the Chem features or just a portion of them? If the former, the enumerated features should correlate with the body content -->
 
 * The platform supports widely accepted _types of notation_ for representing chemical (sub)structures, such as SMILES
   and SMARTS.
@@ -48,11 +28,6 @@ Datagrok supplies a researcher with a powerful cheminformatics arsenal, in parti
 * In order to further explore collections of molecules, one can use advanced tools like _diversity search_
   and _similarity search_.
 
-Though it might seem that cheminformatics covers all the "molecular" needs <!--corr: a very vague formulation-->, it has
-its limitations. In particular, its applicability is limited to small molecules and some types of peptides. It shows
-real power when combined with other _in silico_ approaches, including but not limited to: docking and molecular
-dynamics, systems biology and pharmacology, bioinformatics, proteomics.<!--corr:
-This paragraph leaves the feeling of being unfinished-->
 
 ## Data formats in cheminformatics
 
@@ -63,7 +38,7 @@ represented in the forms convenient both for researchers and computations. In th
 modelled as a graph, with atoms being its vertices and bonds, its edges. Usually, researchers tend to use the graphical
 representations, planar and 3D.
 
-### Importing molecular data in Datagrok<!--corr: should it be here?-->
+### Importing molecular data in Datagrok <!--corr: should it be here?-->
 
 [Import the dataset](../../access/file-browser-and-file-shares.md), as you normally would, by opening a file, querying a
 database, connecting to a webservice, or by any other method. The platform is smart enough to automatically recognize
