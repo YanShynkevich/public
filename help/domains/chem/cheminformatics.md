@@ -3,40 +3,109 @@
 
 # Cheminformatics
 
-Cheminformatics (see the [Wikipedia](https://en.wikipedia.org/wiki/Cheminformatics) article) is one of the core domains that Datagrok specializes in. Our platform covers the majority of cheminformatics-related tasks, primarily connected with small molecules and some types of peptides.
+Datagrok provides a powerful set of tools for [Cheminformatics](https://en.wikipedia.org/wiki/Cheminformatics). (it may be expanded)
+With Datagrok, you can do the following:
 
-<!--corr: now goes the description of Datagrok functionality -- is it apt here? The style requires refactoring,
-for it resembles a dull prayer -->
-<!--corr: to improve style, one should mention that Datagrok is a powerful cheminformatics tool, which
-has the following instruments...-->
-Datagrok supplies a researcher with a powerful cheminformatics arsenal, in particular:
-<!--corr: LINKS!!!-->
-<!-- Should this list contain all the Chem features or just a portion of them? If the former, the enumerated features should correlate with the body content -->
+* Access your datasets of common chemical formats such as SMILES and SMARTS
+* Visualize your data with [chemically aware viewers](chemically-aware-viewers)
+* Analyze molecules in [info panels](../../discover/info-panels.md): view structures in 2D and 3D, evaluate [drug likeness](info-panels/drug-likeness.md), [toxicity risks](info-panels/toxicity-risks), [structural alerts](info-panels/structural-alerts.md), chemical properties
+* Explore molecules with [diversity search](diversity-search.md) and [similarity search](similarity-search.md) and accelerate your search with [sketcher](sketcher) tool
+* Extract [molecular descriptors](descriptors.md) and [fingerprints](fingerprint.md) on the fly
+* Train models using [predictive modeling](chem-predictive-modeling.md) and incorporate them in pipelines or [info panels](../../discover/info-panels.md)
 
-* The platform supports widely accepted _types of notation_ for representing chemical (sub)structures, such as SMILES
-  and SMARTS.
-* It provides first-class support for _small molecules_, as well as most popular building blocks for
-  simulations.<!--corr: a good idea to mention those blocks-->
-* Molecules can be sketched and rendered as 2D or 3D models, equipped with auxiliary _visualization options_.
+## Access
 
-* _Chemical properties_, _descriptors_, and _fingerprints_ can be extracted on the fly.
-* _Predictive models_, accepting molecular structures as their input, can be trained, assessed, executed, deployed,
-  reused by other scientists, and incorporated in pipelines or [info panels](../../discover/info-panels.md). Predictive
-  models for _toxicity_ and _drug-likeness_ are also supported.
-* _Substructure and similarity search_ works out-of-the box for the imported data and can efficiently be utilized for
-  querying databases with the help of Postgres chemical cartridge.
-* In order to further explore collections of molecules, one can use advanced tools like _diversity search_
-  and _similarity search_.
+[Import the dataset](../../access/file-browser-and-file-shares.md) by opening a file, querying a database, connecting to a webservice, or by other method provided by our File Browser.
+   </details>
+
+<!-- To upload your dataset, use any method of [dataset import](../../access/file-browser-and-file-shares.md). -->
+
+<GIF с открытием csv-файла с помощью file import, например>
+
+<details>
+  <summary>Access</summary>
+  <div>
+    <div>[Import the dataset](../../access/file-browser-and-file-shares.md) by opening a file, querying a database, connecting to a webservice, or by other method provided by our File Browser.</div>
+    <br/>
+    <details>
+      <summary>
+        Nested toggle! Some surprise inside...
+      </summary>
+      <div>
+        😲😲😲😲😲
+      </div>
+    </details>
+  </div>
+</details>
+
+## Visualize
+
+Once your dataset opened, all your SMILE-notated columns are automatically rendered into molecular structures.
+
+<GIF, показывающий как SMILES преображается в структурную формулу при загрузке>
+
+To get visual insights of your data, Datagrok provides various [chemically-aware viewers](chemically-aware-viewers), designed for efficient work with molecules.
+
+To use a viewer, on the sidebar, click Viewers and then choose any viewer.
+
+## Analyze
+
+[Info panels](../../discover/info-panels.md) help you to analyze the most important properties of a chosen molecule: 
 
 
-## Data formats in cheminformatics
+## Explore
 
-### Molecular graphs
+To explore your data efficiently, our platform offers the following tools. 
 
-Each cheminformatic problem is usually associated with a specific structure set, and thus all structures should be
-represented in the forms convenient both for researchers and computations. In these two cases the structure is typically
-modelled as a graph, with atoms being its vertices and bonds, its edges. Usually, researchers tend to use the graphical
-representations, planar and 3D.
+### [Sketcher](sketcher.md)
+
+Sketcher offers [substructure search](substructure-search-test) feature.
+To use sketcher, on the top menu, click Chem > Sketcher.
+
+<GIF, показывающий, как открывать скетчер>
+
+Tip: apart from substructure search, use Sketcher to create your own molecules, exploring its chemical properties in info panels.
+
+### [Similarity and diversity search](similarity-search.md)
+
+To use similarity and diversity search, on the top menu, click Similarity search or Diversity search.
+
+
+
+
+### [R-group analysis](r-group-analysis.md)
+
+
+## Extract
+
+To vectorize your molecules, Datagrok offers such feature extractions as [fingerprints](fingerprints.md) and [descriptors](descriptors.md)
+
+<!-- <Tabs
+  defaultValue="fingerprints"
+  values={[
+    {label: 'Descriptors', value: 'descriptors'},
+    {label: 'Fingerprints', value: 'fingerprints'},
+  ]}>
+  <TabItem value="descriptors">Descriptor is a physical characterization of a molecule</TabItem>
+  <TabItem value="fingerprints">Fingerprints is a physical characterization of a molecule</TabItem>
+</Tabs> -->
+
+<GIF, высчитывающий fingerprints>
+<GIF, высчитывающий descriptors>
+
+## Predict 
+
+<Залинковать предиктивные модели на DG, показать в гифках, как их можно использовать>
+<Показать, как вставляются нововычесленные значения в info panels>
+
+---
+<br><br><br><br>
+ 
+
+
+
+
+
 
 ### Importing molecular data in Datagrok <!--corr: should it be here?-->
 
