@@ -80,7 +80,7 @@ To use similarity and diversity search, on the top menu, click Similarity search
 
 To vectorize your molecules, Datagrok offers such feature extractions as [fingerprints](fingerprints.md) and [descriptors](descriptors.md)
 
-<!-- <Tabs
+<Tabs
   defaultValue="fingerprints"
   values={[
     {label: 'Descriptors', value: 'descriptors'},
@@ -88,7 +88,7 @@ To vectorize your molecules, Datagrok offers such feature extractions as [finger
   ]}>
   <TabItem value="descriptors">Descriptor is a physical characterization of a molecule</TabItem>
   <TabItem value="fingerprints">Fingerprints is a physical characterization of a molecule</TabItem>
-</Tabs> -->
+</Tabs>
 
 <GIF, высчитывающий fingerprints>
 <GIF, высчитывающий descriptors>
