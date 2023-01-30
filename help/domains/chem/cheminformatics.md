@@ -15,97 +15,105 @@ With Datagrok, you can do the following:
 
 ## Access
 
-[Import the dataset](../../access/file-browser-and-file-shares.md) by opening a file, querying a database, connecting to a webservice, or by other method provided by our File Browser.
-   </details>
+Initiate your dataflow with the following features:
+* Compatibility with the most common [molecular structure formats](../../access/supported-formats.md#molecular-structure-formats)
+* A large selection of supported [data connectors](../../access/data-connection.md)
+* [Data queries](../../access/data-query.md) and [data preparation pipelines](../../access/data-pipeline.md) to work with only neccessary data from the very beginning
+* Automatic and fast text-to-formula rendering of SMILE-notated cells due to [semantic types](../../discover/semantic-types.md) recognition
 
-<!-- To upload your dataset, use any method of [dataset import](../../access/file-browser-and-file-shares.md). -->
-
-<GIF с открытием csv-файла с помощью file import, например>
-
-<details>
-  <summary>Access</summary>
-  <div>
-    <div>[Import the dataset](../../access/file-browser-and-file-shares.md) by opening a file, querying a database, connecting to a webservice, or by other method provided by our File Browser.</div>
-    <br/>
-    <details>
-      <summary>
-        Nested toggle! Some surprise inside...
-      </summary>
-      <div>
-        😲😲😲😲😲
-      </div>
-    </details>
-  </div>
-</details>
+<!-- made a draft gif with steps commented, how does it look like? (for any unknown reason, can't save GIF in 800x500 after editing, working on that) -->
+![Cell](cell-renderer_test.gif "Automatic SMILES rendering")
 
 ## Visualize
 
-Once your dataset opened, all your SMILE-notated columns are automatically rendered into molecular structures.
+To get visual insights of your data, Datagrok provides the number of context-driven [Viewers](../../visualize/viewers.md). Our [chemically-aware viewers](chemically-aware-viewers.md) allow to work efficiently with molecular data.
 
-<GIF, показывающий как SMILES преображается в структурную формулу при загрузке>
+<If the end goal were to unite all the small articles into one, I'd move all the info from Chemically-aware viewers page to here, like that>
 
-To get visual insights of your data, Datagrok provides various [chemically-aware viewers](chemically-aware-viewers), designed for efficient work with molecules.
+### Grid
 
-To use a viewer, on the sidebar, click Viewers and then choose any viewer.
+Molecules in the [grid](../../visualize/viewers/grid.md)
 
-## Analyze
+![Grid](../../uploads/viewers/grid-molecules.png "Grid: molecules")
 
-[Info panels](../../discover/info-panels.md) help you to analyze the most important properties of a chosen molecule: 
+### Scatter plot
 
+![Scatter plot](../../uploads/viewers/scatter-plot-molecules.png "Scatter plot: molecules")
+
+### Bar chart
+
+Molecules in [bar chart](../../visualize/viewers/bar-chart.md)
+
+![Bar chart](../../uploads/viewers/bar-chart-molecules.png "Bar chart: molecules")
+
+## Transform
+
+For further investigations, workflow may contain a transformation step where an investigator processes his data to retrieve additional information for downstream tasks.
+
+Beside standard [data wrangling](../../transform/data-wrangling.md) procedures, we propose chemistry-specific ones: standardization and vectorization.
+
+### Standardization
+To standardize molecular data, we offer an automated [chemical structure curation](chem-curate.md) pipeline.
+<GIF, показывающий curation process>
+
+### Vectorization
+
+To vectorize molecular data, we offer such feature extractors as [fingerprints](fingerprints.md) and [descriptors](descriptors.md).
+
+<здесь должно быть содержимое смерженной статьи Fingerprints and Descriptors>
+
+<GIF, высчитывающий fingerprints>
+<GIF, высчитывающий descriptors>
+
+> Tip: both fingerprints and descriptors may serve as predictors for Machine Learning tasks
 
 ## Explore
 
-To explore your data efficiently, our platform offers the following tools. 
+For fast data exploration, we developed [info panels](../../discover/info-panels.md). Info panels collect the most important molecule-specific properties and functions in one place:
+
+* Identifiers - all known identifiers for the specified structure (UniChem)
+* Molfile – get a specified molecule .mol file
+* Structure 2D – gets a planar molecular representation
+* Structure 3D – gets a 3 dimensional molecular representation
+* [Gasteiger Partial Charges](functions/gasteiger-charges.md) – use it to get a representation with partial charges highlight
+* [Chem descriptors](descriptors.md) – specified descriptors for a structure
+* Properties – get a list of calculated or predicted physical and chemical properties
+* [Toxicity](info-panels/toxicity-risks.md) – drug design related feature to predict the toxicity
+* [Structural alerts](info-panels/structural-alerts.md) – drug design related feature to highlight fragments in structures that might greatly increase the
+  toxicity and other problematic structural features
+* [Drug likeness](info-panels/structural-alerts.md) – drug design related feature to get a score that shows how likely this molecule is to be a drug. The
+score comes with an interpretation of how different sub-structure fragments contribute to the score.
+
+![Toxicity, Gasteiger Partial Charges, Solubility Prediction](../../uploads/gifs/chem-model-augment.gif "Toxicity, Gasteiger Partial Charges, Solubility Prediction")
+
+
+## Analyze
 
 ### [Sketcher](sketcher.md)
 
 Sketcher offers [substructure search](substructure-search-test) feature.
-To use sketcher, on the top menu, click Chem > Sketcher.
 
 <GIF, показывающий, как открывать скетчер>
 
-Tip: apart from substructure search, use Sketcher to create your own molecules, exploring its chemical properties in info panels.
+> Tip: Beside substructure search, use Sketcher to create your own molecules investigating their chemical properties in info panels.
 
 ### [Similarity and diversity search](similarity-search.md)
 
 To use similarity and diversity search, on the top menu, click Similarity search or Diversity search.
 
-
-
-
+### []
 ### [R-group analysis](r-group-analysis.md)
 
 
-## Extract
 
-To vectorize your molecules, Datagrok offers such feature extractions as [fingerprints](fingerprints.md) and [descriptors](descriptors.md)
-
-<Tabs
-  defaultValue="fingerprints"
-  values={[
-    {label: 'Descriptors', value: 'descriptors'},
-    {label: 'Fingerprints', value: 'fingerprints'},
-  ]}>
-  <TabItem value="descriptors">Descriptor is a physical characterization of a molecule</TabItem>
-  <TabItem value="fingerprints">Fingerprints is a physical characterization of a molecule</TabItem>
-</Tabs>
-
-<GIF, высчитывающий fingerprints>
-<GIF, высчитывающий descriptors>
 
 ## Predict 
 
 <Залинковать предиктивные модели на DG, показать в гифках, как их можно использовать>
-<Показать, как вставляются нововычесленные значения в info panels>
+<Показать, как вставляются нововычисленные значения в info panels>
 
 ---
 <br><br><br><br>
- 
-
-
-
-
-
 
 ### Importing molecular data in Datagrok <!--corr: should it be here?-->
 
