@@ -3,9 +3,8 @@
 
 # Cheminformatics
 
-Datagrok provides a powerful set of tools for [Cheminformatics](https://en.wikipedia.org/wiki/Cheminformatics). (it may be expanded)
+Datagrok provides a powerful set of tools for [Cheminformatics](https://en.wikipedia.org/wiki/Cheminformatics), accelerating chemically-related workflows.
 With Datagrok, you can do the following:
-
 * Access your datasets of common chemical formats such as SMILES and SMARTS
 * Visualize your data with [chemically aware viewers](chemically-aware-viewers)
 * Analyze molecules in [info panels](../../discover/info-panels.md): view structures in 2D and 3D, evaluate [drug likeness](info-panels/drug-likeness.md), [toxicity risks](info-panels/toxicity-risks), [structural alerts](info-panels/structural-alerts.md), chemical properties
@@ -15,18 +14,25 @@ With Datagrok, you can do the following:
 
 ## Access
 
-Initiate your dataflow with the following features:
+Access your data with these capabilities:
 * Compatibility with the most common [molecular structure formats](../../access/supported-formats.md#molecular-structure-formats)
-* A large selection of supported [data connectors](../../access/data-connection.md)
-* [Data queries](../../access/data-query.md) and [data preparation pipelines](../../access/data-pipeline.md) to work with only neccessary data from the very beginning
-* Automatic and fast text-to-formula rendering of SMILE-notated cells due to [semantic types](../../discover/semantic-types.md) recognition
+* Fast size-independent data load
+* [30+ data connectors](../../access/data-connection.md) to access any data source: files, databases or cloud services
+* [Data queries](../../access/data-query.md) and [data preparation pipelines](../../access/data-pipeline.md) filter out only necessary data from your database
+* [Semantic types](../../discover/semantic-types.md) contain 13 types of data content, including molecules. Once molecules are identified, molecule-specific toolset enables the following capabilities: automatic SMILES to structures rendering, chemically-aware viewers, adaptive info panels, etc.
+
+  Version 2: Automatic SMILES to structures rendering, chemically-aware viewers, adaptive info panels are triggered due to molecule [semantic type](../../discover/semantic-types.md) recognition.
+
+  Version 3: Molecule [semantic type](../../discover/semantic-types.md) recognition enables automatic SMILES to structures rendering, chemically-aware viewers, adaptive info panels
 
 <!-- made a draft gif with steps commented, how does it look like? (for any unknown reason, can't save GIF in 800x500 after editing, working on that) -->
 ![Cell](cell-renderer_test.gif "Automatic SMILES rendering")
 
 ## Visualize
 
-To get visual insights of your data, Datagrok provides the number of context-driven [Viewers](../../visualize/viewers.md). Our [chemically-aware viewers](chemically-aware-viewers.md) allow to work efficiently with molecular data.
+To get visual insights of (visualize?) your data, Datagrok provides the number of context-driven [Viewers](../../visualize/viewers.md). On top of [basic viewers advantages](../../develop/advanced/performance#viewers), our [chemically-aware viewers](chemically-aware-viewers.md) adapt to molecular semantic type and include rendered structures right on the plot axes.
+
+<GIF, показывающая, как выглядят структуры на осях графиков>
 
 <If the end goal were to unite all the small articles into one, I'd move all the info from Chemically-aware viewers page to here, like that>
 
@@ -46,30 +52,57 @@ Molecules in [bar chart](../../visualize/viewers/bar-chart.md)
 
 ![Bar chart](../../uploads/viewers/bar-chart-molecules.png "Bar chart: molecules")
 
-## Transform
+## Calculate
 
-For further investigations, workflow may contain a transformation step where an investigator processes his data to retrieve additional information for downstream tasks.
-
-Beside standard [data wrangling](../../transform/data-wrangling.md) procedures, we propose chemistry-specific ones: standardization and vectorization.
-
-### Standardization
-To standardize molecular data, we offer an automated [chemical structure curation](chem-curate.md) pipeline.
-<GIF, показывающий curation process>
+<!-- пока категория неустойчива, поэтому лучше ее не описывать -->
 
 ### Vectorization
 
-To vectorize molecular data, we offer such feature extractors as [fingerprints](fingerprints.md) and [descriptors](descriptors.md).
+To vectorize molecular graph data, Datagrok provides a wide variety of [fingerprints](fingerprints.md) and [descriptors](descriptors.md).
 
-<здесь должно быть содержимое смерженной статьи Fingerprints and Descriptors>
+<!-- Designed to calculate algebraic vectors, fingerprints and descriptors serve as initial steps for following Datagrok's tasks: -->
+With fingerprints and descriptors, you can perform the following Datagrok's tasks:
 
-<GIF, высчитывающий fingerprints>
-<GIF, высчитывающий descriptors>
+* Similarity and diversity search
+* Chem space dimensionality reduction
+* Structure Activity Relationship types of analysis aka SAR Analysis
+* Machine Learning Tasks
 
-> Tip: both fingerprints and descriptors may serve as predictors for Machine Learning tasks
+Among supported descriptors are Lipinski, Crippen, EState, EState VSA, Fragments, Graph, MolSurf, QED and [others](descriptors.md).
 
-## Explore
+<GIF, высчитывающий fingerprints !!! подождать, пока фингерпринты зальют в top-menu Chem> 
 
-For fast data exploration, we developed [info panels](../../discover/info-panels.md). Info panels collect the most important molecule-specific properties and functions in one place:
+Among supported fingerprints are RDKFingerprint, MACCSKeys, AtomPair, TopologicalTorsion, Morgan/Circular and [others](fingerprints.md).
+
+![descriptors](descriptors.gif "Calculate descriptors")
+
+
+## Transform
+
+Datagrok lets transform your molecular structures for standartization and/or augmentation purposes.
+Beside standard [data wrangling](../../transform/data-wrangling.md) procedures, we propose chemistry-specific ones: curation and mutation.
+
+### Curation
+To avoid data-associated errors such as duplicated vectors in the training set or incorrect structure representation, [chemical structure curation](chem-curate.md) tools are available.
+Structure curation methods standartize your molecular data and include:
+<стоит ли тут описывать каждый метод?>
+* Kekulization
+* Normalization
+* Neutralization
+* Tautomerization
+* Selection of the main component
+
+![Chemical structure curation](chem_curation_demo.gif)
+
+### Mutation
+
+<!-- пока про Mutation не стоит писать, ибо функция сыровата -->
+
+
+<!-- don't know yet where Info Panel should fall in -->
+## Info panels 
+
+Use [info panels](../../discover/info-panels.md) for fast data exploration. Info panels collect the most important molecule-specific properties and functions in one place:
 
 * Identifiers - all known identifiers for the specified structure (UniChem)
 * Molfile – get a specified molecule .mol file
@@ -81,13 +114,43 @@ For fast data exploration, we developed [info panels](../../discover/info-panels
 * [Toxicity](info-panels/toxicity-risks.md) – drug design related feature to predict the toxicity
 * [Structural alerts](info-panels/structural-alerts.md) – drug design related feature to highlight fragments in structures that might greatly increase the
   toxicity and other problematic structural features
-* [Drug likeness](info-panels/structural-alerts.md) – drug design related feature to get a score that shows how likely this molecule is to be a drug. The
-score comes with an interpretation of how different sub-structure fragments contribute to the score.
+* [Drug likeness](info-panels/structural-alerts.md) – drug design related feature to get a score that shows how likely this molecule is to be a drug.
 
 ![Toxicity, Gasteiger Partial Charges, Solubility Prediction](../../uploads/gifs/chem-model-augment.gif "Toxicity, Gasteiger Partial Charges, Solubility Prediction")
 
-
 ## Analyze
+
+Analytical methods vary. Thus, for easy navigation our analytical toolset falls into two functional categories:
+1) Analyze SAR - methods designed to identify bioactivity values based on structure 
+2) Analyze Structure - methods designed to investigate exclusively structural pecularities
+
+<!-- Leonid: 
+* Analyze SAR - methods identifing structure-activity relationshpis
+* Analyze Structure - approaches investigating structural pecularities of your dataset -->
+
+### Analyze SAR 
+* #### [R-group Analysis](r-group-analysis.md)
+
+  Performs R-group decomposition followed by the visual analysis of the obtained R-groups. This analysis uses the graph of a selected scaffold in order to find all the entries
+  in the dataset sharing that scaffold, and get all the corresponding substitutes. Datagrok's "Trellis Plot" is a natural fit for such an analysis.
+
+  ![gt1](../../uploads/chem/graphTools2.png "rGroups")
+
+* Activity Cliffs
+* Structural Alerts
+* Group Analysis
+* ADMET
+
+### Analyze Structure
+
+Analyze Structure methods include:
+* Chem space
+* Elemental Analysis
+* Scaffold Tree
+
+## Search
+
+Conduct different types of search 
 
 ### [Sketcher](sketcher.md)
 
@@ -99,15 +162,14 @@ Sketcher offers [substructure search](substructure-search-test) feature.
 
 ### [Similarity and diversity search](similarity-search.md)
 
-To use similarity and diversity search, on the top menu, click Similarity search or Diversity search.
-
-### []
-### [R-group analysis](r-group-analysis.md)
-
-
-
 
 ## Predict 
+
+Datagrok   enables   machine   learning   predictive   models   by   using
+chemical properties, descriptors, and fingerprints as features, and the
+observed properties as results when building predictive models. This lets
+researchers build predictive models that can be trained, assessed, executed,
+reused by other scientists, and used in pipelines.
 
 <Залинковать предиктивные модели на DG, показать в гифках, как их можно использовать>
 <Показать, как вставляются нововычисленные значения в info panels>
@@ -330,20 +392,6 @@ See details [here](functions/reactions.md).
 Perhaps, the most prolific application of cheminformatics is the search of new structures that could be considered as
 potential drugs. Here we describe Datagrok's support for virtual screening and special tools intended for this purpose.
 
-### Dataset curation<!--corr: curation?-->
-
-The methods described above<!--corr: examples, please--> assume that descriptors and graphs correspond to a real
-molecule. However, data-associated errors may lead to biases in descriptors, wrong interpretation of modeling outputs,
-and meaninglessness of the obtained results. The most sensitive cases are duplicated vectors in the training set, and
-errors derived from the incorrect structure representation. In order to avoid that, curation of chemical data is usually
-integrated into the analysis pipeline. To assure the quality of analysis and predictive models development, Datagrok
-provides the tools for chemical dataset curation. Curation tools include, but are not limited to:
-
-* kekulization
-* normalization
-* neutralization
-* tautomerization
-* selection of the main component
 
 See [Chemical dataset curation](chem-curate.md) for more details, and a demo with curation examples.
 
