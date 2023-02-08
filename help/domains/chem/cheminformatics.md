@@ -1,72 +1,83 @@
 <!-- TITLE: Cheminformatics -->
-<!-- SUBTITLE: -->
 
 # Cheminformatics
 
+
+## Overview 
+
 Datagrok provides a powerful set of tools for [Cheminformatics](https://en.wikipedia.org/wiki/Cheminformatics), accelerating chemically-related workflows.
+
 With Datagrok, you can do the following:
-* Access your datasets of common chemical formats such as SMILES and SMARTS
-* Visualize your data with [chemically aware viewers](chemically-aware-viewers)
+* Access your data with these capabilities:
+  * Compatibility with the most common [molecular structure formats](../../access/supported-formats.md#molecular-structure-formats)
+  * Fast size-independent data load
+  * [30+ data connectors](../../access/data-connection.md) to access any data source: files, databases or cloud services
+  * [Data queries](../../access/data-query.md) and [data preparation pipelines](../../access/data-pipeline.md) filter out only necessary data from your database
+  * [Semantic types](../../discover/semantic-types.md) contain 13 types of data content, including molecules. Once molecules are identified, automatic SMILES to structures rendering, chemically-aware viewers, adaptive info panels are available
+
+* Visualize your data with context-driven [Viewers](../../visualize/viewers.md). For molecular data, [chemically aware viewers](chemically-aware-viewers) offer additional functionality:
+  *  Vizualization of the molecules on grid, scatter plot, histogram, trellis plot
+
+      <GIF, показывающая, как выглядят структуры на осях графиков>
+  *  Synchronized filtering across selected viewers.
+
+      <GIF с одновременной фильтрацией на всех вьюерах>
+
 * Analyze molecules in [info panels](../../discover/info-panels.md): view structures in 2D and 3D, evaluate [drug likeness](info-panels/drug-likeness.md), [toxicity risks](info-panels/toxicity-risks), [structural alerts](info-panels/structural-alerts.md), chemical properties
-* Explore molecules with [diversity search](diversity-search.md) and [similarity search](similarity-search.md) and accelerate your search with [sketcher](sketcher) tool
+
+* Accelerate your search with [Sketcher](sketcher.md): sketch a new molecule, edit an existing one, or retrieve one by entering compound identifier/trivial name.
+
+  ![Sketcher](../../uploads/chem/sketcher.png "Sketcher")
+
+  While drawing a molecule, info panels update interactively.
+  <GIF с обновляющимися инфо-панелями>
+
+  You can apply [substructure search](substructure-search-test.md) to your dataset by sketching the substructures to find.
+  <GIF с процессом поиска субструктух в молекуле>
+
+* Explore molecules with [diversity search](diversity-search.md) and [similarity search](similarity-search.md)
 * Extract [molecular descriptors](descriptors.md) and [fingerprints](fingerprint.md) on the fly
 * Train models using [predictive modeling](chem-predictive-modeling.md) and incorporate them in pipelines or [info panels](../../discover/info-panels.md)
 
-## Access
+<!-- ![Cell](cell-renderer_test.gif "Automatic SMILES rendering") -->
 
-Access your data with these capabilities:
-* Compatibility with the most common [molecular structure formats](../../access/supported-formats.md#molecular-structure-formats)
-* Fast size-independent data load
-* [30+ data connectors](../../access/data-connection.md) to access any data source: files, databases or cloud services
-* [Data queries](../../access/data-query.md) and [data preparation pipelines](../../access/data-pipeline.md) filter out only necessary data from your database
-* [Semantic types](../../discover/semantic-types.md) contain 13 types of data content, including molecules. Once molecules are identified, molecule-specific toolset enables the following capabilities: automatic SMILES to structures rendering, chemically-aware viewers, adaptive info panels, etc.
+## Augment
 
-  Version 2: Automatic SMILES to structures rendering, chemically-aware viewers, adaptive info panels are triggered due to molecule [semantic type](../../discover/semantic-types.md) recognition.
+Data augmentation helps you extract new information out of your dataset. In cheminformatics the new information may imply rendering molecules in 2D/3D, toxicity scores, drug likeness, partial charges visualization and other. Datagrok's [info panels](../../discover/info-panels.md) collect these and many more molecule-specific features in one place, calculating them on the fly.
 
-  Version 3: Molecule [semantic type](../../discover/semantic-types.md) recognition enables automatic SMILES to structures rendering, chemically-aware viewers, adaptive info panels
+In info panels, you can find: (Grok's info panels include:)
 
-<!-- made a draft gif with steps commented, how does it look like? (for any unknown reason, can't save GIF in 800x500 after editing, working on that) -->
-![Cell](cell-renderer_test.gif "Automatic SMILES rendering")
+* Identifiers - fetches all known identifiers for the specified structure across multiple databases  <!-- узнать список -->
+* Structure 2D – visualizes a molecule in 2D
+* Structure 3D – visualizes a molecule in 3D through generating .mol file
+* Molfile – provides a .mol file
+* [Gasteiger Partial Charges](functions/gasteiger-charges.md) - visualizes and highlights partial charges in molecule
+* [Chem descriptors](descriptors.md) – calculates and displays specified descriptors for a molecule
+* Properties – yields the list of calculated or predicted physical and chemical properties: empirical formula, molecular weight, hydrogen bond acceptor (HBA) and donor (HDA) values, LogP and LogS, polar surface area (PSA), number of rotatable bonds and stereocenters, also IUPAC name.
+* [Toxicity](info-panels/toxicity-risks.md) –  drug design related feature to predict the toxicity scores. Consists of such categories as mutagenicity, tumorogenicity, irritating effects, reproductive effects.
+* [Structural alerts](info-panels/structural-alerts.md) – drug design related feature to highlight fragments in structures that might greatly increase the
+  toxicity and other problematic structural features
+* [Drug likeness](info-panels/structural-alerts.md) – drug design related feature to get a score that shows how likely this molecule is to be a drug.
 
-## Visualize
+  ![Toxicity, Gasteiger Partial Charges, Solubility Prediction](../../uploads/gifs/chem-model-augment.gif "Toxicity, Gasteiger Partial Charges, Solubility Prediction")
 
-To get visual insights of (visualize?) your data, Datagrok provides the number of context-driven [Viewers](../../visualize/viewers.md). On top of [basic viewers advantages](../../develop/advanced/performance#viewers), our [chemically-aware viewers](chemically-aware-viewers.md) adapt to molecular semantic type and include rendered structures right on the plot axes.
-
-<GIF, показывающая, как выглядят структуры на осях графиков>
-
-<If the end goal were to unite all the small articles into one, I'd move all the info from Chemically-aware viewers page to here, like that>
-
-### Grid
-
-Molecules in the [grid](../../visualize/viewers/grid.md)
-
-![Grid](../../uploads/viewers/grid-molecules.png "Grid: molecules")
-
-### Scatter plot
-
-![Scatter plot](../../uploads/viewers/scatter-plot-molecules.png "Scatter plot: molecules")
-
-### Bar chart
-
-Molecules in [bar chart](../../visualize/viewers/bar-chart.md)
-
-![Bar chart](../../uploads/viewers/bar-chart-molecules.png "Bar chart: molecules")
+In addition to these predefined info panels, users also can develop their own using any scripting language supported by the Datagrok platform.
 
 ## Calculate
 
-<!-- пока категория неустойчива, поэтому лучше ее не описывать -->
+With chemical dataset uploaded, you can conduct necessary calculations to move along your workflow. In Datagrok, two types of calculations are available: descriptors/fingerprints and mapping functions.
 
-### Vectorization
+### Descriptors and fingerprints
 
-To vectorize molecular graph data, Datagrok provides a wide variety of [fingerprints](fingerprints.md) and [descriptors](descriptors.md).
+To vectorize molecular graph data, the platform supports [descriptors](descriptors.md) and [fingerprints](fingerprints.md).
 
-<!-- Designed to calculate algebraic vectors, fingerprints and descriptors serve as initial steps for following Datagrok's tasks: -->
-With fingerprints and descriptors, you can perform the following Datagrok's tasks:
+<!-- With fingerprints and descriptors calculated, the following tasks become available: -->
+While descriptors are more physical and fingerprints are more abstract vectors, both enable the following procedures:
 
 * Similarity and diversity search
 * Chem space dimensionality reduction
-* Structure Activity Relationship types of analysis aka SAR Analysis
-* Machine Learning Tasks
+* SAR analysis
+* Machine learning predictive modeling
 
 Among supported descriptors are Lipinski, Crippen, EState, EState VSA, Fragments, Graph, MolSurf, QED and [others](descriptors.md).
 
@@ -76,91 +87,113 @@ Among supported fingerprints are RDKFingerprint, MACCSKeys, AtomPair, Topologica
 
 ![descriptors](descriptors.gif "Calculate descriptors")
 
+### Mapping functions
+
+Effective management across chemistry data is available only when the same structures are stored under the same identifiers (when the same structures are interlinked across databases)
+
+For each molecule, mapping functions calculate its unique textual identifiers known as [International Chemical Identifiers](https://en.wikipedia.org/wiki/International_Chemical_Identifier).
+
+With just a few clicks, you can convert your structures to InChI and InChI keys, its hashed version.
+
+<GIF with conversion>
 
 ## Transform
 
 Datagrok lets transform your molecular structures for standartization and/or augmentation purposes.
-Beside standard [data wrangling](../../transform/data-wrangling.md) procedures, we propose chemistry-specific ones: curation and mutation.
+Beside standard [data wrangling](../../transform/data-wrangling.md) procedures, you can use chemistry-specific ones: curation and mutation.
 
 ### Curation
-To avoid data-associated errors such as duplicated vectors in the training set or incorrect structure representation, [chemical structure curation](chem-curate.md) tools are available.
-Structure curation methods standartize your molecular data and include:
-<стоит ли тут описывать каждый метод?>
+
+Variant 1:
+[Сhemical structure curation](chem-curate.md) aims to standardize your chemical structures and thereby improve your SAR analysis or your model's prediction accuracy.
+Moreover, by chemical structure curation you can avoid data-associated errors such as duplicated vectors in the training set or incorrect structure representation.
+
+Variant 2:
+([Сhemical structure curation](chem-curate.md) aims to standardize your chemical structures and thereby avoid data-associated errors such as duplicated vectors in the training set or incorrect structure representation.
+Moreover, by chemical structure curation you can improve your SAR analysis or your model's prediction accuracy.
+
+We offer the following curation methods:
+
 * Kekulization
+* Reionization
 * Normalization
 * Neutralization
 * Tautomerization
-* Selection of the main component
+* Main fragment selection
 
 ![Chemical structure curation](chem_curation_demo.gif)
 
-### Mutation
+<!-- ### Mutation -->
 
-<!-- пока про Mutation не стоит писать, ибо функция сыровата -->
+<!-- пока про Mutation не стоит писать, ибо функция сыровата --><br>
 
 
-<!-- don't know yet where Info Panel should fall in -->
-## Info panels 
+## Search
 
-Use [info panels](../../discover/info-panels.md) for fast data exploration. Info panels collect the most important molecule-specific properties and functions in one place:
+We have implemented functions that help scientists analyze a collection of molecules in terms of molecular similarity.
 
-* Identifiers - all known identifiers for the specified structure (UniChem)
-* Molfile – get a specified molecule .mol file
-* Structure 2D – gets a planar molecular representation
-* Structure 3D – gets a 3 dimensional molecular representation
-* [Gasteiger Partial Charges](functions/gasteiger-charges.md) – use it to get a representation with partial charges highlight
-* [Chem descriptors](descriptors.md) – specified descriptors for a structure
-* Properties – get a list of calculated or predicted physical and chemical properties
-* [Toxicity](info-panels/toxicity-risks.md) – drug design related feature to predict the toxicity
-* [Structural alerts](info-panels/structural-alerts.md) – drug design related feature to highlight fragments in structures that might greatly increase the
-  toxicity and other problematic structural features
-* [Drug likeness](info-panels/structural-alerts.md) – drug design related feature to get a score that shows how likely this molecule is to be a drug.
+Navigate across molecular structures with these types of search:
 
-![Toxicity, Gasteiger Partial Charges, Solubility Prediction](../../uploads/gifs/chem-model-augment.gif "Toxicity, Gasteiger Partial Charges, Solubility Prediction")
+* ### [Similarity and diversity search](similarity-search.md)
+
+  Evaluate molecular similarity/diversity with several [distance metrics](similarity-spe#available-distance-metrics) to opt.
+
+  ![Similarity search](../../uploads/gifs/similarity-search.gif "Similarity search")
+
+* ### [Substructure search](substructure-search-test.md)
+
+  As with similarity search, you can choose data source to look for the desired substructures:
+
+  * an uploaded dataset
+  * [your database](db-substructure-similarity-search.md)
+  * an open-source database provided (Chembl, Drugbank or PubChem)
 
 ## Analyze
 
 Analytical methods vary. Thus, for easy navigation our analytical toolset falls into two functional categories:
-1) Analyze SAR - methods designed to identify bioactivity values based on structure 
-2) Analyze Structure - methods designed to investigate exclusively structural pecularities
+
+* Analyze SAR - identify bioactivity values based on structure
+* Analyze Structure - investigate exclusively structural pecularities
 
 <!-- Leonid: 
 * Analyze SAR - methods identifing structure-activity relationshpis
 * Analyze Structure - approaches investigating structural pecularities of your dataset -->
 
-### Analyze SAR 
+### Analyze SAR
+
 * #### [R-group Analysis](r-group-analysis.md)
 
-  Performs R-group decomposition followed by the visual analysis of the obtained R-groups. This analysis uses the graph of a selected scaffold in order to find all the entries
-  in the dataset sharing that scaffold, and get all the corresponding substitutes. Datagrok's "Trellis Plot" is a natural fit for such an analysis.
+  Performs R-group decomposition followed by the visual analysis.
 
-  ![gt1](../../uploads/chem/graphTools2.png "rGroups")
+  ![gt1](../../uploads/chem/graphTools2.png "rGroups") - сделать гифку
 
 * Activity Cliffs
+
+  Find similar compounds with different activity in your dataset. 
+  Choose similarity percent of neighbors, run the function and explore activity cliffs displayed on 2D plots.
+
 * Structural Alerts
-* Group Analysis
+
+  Flag potential chemical hazards or group compounds into categories for read-across.
+  
+  Currently, the following rule sets are taken into account: BMS, Dundee, Glaxo, Inpharmatica, LINT, MLSMR, PAINS, and SureChEMBL. In total, they contain
+[1,251 substructures in the SMARTS format](https://raw.githubusercontent.com/PatWalters/rd_filters/5f70235b387baa39669f25d95079e5dfec49a47c/rd_filters/data/alert_collection.csv).
+
+Presence of any of these substructures triggers a structural alert shown on the info panel; the substructure is highlighted.
+
+* Group Analysis (?)
 * ADMET
 
 ### Analyze Structure
 
 Analyze Structure methods include:
+
 * Chem space
+
+  Explore structural similarity of your molecular data on 2D clusters. For dimensionality reduction, you can choose either t-SNE or UMAP method. Among distance metrics are Cosine, Sokal, Tanimoto, Assimetric.
+
 * Elemental Analysis
 * Scaffold Tree
-
-## Search
-
-Conduct different types of search 
-
-### [Sketcher](sketcher.md)
-
-Sketcher offers [substructure search](substructure-search-test) feature.
-
-<GIF, показывающий, как открывать скетчер>
-
-> Tip: Beside substructure search, use Sketcher to create your own molecules investigating their chemical properties in info panels.
-
-### [Similarity and diversity search](similarity-search.md)
 
 
 ## Predict 
