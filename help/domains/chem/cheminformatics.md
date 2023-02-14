@@ -161,7 +161,7 @@ Mutation function generates new structures based on the specified one. Generatio
 * ### [Similarity and diversity search](similarity-search.md)
 
   For the specified structure, finds the 10 most similar/diverse ones in your dataset.
-  In similarity search all the found structures are sorted by similarity score  based on Morgan fingerprints and multiple distance metrics to opt.
+  In similarity search all the found structures are sorted by similarity score  based on Morgan fingerprints and multiple [distance metrics](similarity-spe#available-distance-metrics) to opt.
 
   ![Similarity search](../../uploads/gifs/similarity-search.gif "Similarity search")
 
