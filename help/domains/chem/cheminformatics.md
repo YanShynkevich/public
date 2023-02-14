@@ -2,10 +2,9 @@
 
 # Cheminformatics
 
-
-## Overview 
-
 Datagrok provides a powerful set of tools for [Cheminformatics](https://en.wikipedia.org/wiki/Cheminformatics), accelerating chemically-related workflows.
+
+## Overview
 
 Variant 1:
 
@@ -107,7 +106,7 @@ While descriptors are more physical and fingerprints are more abstract vectors, 
 
 Among supported descriptors are Lipinski, Crippen, EState, EState VSA, Fragments, Graph, MolSurf, QED and [others](descriptors.md).
 
-<GIF, высчитывающий fingerprints !!! подождать, пока фингерпринты зальют в top-menu Chem> 
+<GIF, высчитывающий fingerprints !!! подождать, пока фингерпринты зальют в top-menu Chem>
 
 Among supported fingerprints are RDKFingerprint, MACCSKeys, AtomPair, TopologicalTorsion, Morgan/Circular and [others](fingerprints.md).
 
@@ -162,19 +161,19 @@ Mutation function generates new structures based on the specified one. Generatio
 * ### [Similarity and diversity search](similarity-search.md)
 
   For the specified structure, finds the 10 most similar/diverse ones in your dataset.
-  In similarity search all the found structures are sorted by similarity score  based on Morgan fingerprints and Tanimoto distance metric.
+  In similarity search all the found structures are sorted by similarity score  based on Morgan fingerprints and multiple distance metrics to opt.
 
   ![Similarity search](../../uploads/gifs/similarity-search.gif "Similarity search")
 
 * ### [Substructure search](substructure-search-test.md)
 
-  Searches a specified structural pattern in the datasource.
+  Searches a specified structural pattern in the datasource. <Лёня в пятницу>
 
 > Similarity and substructure search support uploaded dataset, public databases (Chembl, PubChem, DrugBank) and [relational databases](db-substructure-similarity-search.md).
 
 <GIF с поиском субструктур в опен-сорсных БД>
 
-> Note: to expand search capabilities, use Sketcher to find sketched substructures in an uploaded dataset or in open-source databases.
+> Note: to expand search capabilities, use Sketcher to find sketched substructures in an uploaded dataset or in public databases.
 <GIF c поиском с помощью скетчера>
 
 ## Analyze
