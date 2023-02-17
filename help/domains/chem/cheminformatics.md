@@ -17,10 +17,15 @@ With Datagrok, you can:
 * Visualize your data with context-driven [Viewers](../../visualize/viewers.md). For molecular data, [chemically aware viewers](chemically-aware-viewers) offer additional functionality:
   * Vizualization of the molecules on grid, scatter plot, histogram, trellis plot
 
-      <GIF, показывающая, как выглядят структуры на осях графиков>
-  * Synchronized filtering across selected viewers.
+    <GIF, показывающая, как выглядят структуры на осях графиков>
 
-      <GIF с одновременной фильтрацией на всех вьюерах>
+  * Synchronized filtering across selected viewers.
+  
+    <GIF с одновременной фильтрацией на всех вьюерах>
+  
+  * Datapoint associated tooltip with useful information
+  
+    <GIF с наведением на датапоинты>
 
 * Accelerate your search,  with [Sketcher](sketcher.md): sketch a new molecule, edit an existing one, or retrieve one by entering compound identifier/trivial name.
 
@@ -65,7 +70,8 @@ Visualize your data with context-driven [Viewers](../../visualize/viewers.md). F
   
     <GIF с одновременной фильтрацией на всех вьюерах>
   
-* <Лёня в пятницу>
+* Datapoint associated tooltip with useful information
+    <GIF с наведением на датапоинты>
 
 ## Augment
 
@@ -120,7 +126,7 @@ For each molecule, mapping functions calculate its unique textual identifiers kn
 
 With just a few clicks, you can convert your structures to InChI and InChI keys, its hashed version.
 
-<GIF with conversion>
+<GIF c конверсиями>
 
 ## Transform
 
@@ -167,13 +173,14 @@ Mutation function generates new structures based on the specified one. Generatio
 
 * ### [Substructure search](substructure-search-test.md)
 
-  Searches a specified structural pattern in the datasource. <Лёня в пятницу>
+  Searches a specified structural pattern in the datasource.
 
 > Similarity and substructure search support uploaded dataset, public databases (Chembl, PubChem, DrugBank) and [relational databases](db-substructure-similarity-search.md).
 
 <GIF с поиском субструктур в опен-сорсных БД>
 
 > Note: to expand search capabilities, use Sketcher to find sketched substructures in an uploaded dataset or in public databases.
+
 <GIF c поиском с помощью скетчера>
 
 ## Analyze
