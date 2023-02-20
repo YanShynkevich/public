@@ -37,6 +37,8 @@ With Datagrok, you can:
   While drawing a molecule, info panels update interactively.
   <GIF с обновляющимися инфо-панелями>
 
+  To meet versatility, we support several Sketcher types: Marvin, ChemDraw, OpenChemLib, Ketcher.
+
 * Analyze molecules in [info panels](../../discover/info-panels.md): view structures in 2D and 3D, evaluate [drug likeness](info-panels/drug-likeness.md), [toxicity risks](info-panels/toxicity-risks), [structural alerts](info-panels/structural-alerts.md), chemical properties
 
 * Explore molecules with [diversity search](diversity-search.md) and [similarity search](similarity-search.md)
@@ -72,6 +74,21 @@ Visualize your data with context-driven [Viewers](../../visualize/viewers.md). F
   
 * Datapoint associated tooltip with useful information
     <GIF с наведением на датапоинты>
+
+
+### Sketcher
+
+ Accelerate your search with [Sketcher](sketcher.md): sketch a new molecule, edit an existing one, or retrieve one by entering compound identifier/trivial name.
+
+  ![Sketcher](../../uploads/chem/sketcher.png "Sketcher")
+
+  You can apply [substructure search](substructure-search-test.md) to your dataset by sketching the substructures to find.
+  <GIF с процессом поиска субструктур в молекуле>
+  
+  While drawing a molecule, info panels update interactively.
+  <GIF с обновляющимися инфо-панелями>
+
+  To meet versatility, we support several Sketcher types: Marvin, ChemDraw, OpenChemLib, Ketcher.
 
 ## Augment
 
@@ -140,7 +157,7 @@ Variant 1:
 Moreover, by chemical structure curation you can avoid data-associated errors such as duplicated vectors in the training set or incorrect structure representation.
 
 Variant 2:
-([Сhemical structure curation](chem-curate.md) standardizes your chemical structures and thereby helps avoid data-associated errors such as duplicated vectors in the training set or incorrect structure representation.
+[Сhemical structure curation](chem-curate.md) standardizes your chemical structures and thereby helps avoid data-associated errors such as duplicated vectors in the training set or incorrect structure representation.
 By chemical structure curation you can improve your SAR analysis or your model's prediction accuracy.
 
 We offer the following curation methods:
@@ -173,7 +190,14 @@ Mutation function generates new structures based on the specified one. Generatio
 
 * ### [Substructure search](substructure-search-test.md)
 
-  Searches a specified structural pattern in the datasource.
+  Sketcher-supported function that searches a specified structural pattern in the datasource.
+
+  In Datagrok, substructure search implements advanced navigation with unique features:
+
+  * Sketcher-oriented structural adjustment of the found molecules
+  * Explicit hydrogen search support
+  * Extended toolset for aromaticity search
+  * Multifiltering
 
 > Similarity and substructure search support uploaded dataset, public databases (Chembl, PubChem, DrugBank) and [relational databases](db-substructure-similarity-search.md).
 
@@ -249,7 +273,8 @@ observed properties as targets. This lets
 researchers build predictive models that can be trained, assessed, executed,
 reused by other scientists, and used in pipelines.
 
-<Залинковать предиктивные модели на DG, показать в гифках, как их можно использовать>
+Among ML models are PCA, Naive Bayes, K-Means, Distributed Random Forest, Gradient Boosting, XGBoost, Generalized Linear Modeling, AutoML and Deep Learning.
+
 <Показать, как вставляются нововычисленные значения в info panels>
 
 ---
